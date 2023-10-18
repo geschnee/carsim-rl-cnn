@@ -8,6 +8,11 @@ import pygame
 import sys
 
 
+import PIL.Image as Image
+import io
+import base64
+
+
 def run(args: argparse.Namespace) -> None:
     print(f'will try port {args.port}', flush=True)
     unity_comms = UnityComms(port=args.port)
@@ -20,7 +25,7 @@ def run(args: argparse.Namespace) -> None:
     pygame.init()
 
     # creating display
-    gameDisplay = pygame.display.set_mode((500, 500))
+    gameDisplay = pygame.display.set_mode((250, 250))
 
     right_acceleration, left_acceleration = 0, 0
 
@@ -46,25 +51,31 @@ def run(args: argparse.Namespace) -> None:
 
                 if event.key == pygame.K_UP:
                     print("Key arrow up has been pressed", flush=True)
-                    right_acceleration += 1
-                    left_acceleration += 1
+                    right_acceleration += 0.1
+                    left_acceleration += 0.1
 
                 if event.key == pygame.K_DOWN:
                     print("Key arrow down has been pressed", flush=True)
-                    right_acceleration += -1
-                    left_acceleration += -1
+                    right_acceleration += -0.1
+                    left_acceleration += -0.1
 
                 if event.key == pygame.K_LEFT:
                     print("Key arrow left has been pressed", flush=True)
-                    left_acceleration += 1
+                    left_acceleration += 0.1
+                    right_acceleration += -0.05
 
                 if event.key == pygame.K_RIGHT:
                     print("Key arrow right has been pressed", flush=True)
-                    right_acceleration += 1
+                    right_acceleration += 0.1
+                    left_acceleration += -0.05
                 if event.key == pygame.K_SPACE:
                     print("Key spacebar has been pressed", flush=True)
                     right_acceleration = 0
                     left_acceleration = 0
+
+                if event.key == pygame.K_r:
+                    print("Key r has been pressed, will respawn the jetbot", flush=True)
+                    unity_comms.spawnCar()
 
                 if event.key == pygame.K_p:
                     print(f'p was pressed, will pause/start the simulation')
@@ -73,6 +84,15 @@ def run(args: argparse.Namespace) -> None:
                     # instead the timeScale should not be modified, instead we could implement the car to check if the simulation is currently paused
                     # if the sim is paused, don't turn the wheels
                     raise NotImplementedError("check comments above")
+
+                if right_acceleration > 1:
+                    right_acceleration = 1
+                if right_acceleration < -0.1:
+                    right_acceleration = -0.1
+                if left_acceleration > 1:
+                    left_acceleration = 1
+                if left_acceleration < -0.1:
+                    left_acceleration = -0.1
 
                 unity_comms.forwardInputsToCar(inputAccelerationLeft=float(
                     left_acceleration), inputAccelerationRight=float(right_acceleration))
@@ -92,11 +112,6 @@ def run(args: argparse.Namespace) -> None:
         #print(f'len of obs {len(obs)}')
         #print(f'first obs {obs[0]}')
 
-        import PIL.Image as Image
-
-        import io
-
-        import base64
         base64_bytes = obs.encode('ascii')
         message_bytes = base64.b64decode(base64_bytes)
         #print(f'type message_bytes {type(message_bytes)}')
@@ -108,9 +123,6 @@ def run(args: argparse.Namespace) -> None:
 
         im = Image.open(io.BytesIO(message_bytes))
 
-#            image = Image.frombytes(
-#                'RGB', (240, 240), message_bytes, decoder_name='png')
-        # im.show()
         im.save("savepath.png")
 
         img = pygame.image.load('savepath.png')
@@ -120,8 +132,9 @@ def run(args: argparse.Namespace) -> None:
 
         frames += 1
 
-        print(f'fps {frames / (time.time() - starttime)}')
-        # about 20 fps on my machine
+        if frames % 1000 == 0:
+            print(f'fps {frames / (time.time() - starttime)}')
+            # about 20 fps on my machine
 
         #print(f'format {im.format}, size {im.size}, mode {im.mode}')
         # png, (240,240), RGB
