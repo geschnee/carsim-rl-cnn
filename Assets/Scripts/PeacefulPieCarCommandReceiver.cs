@@ -80,7 +80,7 @@ public class PeacefulPieCarCommandReceiver : MonoBehaviour
         [JsonRpcMethod]
         string getObservation()
         {
-            Debug.Log("getObservation");
+            //Debug.Log("getObservation");
             string cameraPicture = GetCameraInput();
             return cameraPicture;
         }
@@ -99,7 +99,7 @@ public class PeacefulPieCarCommandReceiver : MonoBehaviour
             screenShot.ReadPixels(new Rect(0, 0, resWidth, resHeight), 0, 0);
 
             System.Byte[] pictureInBytes = screenShot.EncodeToPNG(); // the length of the array changes depending on the content
-
+            // screenShot.EncodeToJPG(); auch möglich
 
             carCam.targetTexture = null;
             RenderTexture.active = null; // JC: added to avoid errors
@@ -107,21 +107,27 @@ public class PeacefulPieCarCommandReceiver : MonoBehaviour
             Destroy(screenShot);
 
             File.WriteAllBytes("observation.png", pictureInBytes);
-            File.WriteAllBytes("observation.txt", pictureInBytes);
+
+
+
+            string base64_string = System.Convert.ToBase64String(pictureInBytes);
+
+
+            byte[] base64EncodedBytes = System.Convert.FromBase64String(base64_string);
+
+            /*
+            Debug.Log($"base64_string {base64_string}");
 
             Debug.Log($"Shape of byte[] {pictureInBytes.Length}");
             Debug.Log($"byte[] {pictureInBytes}");
             Debug.Log($"first byte: {pictureInBytes[0]}");
 
-            // test as strings, since the byte array received has a different length in python than in c# anyways
-            string utfString = Encoding.ASCII.GetString(pictureInBytes, 0, pictureInBytes.Length);
-            Debug.Log($"uft-8 string {utfString}");
-            File.WriteAllText("encoded_string.txt", utfString);
-            // utfString has the same length as the one received in python!!!
-            // and same content, now how to get the string back to png?
+            Debug.Log($"base64EncodedBytes {base64EncodedBytes}");
+            Debug.Log($"base64EncodedBytes length {base64EncodedBytes.Length}");
+            Debug.Log($"base64EncodedBytes first char {base64EncodedBytes[0]}");
+            */
 
-            // System.Byte[]   pictureInBytes;
-            return utfString;
+            return base64_string;
         }
     }
 

@@ -20,9 +20,12 @@ def run(args: argparse.Namespace) -> None:
     pygame.init()
 
     # creating display
-    display = pygame.display.set_mode((500, 500))
+    gameDisplay = pygame.display.set_mode((500, 500))
 
     right_acceleration, left_acceleration = 0, 0
+
+    starttime = time.time()
+    frames = 0
 
     # creating a running loop
     while True:
@@ -79,42 +82,49 @@ def run(args: argparse.Namespace) -> None:
                     pygame.quit()
                     sys.exit()
 
-            obs = unity_comms.getObservation()
-            with open("obs.txt", "w") as file:
-                file.write(obs)
+        obs = unity_comms.getObservation()
+        with open("obs.txt", "w") as file:
+            file.write(obs)
 
-            print(f'Obs {obs}')
-            print(f'type of obs {type(obs)}')
+        #print(f'Obs {obs}')
+        #print(f'type of obs {type(obs)}')
 
-            print(f'len of obs {len(obs)}')
+        #print(f'len of obs {len(obs)}')
+        #print(f'first obs {obs[0]}')
 
-            import PIL.Image as Image
+        import PIL.Image as Image
 
-            import io
+        import io
 
-            #bytes = bytearray(obs)
-            b = bytes(obs, 'utf-8')
+        import base64
+        base64_bytes = obs.encode('ascii')
+        message_bytes = base64.b64decode(base64_bytes)
+        #print(f'type message_bytes {type(message_bytes)}')
+        #print(f'length of message_bytes {len(message_bytes)}')
+        #print(f'first byte {message_bytes[0]}')
 
-            #print(f'b {b}')
-            print(f'type b {type(b)}')
-            print(f'length of bytes {len(b)}')
+        with open("imagepython_base64.png", "wb") as file:
+            file.write(message_bytes)
 
-            ba = bytearray(obs, encoding="ascii")
-            print(f'type ba {type(ba)}')
-            print(f'length of ba {len(ba)}')
+        im = Image.open(io.BytesIO(message_bytes))
 
-            with open("imagepython.png", "wb") as file:
-                file.write(b)
+#            image = Image.frombytes(
+#                'RGB', (240, 240), message_bytes, decoder_name='png')
+        # im.show()
+        im.save("savepath.png")
 
-            sys.exit()
+        img = pygame.image.load('savepath.png')
+        gameDisplay.blit(img, (0, 0))
 
-            #picture = Image.open(b)
+        pygame.display.update()
 
-            # display image
-            # picture.show()
+        frames += 1
 
-            #image = Image.frombytes('RGB', (240, 240), b, 'raw')
-            # image.save("savepath")
+        print(f'fps {frames / (time.time() - starttime)}')
+        # about 20 fps on my machine
+
+        #print(f'format {im.format}, size {im.size}, mode {im.mode}')
+        # png, (240,240), RGB
 
 
 if __name__ == "__main__":

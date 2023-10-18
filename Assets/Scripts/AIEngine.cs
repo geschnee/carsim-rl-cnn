@@ -6,8 +6,8 @@ using UnityEngine;
 public class AIEngine : MonoBehaviour
 {
 
-    private float inputAccelerationLeft;
-    private float inputAccelerationRight;
+    private float inputAccelerationLeft = 0;
+    private float inputAccelerationRight = 0;
     private float currentSteerAngle;
 
     private float maxTorque = 100f;
@@ -27,6 +27,13 @@ public class AIEngine : MonoBehaviour
 
     public Transform carBody;
 
+    public void Start()
+    {
+        Debug.Log($"AIEngine started");
+        Debug.Log($"left front wheeel rotation {frontLeftWheelCollider.transform.rotation.eulerAngles}");
+        Debug.Log($"Motor torque start left {frontLeftWheelCollider.motorTorque} right {frontRightWheelCollider.motorTorque}");
+
+    }
 
     public void FixedUpdate()
     {
@@ -51,6 +58,9 @@ public class AIEngine : MonoBehaviour
         // grows with velocity + (signed in direction of vel) constant
         // custome resistance if wanted actually set to 0
 
+
+
+        // this resistance is not used anywhere
         float resistance = (float)(0f * (Math.Pow(this.getCarVelocity(), 8) * Math.Sign(this.getCarVelocity()) * this.resistanceFactor) + Math.Sign(this.getCarVelocity()) * 5f);
 
 
@@ -70,6 +80,9 @@ public class AIEngine : MonoBehaviour
         frontLeftWheelCollider.motorTorque = (inputAccelerationLeft * this.maxTorque);
         frontLeftWheelCollider.steerAngle = steeringAngle;
 
+        Debug.Log($"steering angle {steeringAngle} left {frontLeftWheelCollider.steerAngle} right {frontRightWheelCollider.steerAngle}");
+        Debug.Log($"Motor torque left {frontLeftWheelCollider.motorTorque} right {frontRightWheelCollider.motorTorque}");
+
         // Apply torque and steering angle to the right wheel
         frontRightWheelCollider.motorTorque = (inputAccelerationRight * this.maxTorque);
         frontRightWheelCollider.steerAngle = steeringAngle;
@@ -86,6 +99,7 @@ public class AIEngine : MonoBehaviour
 
         frontLeftWheelCollider.motorTorque = 0;
         frontRightWheelCollider.motorTorque = 0;
+
         frontLeftWheelCollider.attachedRigidbody.velocity = Vector3.zero;
         frontRightWheelCollider.attachedRigidbody.angularVelocity = Vector3.zero;
 
@@ -99,6 +113,9 @@ public class AIEngine : MonoBehaviour
         UpdateSingleWheel(frontRightWheelCollider, frontRightWheeTransform);
         UpdateSingleWheel(rearRightWheelCollider, rearRightWheelTransform);
         UpdateSingleWheel(rearLeftWheelCollider, rearLeftWheelTransform);
+
+
+
     }
 
     public void UpdateSingleWheel(WheelCollider wheelCollider, Transform wheelTransform)
@@ -106,8 +123,15 @@ public class AIEngine : MonoBehaviour
         Vector3 pos;
         Quaternion rot;
         wheelCollider.GetWorldPose(out pos, out rot);
+
+
         wheelTransform.rotation = rot;
         wheelTransform.position = pos;
+        // dieser Code hier sieht wie Muell fuer mich aus
+        // warum sind die Meshes separate GameObjects von den collidern?
+        // sieht aus wie dieses Tutorial:
+        // https://www.youtube.com/watch?v=rdl66506RY4&list=PL1R2qsKCcUCIdGXBLkZV2Tq_sxa-ADASN
+
         // Debug.Log(pos);
         // (25, 87) , (-30, 90) (-30, (-25) , (24, -27)
 
