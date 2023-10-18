@@ -13,17 +13,44 @@ public class PeacefulPieCarCommandReceiver : MonoBehaviour
     {
         PeacefulPieCarCommandReceiver sphere;
         //GameObject car;
-        AIEngine aIEngine;
+
+        GameManager gameManager;
+
+        GameObject carPrefab;
+        GameObject car;
         Camera carCam;
+
+        AIEngine aIEngine;
 
         bool simRunning = true;
 
-        public Rpc(PeacefulPieCarCommandReceiver sphere, GameObject car, Camera carCam)
+        public Rpc(PeacefulPieCarCommandReceiver sphere, GameObject prefab, GameObject gameManagerObject)
         {
+            this.gameManager = gameManagerObject.GetComponent<GameManager>();
             this.sphere = sphere;
-            //this.car = car;
+
+            this.carPrefab = prefab;
+        }
+
+        [JsonRpcMethod]
+        void spawnCar()
+        {
+            Debug.Log($"spawnCar");
+
+            if (this.car != null)
+            {
+                Debug.Log($"will destroy existing car");
+                Destroy(this.car);
+            }
+
+            //GameObject car = Instantiate(carPrefab, new Vector3(10, 1, 60), Quaternion.identity);
+
+            GameObject car = gameManager.spawnJetbot();
+
+            this.car = car;
+
             this.aIEngine = car.GetComponent<AIEngine>();
-            this.carCam = carCam;
+            this.carCam = car.GetComponentInChildren<Camera>();
         }
 
         [JsonRpcMethod]
@@ -80,6 +107,12 @@ public class PeacefulPieCarCommandReceiver : MonoBehaviour
         [JsonRpcMethod]
         string getObservation()
         {
+            if (car == null)
+            {
+                Debug.Log($"car is null in getObservation, try spawn new one");
+                spawnCar();
+            }
+
             //Debug.Log("getObservation");
             string cameraPicture = GetCameraInput();
             return cameraPicture;
@@ -87,6 +120,7 @@ public class PeacefulPieCarCommandReceiver : MonoBehaviour
 
         int resWidth = 240;
         int resHeight = 240;
+        // resolution is quite high: https://www.raspberrypi.com/documentation/accessories/camera.html
 
         //Get the AI vehicles camera input encode as byte array
         private string GetCameraInput()
@@ -132,12 +166,13 @@ public class PeacefulPieCarCommandReceiver : MonoBehaviour
     }
 
     Rpc rpc;
-    public GameObject car;
-    public Camera carCam;
+    public GameObject carPrefab;
+    public GameObject gameManager;
+
 
     void Awake()
     {
-        rpc = new Rpc(this, car, carCam);
+        rpc = new Rpc(this, carPrefab, gameManager);
         print("rpc started");
     }
 

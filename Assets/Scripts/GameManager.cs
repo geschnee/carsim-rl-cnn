@@ -81,14 +81,14 @@ public class GameManager : MonoBehaviour
 
 	// Start is called before the first frame update
 	void Start()
-    {
+	{
 		// load obstacles
 		this.isEvaluation = !isTrainingSpawnRandom;
-		if(this.isTrainingSpawnRandom == false)
-        {
+		if (this.isTrainingSpawnRandom == false)
+		{
 			isTrainingSpawnRandom = false;
 			isLogTraining = false;
-			
+
 
 		}
 		this.gameObject.AddComponent<ObstacleMapManager>();
@@ -97,25 +97,36 @@ public class GameManager : MonoBehaviour
 		//this.obstacleMapManager.gameManagerTransform = this.transform;
 		this.obstacleMapManager.SetLikeInitialize(this.transform, obstacleBlue, obstacleRed, goalPassedWallCheckpoint, goalMissedWallCheckpoint, this.FinishLineCheckpoint, this.isFinishLineLastGoal, this.JetBot, this.isTrainingSpawnRandom, this.singleGoalTraining);
 
-		print("before spawn jetbot in GameManager");
+
 		// this.obstacleMapManager = new ObstacleMapManager(this.transform, obstacleBlue, obstacleRed, goalPassedWallCheckpoint, goalMissedWallCheckpoint, this.FinishLineCheckpoint, this.isFinishLineLastGoal, this.JetBot, this.isTrainingSpawnRandom, this.singleGoalTraining);
-		this.obstacleMapManager.SpawnJetBot();
+		//this.obstacleMapManager.SpawnJetBot();
+
+
+
 		//InitializeMapWithObstacles();
-    }
+	}
+
+	public GameObject spawnJetbot()
+	{
+
+		print("before spawn jetbot in GameManager");
+		return this.obstacleMapManager.SpawnJetBot();
+	}
 
 	void FixedUpdate()//FixedUpdate is called at a constant interval
-    {
+	{
 
 	}
 
-    // Update is called once per frame
-    void Update()
-    {
+	// Update is called once per frame
+	void Update()
+	{
 
-    }
-      
-    
-    public void InitializeMapWithObstacles(Boolean correctStart){
+	}
+
+
+	public void InitializeMapWithObstacles(Boolean correctStart)
+	{
 
 		// load a already generated map
 		if (loadObstacles)
@@ -141,7 +152,7 @@ public class GameManager : MonoBehaviour
 		else
 		{
 
-			if (currentMapIndex == evaluationMaps.Length - 1 && idOfCurrentRun == numberOfRunsPerMap-1 && isEvaluation)
+			if (currentMapIndex == evaluationMaps.Length - 1 && idOfCurrentRun == numberOfRunsPerMap - 1 && isEvaluation)
 			{
 				UnityEditor.EditorApplication.isPlaying = false;
 				UnityEditor.EditorApplication.ExitPlaymode();
@@ -167,42 +178,42 @@ public class GameManager : MonoBehaviour
 
 			}
 		}
-		
+
 
 
 	}
 
 	//retuns coords at beginning of the map (start point)
 	public Vector3 GetStartSpawnPosition()
-    {
+	{
 		return this.obstacleMapManager.GetJetBotSpawnCoords();
-    }
+	}
 
 	//returns random spawn position on map
 	public Vector3 GetRandomSpawnPosition()
-    {
+	{
 		return this.obstacleMapManager.GetJetBotRandomCoords();
 
 	}
 
 	public Quaternion GetRandomSpawnRotation()
-    {
+	{
 		return this.obstacleMapManager.JetBotRandomRotation();
-    }
+	}
 
 	public void DestroyObstaclesOnMap()
-    {
+	{
 		this.obstacleMapManager.DestroyMap();
-    }
+	}
 	public Boolean GetIsTrainingSpawnRandom()
-    {
+	{
 		return this.isTrainingSpawnRandom;
 
 	}
 	public int GetIdOfCurrentRun()
-    {
+	{
 		return this.idOfCurrentRun;
-    }
+	}
 
 	public String GetMapTypeName()
 	{

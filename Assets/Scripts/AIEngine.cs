@@ -104,7 +104,6 @@ public class AIEngine : MonoBehaviour
         frontRightWheelCollider.attachedRigidbody.angularVelocity = Vector3.zero;
 
 
-
     }
 
     public void UpdateWheels()
@@ -127,13 +126,11 @@ public class AIEngine : MonoBehaviour
 
         wheelTransform.rotation = rot;
         wheelTransform.position = pos;
-        // dieser Code hier sieht wie Muell fuer mich aus
-        // warum sind die Meshes separate GameObjects von den collidern?
+        // TODO why do the wheels (mesh) rotate when the JetBot is fresh?
+        // there has not been any command issued yet
+
         // sieht aus wie dieses Tutorial:
         // https://www.youtube.com/watch?v=rdl66506RY4&list=PL1R2qsKCcUCIdGXBLkZV2Tq_sxa-ADASN
-
-        // Debug.Log(pos);
-        // (25, 87) , (-30, 90) (-30, (-25) , (24, -27)
 
     }
 

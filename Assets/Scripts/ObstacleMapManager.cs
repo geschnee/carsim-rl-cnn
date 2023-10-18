@@ -62,11 +62,11 @@ public class Goal
 
     }
 
-    public GameObject IntantiateGoal(Goal goal, GameObject passedCheckpointWall, GameObject missedCheckpointWall, Vector3 gameManagerPosition)
+    public GameObject InstantiateGoal(GameObject passedCheckpointWall, GameObject missedCheckpointWall, Vector3 gameManagerPosition)
     {
-        Vector3 coords0 = goal.Coords[0];
-        Vector3 coords1 = goal.Coords[1];
-        float widthObstacle = goal.ObstacleGO.transform.localScale.z;
+        Vector3 coords0 = this.Coords[0];
+        Vector3 coords1 = this.Coords[1];
+        float widthObstacle = this.ObstacleGO.transform.localScale.z;
         Quaternion goalRotationQuaternion = new Quaternion(0, 0, 0, 0);
 
         //local coordinates dependent from game manager position
@@ -77,8 +77,8 @@ public class Goal
         GameObject goalParentGameObject = new(name: "Goal");
 
         //goalposts
-        GameObject.Instantiate(goal.ObstacleGO, goal.Coords[0], goalRotationQuaternion, goalParentGameObject.transform);
-        GameObject.Instantiate(goal.ObstacleGO, goal.Coords[1], goalRotationQuaternion, goalParentGameObject.transform);
+        GameObject.Instantiate(this.ObstacleGO, this.Coords[0], goalRotationQuaternion, goalParentGameObject.transform);
+        GameObject.Instantiate(this.ObstacleGO, this.Coords[1], goalRotationQuaternion, goalParentGameObject.transform);
 
 
         //instantiate passed checkpoint wall between obstacles 
@@ -101,7 +101,7 @@ public class Goal
             Vector3 midPointToLeftBorder = this.GetMidPoint(coords0, pointLeftBorder);
 
             GameObject missedWallLeft = GameObject.Instantiate(missedCheckpointWall, midPointToLeftBorder, goalRotationQuaternion, goalParentGameObject.transform);
-            missedWallLeft.transform.localScale += new Vector3(0, 0, distanceToZLeft - 1.25f*widthObstacle);
+            missedWallLeft.transform.localScale += new Vector3(0, 0, distanceToZLeft - 1.25f * widthObstacle);
 
 
             // intatiate missed Checkpoint wall from right obstacle of the goal to the border   
@@ -110,7 +110,7 @@ public class Goal
             Vector3 midPointToRightBorder = this.GetMidPoint(coords1, pointRightBorder);
 
             GameObject missedWallRight = GameObject.Instantiate(missedCheckpointWall, midPointToRightBorder, goalRotationQuaternion, goalParentGameObject.transform);
-            missedWallRight.transform.localScale += new Vector3(0, 0, distanceToZRight - 1.5f*widthObstacle);
+            missedWallRight.transform.localScale += new Vector3(0, 0, distanceToZRight - 1.5f * widthObstacle);
 
 
         }
@@ -207,20 +207,20 @@ public class ObstacleMapManager : MonoBehaviour
 
     }
 
-    public void SpawnJetBot()
+    public GameObject SpawnJetBot()
     {
         Vector3 SpawnPoint;
         if (this.isTrainingSpawnRandom)
         {
             SpawnPoint = this.GetJetBotRandomCoords();
         }
-       else
+        else
         {
             SpawnPoint = this.GetJetBotSpawnCoords();
         }
 
-        GameObject.Instantiate(original:this.JetBot, position:SpawnPoint, rotation: new Quaternion(0,1,0,1), this.gameManagerTransform.parent);
-
+        GameObject jb = GameObject.Instantiate(original: this.JetBot, position: SpawnPoint, rotation: new Quaternion(0, 1, 0, 1), this.gameManagerTransform.parent);
+        return jb;
     }
     public Vector3 GetJetBotSpawnCoords()
     {
@@ -280,28 +280,28 @@ public class ObstacleMapManager : MonoBehaviour
 
             foreach (Goal goal in goalList.goals)
             {
-                GameObject goalIntantiatedGameObject = goal.IntantiateGoal(goal, this.goalPassedGameOjbect, this.goalMissedGameObject, this.gameManagerPosition);
+                GameObject goalIntantiatedGameObject = goal.InstantiateGoal(this.goalPassedGameOjbect, this.goalMissedGameObject, this.gameManagerPosition);
                 goalIntantiatedGameObject.transform.SetParent(allGoals.transform);
 
             }
         }
         else
         {
-            for (int i = 0; i < goalList.goals.Length -1; i++)
+            for (int i = 0; i < goalList.goals.Length - 1; i++)
             {
 
                 Goal goal = goalList.goals[i];
                 GameObject goalInstantiatedGameObject;
-                if (this.singleGoalTraining && i ==0)
+                if (this.singleGoalTraining && i == 0)
                 {
                     // in single goal training make the first goal with finish line
                     // this means the training is successfully aborted by passing the first goal
-                    goalInstantiatedGameObject = goal.IntantiateGoal(goal, this.finishlineCheckpoint, this.goalMissedGameObject, this.gameManagerPosition);
+                    goalInstantiatedGameObject = goal.InstantiateGoal(this.finishlineCheckpoint, this.goalMissedGameObject, this.gameManagerPosition);
 
                 }
                 else
                 {
-                    goalInstantiatedGameObject = goal.IntantiateGoal(goal, this.goalPassedGameOjbect, this.goalMissedGameObject, this.gameManagerPosition);
+                    goalInstantiatedGameObject = goal.InstantiateGoal(this.goalPassedGameOjbect, this.goalMissedGameObject, this.gameManagerPosition);
 
                 }
                 goalInstantiatedGameObject.transform.SetParent(allGoals.transform);
@@ -311,7 +311,7 @@ public class ObstacleMapManager : MonoBehaviour
             // only matters in full map training
             int lastGoalIndex = goalList.goals.Length - 1;
             Goal goalLast = goalList.goals[lastGoalIndex];
-            GameObject goalInstantiatedGameObjectLast = goalLast.IntantiateGoal(goalLast, this.finishlineCheckpoint, this.goalMissedGameObject, this.gameManagerPosition);
+            GameObject goalInstantiatedGameObjectLast = goalLast.InstantiateGoal(this.finishlineCheckpoint, this.goalMissedGameObject, this.gameManagerPosition);
             goalInstantiatedGameObjectLast.transform.SetParent(allGoals.transform);
 
         }
@@ -322,7 +322,7 @@ public class ObstacleMapManager : MonoBehaviour
     {
         //DestroyImmediate(this.allGoals);
         Destroy(this.allGoals);
-       
+
 
     }
 
@@ -365,7 +365,7 @@ public class ObstacleMapManager : MonoBehaviour
         Goal[] obstacles = new Goal[0];
 
         switch (mapType)
-            { 
+        {
             case MapType.random:
                 obstacles = this.GenerateRandomObstacleMap();
                 //Debug.Log("Random Map generated");
@@ -414,10 +414,10 @@ public class ObstacleMapManager : MonoBehaviour
                 obstacles = this.GenerateTwoGoalLanesMapHard(false, false);
                 Debug.Log("Two lanes map with red obstacles first generated");
                 break;
-            }
+        }
 
-        ObstacleList obstacleList = new ObstacleList { listId= id, goals = obstacles };
-             
+        ObstacleList obstacleList = new ObstacleList { listId = id, goals = obstacles };
+
         return obstacleList;
 
     }
@@ -473,7 +473,7 @@ public class ObstacleMapManager : MonoBehaviour
             coordsGoal[0] = coordLeft;
             coordsGoal[1] = coordRight;
 
-           
+
             Goal goal = new Goal(actualColorObject, coordsGoal, this.goalPassedGameOjbect, this.goalMissedGameObject);
             obstacles.Add(goal);
 
@@ -486,14 +486,14 @@ public class ObstacleMapManager : MonoBehaviour
         return obstacles.ToArray();
     }
 
-    private Goal[] GenerateEasyGoalLaneMiddleMap(Boolean isBlueFirst=true)
+    private Goal[] GenerateEasyGoalLaneMiddleMap(Boolean isBlueFirst = true)
     {
         List<Goal> obstacles = new List<Goal>();
         // calculate how many goals
 
 
         // local coordinates fore every train arena
-        float zLeftRow = (Constants.Z_WIDTH/2 + this.gameManagerPosition.z - Constants.MAXWIDTH_GOAL/2);
+        float zLeftRow = (Constants.Z_WIDTH / 2 + this.gameManagerPosition.z - Constants.MAXWIDTH_GOAL / 2);
 
         int minXLocal = (int)(Constants.MIN_X + this.gameManagerPosition.x);
         int maxXLocal = minXLocal + Constants.X_WIDTH - 2;
@@ -509,13 +509,13 @@ public class ObstacleMapManager : MonoBehaviour
         }
 
 
-        for (int x = minXLocal; x < maxXLocal ; x += Constants.MINXDISTANCEGOALS +1)
+        for (int x = minXLocal; x < maxXLocal; x += Constants.MINXDISTANCEGOALS + 1)
         {
 
             // left obstacles of goals
             Vector3 coordLeft = new Vector3(x, Constants.SPAWNHEIGHT_Y, zLeftRow);
 
-            Vector3 coordRight = new Vector3(x, Constants.SPAWNHEIGHT_Y, zLeftRow + Constants.MAXWIDTH_GOAL );
+            Vector3 coordRight = new Vector3(x, Constants.SPAWNHEIGHT_Y, zLeftRow + Constants.MAXWIDTH_GOAL);
             Vector3[] coordsGoal = { coordLeft, coordRight };
 
             Goal goal = new Goal(actualColorObject, coordsGoal, this.goalPassedGameOjbect, this.goalMissedGameObject);
@@ -532,13 +532,14 @@ public class ObstacleMapManager : MonoBehaviour
 
     }
 
-    private Goal[] GenerateTwoGoalLanesMapHard(Boolean isBlueFirst=true, Boolean isLeftFirst=true)
+    private Goal[] GenerateTwoGoalLanesMapHard(Boolean isBlueFirst = true, Boolean isLeftFirst = true)
     {
 
         List<Goal> obstacles = new List<Goal>();
 
         GameObject actualColorObject;
-        if (isBlueFirst) {
+        if (isBlueFirst)
+        {
             actualColorObject = this.obstacleBlue;
         }
         else
@@ -552,7 +553,7 @@ public class ObstacleMapManager : MonoBehaviour
         float zLeftRow = (1.5f + this.gameManagerPosition.z);
         float zRightRow = (5f + this.gameManagerPosition.z);
         int minXLocal = (int)(Constants.MIN_X + this.gameManagerPosition.x);
-        int maxXLocal = minXLocal + Constants.X_WIDTH -2;
+        int maxXLocal = minXLocal + Constants.X_WIDTH - 2;
 
 
         for (int x = minXLocal; x < maxXLocal; x += Constants.MAXXDISTANCEGOALS - 1)
@@ -565,7 +566,7 @@ public class ObstacleMapManager : MonoBehaviour
                 Vector3 coordLeft = new Vector3(x, Constants.SPAWNHEIGHT_Y, zLeftRow);
 
                 Vector3 coordRight = new Vector3(x, Constants.SPAWNHEIGHT_Y, zLeftRow + Constants.MAXWIDTH_GOAL);
-             
+
                 coordsGoal[0] = coordLeft;
                 coordsGoal[1] = coordRight;
 
@@ -590,7 +591,7 @@ public class ObstacleMapManager : MonoBehaviour
 
 
 
-            return obstacles.ToArray() ;
+        return obstacles.ToArray();
     }
 
     private Goal[] GenerateTwoGoalLanesMapMedium(Boolean isBlueFirst = true, Boolean isLeftFirst = true)
@@ -640,7 +641,7 @@ public class ObstacleMapManager : MonoBehaviour
 
                 coordsGoal[0] = coordLeft;
                 coordsGoal[1] = coordRight;
-                
+
             }
 
             Goal goal = new Goal(actualColorObject, coordsGoal, this.goalPassedGameOjbect, this.goalMissedGameObject);
