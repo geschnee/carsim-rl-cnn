@@ -74,8 +74,9 @@ def run(args: argparse.Namespace) -> None:
                     left_acceleration = 0
 
                 if event.key == pygame.K_r:
-                    print("Key r has been pressed, will respawn the jetbot", flush=True)
+                    print("Key r has been pressed, will respawn the jetbot and start an episode", flush=True)
                     unity_comms.spawnCar()
+                    unity_comms.startEpisode()
 
                 if event.key == pygame.K_p:
                     print(f'p was pressed, will pause/start the simulation')

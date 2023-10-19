@@ -29,6 +29,8 @@ public class GameManager : MonoBehaviour
 	public GameObject goalMissedWallCheckpoint;
 	public GameObject FinishLineCheckpoint;
 
+	public GameObject goalMiddleIndicator;
+
 	//spawn jetbot random on map if trainnig
 	public Boolean isTrainingSpawnRandom;
 	public bool singleGoalTraining;
@@ -95,7 +97,7 @@ public class GameManager : MonoBehaviour
 
 		this.obstacleMapManager = this.gameObject.GetComponent<ObstacleMapManager>();
 		//this.obstacleMapManager.gameManagerTransform = this.transform;
-		this.obstacleMapManager.SetLikeInitialize(this.transform, obstacleBlue, obstacleRed, goalPassedWallCheckpoint, goalMissedWallCheckpoint, this.FinishLineCheckpoint, this.isFinishLineLastGoal, this.JetBot, this.isTrainingSpawnRandom, this.singleGoalTraining);
+		this.obstacleMapManager.SetLikeInitialize(this.transform, obstacleBlue, obstacleRed, goalPassedWallCheckpoint, goalMissedWallCheckpoint, this.FinishLineCheckpoint, goalMiddleIndicator, this.isFinishLineLastGoal, this.JetBot, this.isTrainingSpawnRandom, this.singleGoalTraining);
 
 
 		// this.obstacleMapManager = new ObstacleMapManager(this.transform, obstacleBlue, obstacleRed, goalPassedWallCheckpoint, goalMissedWallCheckpoint, this.FinishLineCheckpoint, this.isFinishLineLastGoal, this.JetBot, this.isTrainingSpawnRandom, this.singleGoalTraining);
@@ -103,7 +105,7 @@ public class GameManager : MonoBehaviour
 
 
 
-		//InitializeMapWithObstacles();
+		InitializeMapWithObstacles(true);
 	}
 
 	public GameObject spawnJetbot()

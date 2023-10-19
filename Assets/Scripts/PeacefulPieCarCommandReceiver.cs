@@ -54,6 +54,13 @@ public class PeacefulPieCarCommandReceiver : MonoBehaviour
         }
 
         [JsonRpcMethod]
+        void startEpisode()
+        {
+            Debug.Log($"startEpisode");
+            car.GetComponent<EpisodeManager>().StartEpisode();
+        }
+
+        [JsonRpcMethod]
         void say(string message)
         {
             Debug.Log($"you sent {message}");
@@ -81,7 +88,7 @@ public class PeacefulPieCarCommandReceiver : MonoBehaviour
         [JsonRpcMethod]
         void forwardInputsToCar(float inputAccelerationLeft, float inputAccelerationRight)
         {
-            Debug.Log($"forwrd left {inputAccelerationLeft} right {inputAccelerationRight}");
+            //Debug.Log($"forward left {inputAccelerationLeft} right {inputAccelerationRight}");
             aIEngine.SetInput(inputAccelerationLeft, inputAccelerationRight);
 
         }
@@ -118,8 +125,8 @@ public class PeacefulPieCarCommandReceiver : MonoBehaviour
             return cameraPicture;
         }
 
-        int resWidth = 240;
-        int resHeight = 240;
+        int resWidth = 512; // from CarAgent.cs
+        int resHeight = 256;
         // resolution is quite high: https://www.raspberrypi.com/documentation/accessories/camera.html
 
         //Get the AI vehicles camera input encode as byte array

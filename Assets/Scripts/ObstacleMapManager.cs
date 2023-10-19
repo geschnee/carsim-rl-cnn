@@ -62,7 +62,7 @@ public class Goal
 
     }
 
-    public GameObject InstantiateGoal(GameObject passedCheckpointWall, GameObject missedCheckpointWall, Vector3 gameManagerPosition)
+    public GameObject InstantiateGoal(GameObject passedCheckpointWall, GameObject missedCheckpointWall, GameObject middleIndicator, Vector3 gameManagerPosition)
     {
         Vector3 coords0 = this.Coords[0];
         Vector3 coords1 = this.Coords[1];
@@ -79,6 +79,12 @@ public class Goal
         //goalposts
         GameObject.Instantiate(this.ObstacleGO, this.Coords[0], goalRotationQuaternion, goalParentGameObject.transform);
         GameObject.Instantiate(this.ObstacleGO, this.Coords[1], goalRotationQuaternion, goalParentGameObject.transform);
+
+
+        // middleIndicator
+        Vector3 midPoint = this.GetMidPoint(this.Coords[0], this.Coords[1]);
+        GameObject.Instantiate(middleIndicator, midPoint, goalRotationQuaternion, goalParentGameObject.transform);
+        // TODO in reality we don't need this, the position of this is equal to the pos of GoalPassedCheckpointWall
 
 
         //instantiate passed checkpoint wall between obstacles 
@@ -169,12 +175,17 @@ public class ObstacleMapManager : MonoBehaviour
     public GameObject goalPassedGameOjbect;
     public GameObject goalMissedGameObject;
     public GameObject finishlineCheckpoint;
+
+    public GameObject goalMiddleIndicator;
+
     public GameObject allGoals;
     public GameObject JetBot;
     public double JetBotXSpawn;
 
     public ObstacleMapManager(Transform gameManagerTransform, GameObject obstacleBlue, GameObject obstacleRed, GameObject goalPassedGameObject, GameObject goalMissedGameObject, GameObject finishlineCheckpoint, Boolean isFinishLine, GameObject JetBot, Boolean isTrainingSpawnRandom, bool singleGoalTraining)
     {
+        Debug.LogWarning("ObstacleMapManager constructor called, this is unexpected");
+
         this.gameManagerTransform = gameManagerTransform;
         this.gameManagerPosition = gameManagerTransform.position;
         this.obstacleBlue = obstacleBlue;
@@ -191,7 +202,7 @@ public class ObstacleMapManager : MonoBehaviour
 
     }
 
-    public void SetLikeInitialize(Transform gameManagerTransform, GameObject obstacleBlue, GameObject obstacleRed, GameObject goalPassedGameObject, GameObject goalMissedGameObject, GameObject finishlineCheckpoint, Boolean isFinishLine, GameObject JetBot, Boolean isTrainingSpawnRandom, bool singleGoalTraining)
+    public void SetLikeInitialize(Transform gameManagerTransform, GameObject obstacleBlue, GameObject obstacleRed, GameObject goalPassedGameObject, GameObject goalMissedGameObject, GameObject finishlineCheckpoint, GameObject goalMiddleIndicator, Boolean isFinishLine, GameObject JetBot, Boolean isTrainingSpawnRandom, bool singleGoalTraining)
     {
         this.gameManagerTransform = gameManagerTransform;
         this.gameManagerPosition = gameManagerTransform.position;
@@ -200,6 +211,9 @@ public class ObstacleMapManager : MonoBehaviour
         this.goalPassedGameOjbect = goalPassedGameObject;
         this.goalMissedGameObject = goalMissedGameObject;
         this.finishlineCheckpoint = finishlineCheckpoint;
+        this.goalMiddleIndicator = goalMiddleIndicator;
+
+
         this.isFinishLineLastGoal = isFinishLine;
         this.isTrainingSpawnRandom = isTrainingSpawnRandom;
         this.JetBot = JetBot;
@@ -274,47 +288,47 @@ public class ObstacleMapManager : MonoBehaviour
     {
 
         allGoals = new GameObject(name: "AllGoals");
-        //if you want to manually place the finishline somewhere else
-        if (this.isFinishLineLastGoal == false)
+        this.allGoals = allGoals;
+        allGoals.transform.SetParent(this.gameManagerTransform.parent); // set goals to be child of TrainArena
+
+
+
+        // TODO the finish line is always placed directly on the last goal
+        // maybe the finish line should be a bit behind it.
+
+        for (int i = 0; i < goalList.goals.Length - 1; i++)
         {
 
-            foreach (Goal goal in goalList.goals)
+            Goal goal = goalList.goals[i];
+            GameObject goalInstantiatedGameObject;
+            if (this.singleGoalTraining && i == 0)
             {
-                GameObject goalIntantiatedGameObject = goal.InstantiateGoal(this.goalPassedGameOjbect, this.goalMissedGameObject, this.gameManagerPosition);
-                goalIntantiatedGameObject.transform.SetParent(allGoals.transform);
+                // in single goal training make the first goal with finish line
+                // this means the training is successfully aborted by passing the first goal
+                goalInstantiatedGameObject = goal.InstantiateGoal(this.finishlineCheckpoint, this.goalMissedGameObject, this.goalMiddleIndicator, this.gameManagerPosition);
 
             }
-        }
-        else
-        {
-            for (int i = 0; i < goalList.goals.Length - 1; i++)
+            else
             {
+                goalInstantiatedGameObject = goal.InstantiateGoal(this.goalPassedGameOjbect, this.goalMissedGameObject, this.goalMiddleIndicator, this.gameManagerPosition);
 
-                Goal goal = goalList.goals[i];
-                GameObject goalInstantiatedGameObject;
-                if (this.singleGoalTraining && i == 0)
-                {
-                    // in single goal training make the first goal with finish line
-                    // this means the training is successfully aborted by passing the first goal
-                    goalInstantiatedGameObject = goal.InstantiateGoal(this.finishlineCheckpoint, this.goalMissedGameObject, this.gameManagerPosition);
-
-                }
-                else
-                {
-                    goalInstantiatedGameObject = goal.InstantiateGoal(this.goalPassedGameOjbect, this.goalMissedGameObject, this.gameManagerPosition);
-
-                }
-                goalInstantiatedGameObject.transform.SetParent(allGoals.transform);
             }
+            goalInstantiatedGameObject.transform.SetParent(allGoals.transform);
 
-            //make passed checkpoint of last goal to finishLine checkpoint object
-            // only matters in full map training
-            int lastGoalIndex = goalList.goals.Length - 1;
-            Goal goalLast = goalList.goals[lastGoalIndex];
-            GameObject goalInstantiatedGameObjectLast = goalLast.InstantiateGoal(this.finishlineCheckpoint, this.goalMissedGameObject, this.gameManagerPosition);
-            goalInstantiatedGameObjectLast.transform.SetParent(allGoals.transform);
+            goalInstantiatedGameObject.name = "Goal" + i.ToString();
 
         }
+
+        //make passed checkpoint of last goal to finishLine checkpoint object
+        // only matters in full map training
+        int lastGoalIndex = goalList.goals.Length - 1;
+        Goal goalLast = goalList.goals[lastGoalIndex];
+        GameObject goalInstantiatedGameObjectLast = goalLast.InstantiateGoal(this.finishlineCheckpoint, this.goalMissedGameObject, this.goalMiddleIndicator, this.gameManagerPosition);
+        goalInstantiatedGameObjectLast.transform.SetParent(allGoals.transform);
+        goalInstantiatedGameObjectLast.name = "Goal" + lastGoalIndex.ToString();
+
+
+
     }
 
 

@@ -80,8 +80,8 @@ public class AIEngine : MonoBehaviour
         frontLeftWheelCollider.motorTorque = (inputAccelerationLeft * this.maxTorque);
         frontLeftWheelCollider.steerAngle = steeringAngle;
 
-        Debug.Log($"steering angle {steeringAngle} left {frontLeftWheelCollider.steerAngle} right {frontRightWheelCollider.steerAngle}");
-        Debug.Log($"Motor torque left {frontLeftWheelCollider.motorTorque} right {frontRightWheelCollider.motorTorque}");
+        //Debug.Log($"steering angle {steeringAngle} left {frontLeftWheelCollider.steerAngle} right {frontRightWheelCollider.steerAngle}");
+        //Debug.Log($"Motor torque left {frontLeftWheelCollider.motorTorque} right {frontRightWheelCollider.motorTorque}");
 
         // Apply torque and steering angle to the right wheel
         frontRightWheelCollider.motorTorque = (inputAccelerationRight * this.maxTorque);
