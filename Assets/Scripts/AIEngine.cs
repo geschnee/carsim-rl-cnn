@@ -24,19 +24,24 @@ public class AIEngine : MonoBehaviour
     public Transform rearLeftWheelTransform;
     public Transform rearRightWheelTransform;
 
+    public bool episodeRunning = true;
 
     public Transform carBody;
 
     public void Start()
     {
         Debug.Log($"AIEngine started");
-        Debug.Log($"left front wheeel rotation {frontLeftWheelCollider.transform.rotation.eulerAngles}");
-        Debug.Log($"Motor torque start left {frontLeftWheelCollider.motorTorque} right {frontRightWheelCollider.motorTorque}");
+        //Debug.Log($"left front wheeel rotation {frontLeftWheelCollider.transform.rotation.eulerAngles}");
+        //Debug.Log($"Motor torque start left {frontLeftWheelCollider.motorTorque} right {frontRightWheelCollider.motorTorque}");
 
     }
 
     public void FixedUpdate()
     {
+        if (episodeRunning == false)
+        {
+            return;
+        }
         this.HandleMotor();
         this.UpdateWheels();
     }
@@ -49,7 +54,6 @@ public class AIEngine : MonoBehaviour
         // normal input
         this.inputAccelerationLeft = inputAccelerationLeft;
         this.inputAccelerationRight = inputAccelerationRight;
-        Debug.Log($"SetInput called with {inputAccelerationLeft} and {inputAccelerationRight}");
     }
 
     public void HandleMotor()

@@ -25,12 +25,14 @@ def run(args: argparse.Namespace) -> None:
     pygame.init()
 
     # creating display
-    gameDisplay = pygame.display.set_mode((250, 250))
+    gameDisplay = pygame.display.set_mode((512, 256))
 
     right_acceleration, left_acceleration = 0, 0
 
     starttime = time.time()
     frames = 0
+
+    car_spawned = False
 
     # creating a running loop
     while True:
@@ -47,7 +49,6 @@ def run(args: argparse.Namespace) -> None:
 
                 # if keydown event happened
                 # than printing a string to output
-                print("A key has been pressed", flush=True)
 
                 if event.key == pygame.K_UP:
                     print("Key arrow up has been pressed", flush=True)
@@ -74,9 +75,17 @@ def run(args: argparse.Namespace) -> None:
                     left_acceleration = 0
 
                 if event.key == pygame.K_r:
-                    print("Key r has been pressed, will respawn the jetbot and start an episode", flush=True)
-                    unity_comms.spawnCar()
+                    print(
+                        "Key r has been pressed, will destroy map", flush=True)
+
+                    unity_comms.destroyMap()  # car has to be spawned before episode is started
+                    car_spawned = False
+
+                if event.key == pygame.K_s:
+                    print(
+                        "Key s has been pressed, will start an episode", flush=True)
                     unity_comms.startEpisode()
+                    car_spawned = True
 
                 if event.key == pygame.K_p:
                     print(f'p was pressed, will pause/start the simulation')
@@ -95,50 +104,43 @@ def run(args: argparse.Namespace) -> None:
                 if left_acceleration < -0.1:
                     left_acceleration = -0.1
 
-                unity_comms.forwardInputsToCar(inputAccelerationLeft=float(
-                    left_acceleration), inputAccelerationRight=float(right_acceleration))
+                if car_spawned:
+                    unity_comms.forwardInputsToCar(inputAccelerationLeft=float(
+                        left_acceleration), inputAccelerationRight=float(right_acceleration))
 
                 if event.key == pygame.K_q or event.key == pygame.K_c:
                     print("q or c pressed, will quit", flush=True)
                     pygame.quit()
                     sys.exit()
 
-        obs = unity_comms.getObservation()
-        with open("obs.txt", "w") as file:
-            file.write(obs)
+        if car_spawned:
+            obs = unity_comms.getObservation()
+            with open("obs.txt", "w") as file:
+                file.write(obs)
 
-        #print(f'Obs {obs}')
-        #print(f'type of obs {type(obs)}')
+            base64_bytes = obs.encode('ascii')
+            message_bytes = base64.b64decode(base64_bytes)
 
-        #print(f'len of obs {len(obs)}')
-        #print(f'first obs {obs[0]}')
+            with open("imagepython_base64.png", "wb") as file:
+                file.write(message_bytes)
 
-        base64_bytes = obs.encode('ascii')
-        message_bytes = base64.b64decode(base64_bytes)
-        #print(f'type message_bytes {type(message_bytes)}')
-        #print(f'length of message_bytes {len(message_bytes)}')
-        #print(f'first byte {message_bytes[0]}')
+            im = Image.open(io.BytesIO(message_bytes))
 
-        with open("imagepython_base64.png", "wb") as file:
-            file.write(message_bytes)
+            im.save("savepath.png")
 
-        im = Image.open(io.BytesIO(message_bytes))
+            img = pygame.image.load('savepath.png')
+            gameDisplay.blit(img, (0, 0))
 
-        im.save("savepath.png")
+            pygame.display.update()
 
-        img = pygame.image.load('savepath.png')
-        gameDisplay.blit(img, (0, 0))
+            frames += 1
 
-        pygame.display.update()
+            if frames % 1000 == 0:
+                print(f'fps {frames / (time.time() - starttime)}')
+                # about 20 fps on my machine
 
-        frames += 1
-
-        if frames % 1000 == 0:
-            print(f'fps {frames / (time.time() - starttime)}')
-            # about 20 fps on my machine
-
-        #print(f'format {im.format}, size {im.size}, mode {im.mode}')
-        # png, (240,240), RGB
+            #print(f'format {im.format}, size {im.size}, mode {im.mode}')
+            # png, (240,240), RGB
 
 
 if __name__ == "__main__":

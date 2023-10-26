@@ -14,7 +14,7 @@ public class EpisodeManager : MonoBehaviour
 {
 
     // for debugging its public, then you can lift the TimeLimit in unity
-    public float allowedTime = 10f;
+    public float allowedTime = 20f; // TODO was 10f
     public float duration = 0f;
 
     private AIEngine aIEngine;
@@ -25,9 +25,8 @@ public class EpisodeManager : MonoBehaviour
     private DataFrameManager df;
     private int steps;
 
-    private int passedGoals;
+    public int passedGoals;
 
-    private bool terminated = false;
     private bool episodeRunning = false;
 
     private Vector3 lastPosition;
@@ -38,79 +37,77 @@ public class EpisodeManager : MonoBehaviour
     private string endEvent = "notEnded";
     private float lastDistance;
 
-    private List<GameObject> centerIndicators = new List<GameObject>();
+    public List<GameObject> centerIndicators = new List<GameObject>();
 
+    private GameManager gameManager;
 
-
-    public void Awake()
+    public void PrepareAgent()
     {
         this.aIEngine = this.GetComponent<AIEngine>();
 
-        GameObject allGoals = this.transform.parent.Find("AllGoals").gameObject;
-        Debug.Log($"allGoals {allGoals}");
-        Debug.Log($"allGoals child amount {allGoals.transform.childCount}");
+        gameManager = this.transform.parent.Find("GameManager").GetComponent<GameManager>();
 
-        this.centerIndicators = new List<GameObject>();
 
-        for (int i = 0; i < allGoals.transform.childCount; i++)
-        {
-            GameObject goal = allGoals.transform.GetChild(i).gameObject;
-            Debug.Log($"goal {goal}");
 
-            GameObject middle = FindChildWithTag(goal, "GoalPassed");
-            GameObject middleFinished = FindChildWithTag(goal, "FinishCheckpoint");
-            if (middle != null)
-            {
-                this.centerIndicators.Add(middle);
-            }
-            if (middleFinished != null)
-            {
-                this.centerIndicators.Add(middleFinished);
-            }
-        }
-
-        Debug.Log($"centerIndicators found: {this.centerIndicators.Count}");
+        PrintIndicators();
     }
 
-    private GameObject FindChildWithTag(GameObject parent, string tag)
-    {
-        Transform t = parent.transform;
-        for (int i = 0; i < t.childCount; i++)
-        {
-            if (t.GetChild(i).gameObject.tag == tag)
-            {
-                return t.GetChild(i).gameObject;
-            }
-        }
 
-        return null;
+
+    public void setCenterIndicators(List<GameObject> indicators)
+    {
+        this.centerIndicators = indicators;
     }
 
     public void StartEpisode()
     {
-
+        Debug.LogWarning($"StartEpisode");
         this.duration = 0f;
         this.passedGoals = 0;
-        this.terminated = false;
         this.cumReward = 0f;
         this.rewardSinceLastGetReward = 0f;
         this.lastPosition = this.transform.position;
 
-        this.episodeRunning = true;
+        this.PrepareAgent();
+
+        PrintIndicators();
 
         this.lastDistance = GetDistanceToNextGoal();
+
+        //Debug.Log($"last distance in startepisode {this.lastDistance}");
+
+        this.episodeRunning = true;
+    }
+
+    private void PrintIndicators()
+    {
+
+        Debug.Log($"centerIndicators found: {this.centerIndicators.Count}");
+
+        return;
+        for (int i = 0; i < this.centerIndicators.Count; i++)
+        {
+            Debug.Log($"centerIndicators[{i}] {this.centerIndicators[i]}");
+            Debug.Log($"{this.centerIndicators[i].transform.parent.gameObject.name}");
+        }
     }
 
     public void EndEpisode(string endEvent)
     {
-        if (this.terminated)
+        if (this.episodeRunning == false)
         {
-            Debug.LogWarning($"something went wrong, episode already terminated but EpisodeManager.EndEpisode called again {endEvent}");
+            Debug.LogWarning($"EndEpisode called again {endEvent} before {this.endEvent}");
+        }
+        else
+        {
+            Debug.Log($"EndEpisode called {endEvent}");
         }
 
-        this.terminated = true;
-        this.endEvent = endEvent;
         this.episodeRunning = false;
+        this.endEvent = endEvent;
+
+        aIEngine.ResetMotor();
+        aIEngine.episodeRunning = false;
     }
 
     public float GetReward()
@@ -124,13 +121,17 @@ public class EpisodeManager : MonoBehaviour
 
     public bool IsTerminated()
     {
-        return this.terminated;
+        return !this.episodeRunning;
     }
 
     public string GetEndEvent()
     {
-        if (this.terminated == false)
-            Debug.LogWarning("GetEndEvent called but episode not terminated yet");
+        if (this.episodeRunning == true)
+        {
+            Debug.LogWarning("GetEndEvent called but episode is still running");
+            Debug.Log("GetEndEvent called but episode is still running");
+        }
+
 
         return this.endEvent;
     }
@@ -144,6 +145,15 @@ public class EpisodeManager : MonoBehaviour
 
     public float GetDistanceToNextGoal()
     {
+
+        if (this.passedGoals >= this.centerIndicators.Count)
+        {
+            return 0f;
+        }
+        //Debug.Log($"passedGoals {this.passedGoals} centerIndicators.Count {this.centerIndicators.Count}");
+
+        //PrintIndicators();
+
         Vector3 nextGoal = this.centerIndicators[this.passedGoals].transform.position;
         Vector3 nextGoalDirection = nextGoal - this.transform.position;
         nextGoalDirection.y = 0; // set y difference to zero (we only care about the distance in the xz plane)
@@ -156,7 +166,7 @@ public class EpisodeManager : MonoBehaviour
 
         if (this.episodeRunning == false)
         {
-            Debug.Log("episode not running");
+            //Debug.Log("episode not running");
             return;
         }
 
@@ -182,7 +192,7 @@ public class EpisodeManager : MonoBehaviour
         // reward for driving towards the next goal middleIndicator
         float distanceReward = this.lastDistance - GetDistanceToNextGoal();
         AddReward(distanceReward);
-        Debug.Log($"Distance reward: {distanceReward}");
+        // Debug.Log($"Distance reward: {distanceReward}");
 
         this.lastDistance = GetDistanceToNextGoal();
 
@@ -247,6 +257,11 @@ public class EpisodeManager : MonoBehaviour
         AddTime(10f);
 
         AddReward(1f);
+
+        IncreasePassedGoals();
+        centerIndicators.RemoveAt(0); // remove an indicator
+
+        Debug.Log($"will destroy goal {goal.name} {goal.transform.parent.gameObject.name}");
         Destroy(goal);
 
         // TODO also save the color of the completed goal?
@@ -254,9 +269,8 @@ public class EpisodeManager : MonoBehaviour
         // update the distance to the next goal
         this.lastDistance = GetDistanceToNextGoal();
 
-
-
-        IncreasePassedGoals();
+        Debug.Log($"completed a goal");
+        PrintIndicators();
     }
 
     public void obstacleHit()
@@ -266,26 +280,32 @@ public class EpisodeManager : MonoBehaviour
 
     public void redObstacleHit()
     {
+        obstacleHit();
         string endEvent = "redObstacle";
         EndEpisode(endEvent);
-        obstacleHit();
     }
 
     public void blueObstacleHit()
     {
+        obstacleHit();
         string endEvent = "blueObstacle";
         EndEpisode(endEvent);
-        obstacleHit();
     }
 
 
     // automatically detects when transform to which this is assigned hit another object with a tag
     private void OnTriggerEnter(Collider other)
     {
-        //        Debug.Log("Triggered by: " + other.tag);
+        Debug.Log("Triggered by: " + other.tag);
         //      Debug.Log("Chackpoint manager attached to " + this.name);
 
         // This is attached to the JetBot
+
+        if (!this.episodeRunning)
+        {
+            Debug.LogWarning("Episode not running, ignore collision");
+            return;
+        }
 
         if (other.tag == "BlueObstacleTag")
         {

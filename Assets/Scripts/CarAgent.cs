@@ -72,7 +72,7 @@ public class CarAgent : Agent
         this.gameManager.DestroyObstaclesOnMap();
         this.Respawn();
 
-        this.gameManager.InitializeMapWithObstacles(true);
+        this.gameManager.InitializeMapWithObstacles();
 
         //Instead destroy verschieben -> Car Agent hat alle wichtigen sachen kann nicht destroyd werden
         //this.gameManager.SpawnJetBot();

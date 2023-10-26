@@ -105,7 +105,7 @@ public class GameManager : MonoBehaviour
 
 
 
-		InitializeMapWithObstacles(true);
+		//InitializeMapWithObstacles();
 	}
 
 	public GameObject spawnJetbot()
@@ -127,7 +127,7 @@ public class GameManager : MonoBehaviour
 	}
 
 
-	public void InitializeMapWithObstacles(Boolean correctStart)
+	public void InitializeMapWithObstacles()
 	{
 
 		// load a already generated map
@@ -159,6 +159,7 @@ public class GameManager : MonoBehaviour
 				UnityEditor.EditorApplication.isPlaying = false;
 				UnityEditor.EditorApplication.ExitPlaymode();
 
+				Debug.LogWarning("will quit caused by gamemanager");
 				Application.Quit();
 
 

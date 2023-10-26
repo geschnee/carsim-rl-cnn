@@ -182,6 +182,8 @@ public class ObstacleMapManager : MonoBehaviour
     public GameObject JetBot;
     public double JetBotXSpawn;
 
+    private List<GameObject> centerIndicators;
+
     public ObstacleMapManager(Transform gameManagerTransform, GameObject obstacleBlue, GameObject obstacleRed, GameObject goalPassedGameObject, GameObject goalMissedGameObject, GameObject finishlineCheckpoint, Boolean isFinishLine, GameObject JetBot, Boolean isTrainingSpawnRandom, bool singleGoalTraining)
     {
         Debug.LogWarning("ObstacleMapManager constructor called, this is unexpected");
@@ -233,7 +235,20 @@ public class ObstacleMapManager : MonoBehaviour
             SpawnPoint = this.GetJetBotSpawnCoords();
         }
 
+
+
         GameObject jb = GameObject.Instantiate(original: this.JetBot, position: SpawnPoint, rotation: new Quaternion(0, 1, 0, 1), this.gameManagerTransform.parent);
+
+        if (this.centerIndicators.Count == 0)
+        {
+            Debug.LogWarning("centerIndicators not set");
+        }
+        else
+        {
+            jb.GetComponent<EpisodeManager>().setCenterIndicators(this.centerIndicators);
+        }
+
+        jb.GetComponent<EpisodeManager>().setCenterIndicators(this.centerIndicators);
         return jb;
     }
     public Vector3 GetJetBotSpawnCoords()
@@ -328,6 +343,36 @@ public class ObstacleMapManager : MonoBehaviour
         goalInstantiatedGameObjectLast.name = "Goal" + lastGoalIndex.ToString();
 
 
+        this.centerIndicators = new List<GameObject>();
+        Debug.Log($"allGoals {allGoals}");
+        Debug.Log($"allGoals child amount {allGoals.transform.childCount}");
+
+        this.centerIndicators = new List<GameObject>();
+
+        for (int i = 0; i < allGoals.transform.childCount; i++)
+        {
+            GameObject goal = allGoals.transform.GetChild(i).gameObject;
+            Debug.Log($"goal {goal}");
+
+            GameObject middle = FindChildWithTag(goal, "GoalPassed");
+            GameObject middleFinished = FindChildWithTag(goal, "FinishCheckpoint");
+            if (middle != null)
+            {
+                Debug.Log("middle");
+                this.centerIndicators.Add(middle);
+
+            }
+            if (middleFinished != null)
+            {
+                Debug.Log("middle finished");
+                this.centerIndicators.Add(middleFinished);
+            }
+        }
+        if (this.centerIndicators.Count != 3)
+        {
+            Debug.LogWarning($"only {this.centerIndicators.Count} center indicators found");
+        }
+
 
     }
 
@@ -348,6 +393,19 @@ public class ObstacleMapManager : MonoBehaviour
         }
     }
 
+    private GameObject FindChildWithTag(GameObject parent, string tag)
+    {
+        Transform t = parent.transform;
+        for (int i = 0; i < t.childCount; i++)
+        {
+            if (t.GetChild(i).gameObject.tag == tag)
+            {
+                return t.GetChild(i).gameObject;
+            }
+        }
+        //Debug.LogWarning($"no child with tag {tag} found");
+        return null;
+    }
 
     public ObstacleList LoadObastacleMap(string filepath, float id)
     {
