@@ -12,15 +12,22 @@ import PIL.Image as Image
 import io
 import base64
 
+from dataclasses import dataclass
+
+
+@dataclass
+class StepReturnObject:
+    obs: str
+    reward: float
+    done: bool
+    terminated: bool
+    info: dict
+
 
 def run(args: argparse.Namespace) -> None:
     print(f'will try port {args.port}', flush=True)
     unity_comms = UnityComms(port=args.port)
     print(f'Unity comms created', flush=True)
-    t = time.time()
-    res = unity_comms.getHeight()
-    print(f'Request took {time.time() - t} seconds')
-    print("res", res, flush=True)
 
     pygame.init()
 
@@ -46,45 +53,32 @@ def run(args: argparse.Namespace) -> None:
 
             # checking if keydown event happened or not
             if event.type == pygame.KEYDOWN:
-
-                # if keydown event happened
-                # than printing a string to output
-
                 if event.key == pygame.K_UP:
-                    print("Key arrow up has been pressed", flush=True)
                     right_acceleration += 0.1
                     left_acceleration += 0.1
 
                 if event.key == pygame.K_DOWN:
-                    print("Key arrow down has been pressed", flush=True)
                     right_acceleration += -0.1
                     left_acceleration += -0.1
 
                 if event.key == pygame.K_LEFT:
-                    print("Key arrow left has been pressed", flush=True)
                     left_acceleration += 0.1
                     right_acceleration += -0.05
 
                 if event.key == pygame.K_RIGHT:
-                    print("Key arrow right has been pressed", flush=True)
                     right_acceleration += 0.1
                     left_acceleration += -0.05
                 if event.key == pygame.K_SPACE:
-                    print("Key spacebar has been pressed", flush=True)
                     right_acceleration = 0
                     left_acceleration = 0
 
                 if event.key == pygame.K_r:
-                    print(
-                        "Key r has been pressed, will destroy map", flush=True)
-
                     unity_comms.destroyMap()  # car has to be spawned before episode is started
                     car_spawned = False
 
                 if event.key == pygame.K_s:
-                    print(
-                        "Key s has been pressed, will start an episode", flush=True)
-                    unity_comms.startEpisode()
+                    print("will reset the simulation")
+                    unity_comms.reset()
                     car_spawned = True
 
                 if event.key == pygame.K_p:
@@ -105,8 +99,10 @@ def run(args: argparse.Namespace) -> None:
                     left_acceleration = -0.1
 
                 if car_spawned:
-                    unity_comms.forwardInputsToCar(inputAccelerationLeft=float(
+                    stepObj = unity_comms.step(inputAccelerationLeft=float(
                         left_acceleration), inputAccelerationRight=float(right_acceleration))
+                    print(
+                        f'stepObj reward {stepObj["reward"]} done {stepObj["done"]} info {stepObj["info"]}', flush=True)
 
                 if event.key == pygame.K_q or event.key == pygame.K_c:
                     print("q or c pressed, will quit", flush=True)

@@ -225,6 +225,7 @@ public class ObstacleMapManager : MonoBehaviour
 
     public GameObject SpawnJetBot()
     {
+        Debug.Log($"SpawnJetBot called is random {this.isTrainingSpawnRandom}");
         Vector3 SpawnPoint;
         if (this.isTrainingSpawnRandom)
         {
@@ -235,18 +236,7 @@ public class ObstacleMapManager : MonoBehaviour
             SpawnPoint = this.GetJetBotSpawnCoords();
         }
 
-
-
         GameObject jb = GameObject.Instantiate(original: this.JetBot, position: SpawnPoint, rotation: new Quaternion(0, 1, 0, 1), this.gameManagerTransform.parent);
-
-        if (this.centerIndicators.Count == 0)
-        {
-            Debug.LogWarning("centerIndicators not set");
-        }
-        else
-        {
-            jb.GetComponent<EpisodeManager>().setCenterIndicators(this.centerIndicators);
-        }
 
         jb.GetComponent<EpisodeManager>().setCenterIndicators(this.centerIndicators);
         return jb;
@@ -523,9 +513,6 @@ public class ObstacleMapManager : MonoBehaviour
             minXLocal = (int)(this.JetBotXSpawn + rnd.Next(Constants.MINXDISTANCEGOALS, Constants.MAXXDISTANCEGOALS));
 
         }
-        else
-        {
-        }
 
         // choose random distance between goals every round
         int xDistanceGoals = 0;
@@ -596,12 +583,7 @@ public class ObstacleMapManager : MonoBehaviour
             actualColorObject = actualColorObject == obstacleBlue ? obstacleRed : obstacleBlue;
 
         }
-
-
-
         return obstacles.ToArray();
-
-
     }
 
     private Goal[] GenerateTwoGoalLanesMapHard(Boolean isBlueFirst = true, Boolean isLeftFirst = true)
@@ -626,7 +608,6 @@ public class ObstacleMapManager : MonoBehaviour
         float zRightRow = (5f + this.gameManagerPosition.z);
         int minXLocal = (int)(Constants.MIN_X + this.gameManagerPosition.x);
         int maxXLocal = minXLocal + Constants.X_WIDTH - 2;
-
 
         for (int x = minXLocal; x < maxXLocal; x += Constants.MAXXDISTANCEGOALS - 1)
         {
@@ -659,10 +640,6 @@ public class ObstacleMapManager : MonoBehaviour
             left = left == true ? false : true;
             actualColorObject = actualColorObject == obstacleBlue ? obstacleRed : obstacleBlue;
         }
-
-
-
-
         return obstacles.ToArray();
     }
 
@@ -722,9 +699,6 @@ public class ObstacleMapManager : MonoBehaviour
             left = left == true ? false : true;
             actualColorObject = actualColorObject == obstacleBlue ? obstacleRed : obstacleBlue;
         }
-
-
-
 
         return obstacles.ToArray();
     }

@@ -49,7 +49,7 @@ public class EpisodeManager : MonoBehaviour
 
 
 
-        PrintIndicators();
+        //PrintIndicators();
     }
 
 
@@ -70,7 +70,7 @@ public class EpisodeManager : MonoBehaviour
 
         this.PrepareAgent();
 
-        PrintIndicators();
+        //PrintIndicators();
 
         this.lastDistance = GetDistanceToNextGoal();
 
@@ -134,6 +134,17 @@ public class EpisodeManager : MonoBehaviour
 
 
         return this.endEvent;
+    }
+
+    public Dictionary<string, string> GetInfo()
+    {
+
+        Dictionary<string, string> info = new Dictionary<string, string>();
+        info.Add("endEvent", this.endEvent);
+        info.Add("duration", this.duration.ToString());
+        info.Add("cumreward", this.cumReward.ToString());
+
+        return info;
     }
 
 
@@ -270,7 +281,7 @@ public class EpisodeManager : MonoBehaviour
         this.lastDistance = GetDistanceToNextGoal();
 
         Debug.Log($"completed a goal");
-        PrintIndicators();
+        //PrintIndicators();
     }
 
     public void obstacleHit()

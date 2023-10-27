@@ -7,6 +7,26 @@ using System.Text;
 
 using System.IO;
 using System.Linq;
+
+public class StepReturnObject
+{
+    public string observation;
+    public float reward;
+    public bool done;
+    public bool terminated;
+
+    public Dictionary<string, string> info;
+
+    public StepReturnObject(string observation, float reward, bool done, bool terminated, Dictionary<string, string> info)
+    {
+        this.observation = observation;
+        this.reward = reward;
+        this.done = done;
+        this.terminated = terminated;
+        this.info = info;
+    }
+}
+
 public class PeacefulPieCarCommandReceiver : MonoBehaviour
 {
     class Rpc : JsonRpcService
@@ -16,7 +36,6 @@ public class PeacefulPieCarCommandReceiver : MonoBehaviour
 
         GameManager gameManager;
 
-        GameObject carPrefab;
         GameObject car;
         Camera carCam;
 
@@ -24,12 +43,10 @@ public class PeacefulPieCarCommandReceiver : MonoBehaviour
 
         bool simRunning = true;
 
-        public Rpc(PeacefulPieCarCommandReceiver sphere, GameObject prefab, GameObject gameManagerObject)
+        public Rpc(PeacefulPieCarCommandReceiver sphere, GameObject gameManagerObject)
         {
             this.gameManager = gameManagerObject.GetComponent<GameManager>();
             this.sphere = sphere;
-
-            this.carPrefab = prefab;
         }
 
         [JsonRpcMethod]
@@ -46,7 +63,7 @@ public class PeacefulPieCarCommandReceiver : MonoBehaviour
         }
 
         [JsonRpcMethod]
-        void startEpisode()
+        void reset()
         {
             if (this.car != null)
             {
@@ -65,7 +82,7 @@ public class PeacefulPieCarCommandReceiver : MonoBehaviour
 
 
             // spawn new ones:
-            gameManager.InitializeMapWithObstacles();
+            gameManager.InitializeMapWithObstaclesTraining(0, 0);
 
 
             GameObject car = gameManager.spawnJetbot();
@@ -78,19 +95,15 @@ public class PeacefulPieCarCommandReceiver : MonoBehaviour
 
 
             car.GetComponent<EpisodeManager>().StartEpisode();
+
+            // TODO does reset need to return something?
+            // TOOD yes, need to return an observation
         }
 
         [JsonRpcMethod]
         void say(string message)
         {
             Debug.Log($"you sent {message}");
-        }
-
-        [JsonRpcMethod]
-        float getHeight()
-        {
-            Debug.Log($"get height triggered");
-            return sphere.transform.position.y;
         }
 
         [JsonRpcMethod]
@@ -111,6 +124,21 @@ public class PeacefulPieCarCommandReceiver : MonoBehaviour
             //Debug.Log($"forward left {inputAccelerationLeft} right {inputAccelerationRight}");
             aIEngine.SetInput(inputAccelerationLeft, inputAccelerationRight);
 
+        }
+
+        [JsonRpcMethod]
+        StepReturnObject step(float inputAccelerationLeft, float inputAccelerationRight)
+        {
+            // TODO maybe move this code to the episodeManager
+            aIEngine.SetInput(inputAccelerationLeft, inputAccelerationRight);
+            float reward = car.GetComponent<EpisodeManager>().GetReward();
+            bool done = car.GetComponent<EpisodeManager>().IsTerminated();
+            bool terminated = car.GetComponent<EpisodeManager>().IsTerminated();
+            string observation = GetCameraInput();
+
+            Dictionary<string, string> info = car.GetComponent<EpisodeManager>().GetInfo();
+
+            return new StepReturnObject(observation, reward, done, terminated, info);
         }
 
         [JsonRpcMethod]
@@ -193,13 +221,13 @@ public class PeacefulPieCarCommandReceiver : MonoBehaviour
     }
 
     Rpc rpc;
-    public GameObject carPrefab;
+
     public GameObject gameManager;
 
 
     void Awake()
     {
-        rpc = new Rpc(this, carPrefab, gameManager);
+        rpc = new Rpc(this, gameManager);
         print("rpc started");
     }
 

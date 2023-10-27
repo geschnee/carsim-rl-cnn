@@ -85,13 +85,14 @@ public class GameManager : MonoBehaviour
 	void Start()
 	{
 		// load obstacles
-		this.isEvaluation = !isTrainingSpawnRandom;
+		//this.isEvaluation = !isTrainingSpawnRandom;
+		//Debug.LogWarning($"isEvaluation: {isEvaluation}, isTrainingSpawnRandom: {isTrainingSpawnRandom}");
+
+
 		if (this.isTrainingSpawnRandom == false)
 		{
 			isTrainingSpawnRandom = false;
 			isLogTraining = false;
-
-
 		}
 		this.gameObject.AddComponent<ObstacleMapManager>();
 
@@ -99,18 +100,10 @@ public class GameManager : MonoBehaviour
 		//this.obstacleMapManager.gameManagerTransform = this.transform;
 		this.obstacleMapManager.SetLikeInitialize(this.transform, obstacleBlue, obstacleRed, goalPassedWallCheckpoint, goalMissedWallCheckpoint, this.FinishLineCheckpoint, goalMiddleIndicator, this.isFinishLineLastGoal, this.JetBot, this.isTrainingSpawnRandom, this.singleGoalTraining);
 
-
-		// this.obstacleMapManager = new ObstacleMapManager(this.transform, obstacleBlue, obstacleRed, goalPassedWallCheckpoint, goalMissedWallCheckpoint, this.FinishLineCheckpoint, this.isFinishLineLastGoal, this.JetBot, this.isTrainingSpawnRandom, this.singleGoalTraining);
-		//this.obstacleMapManager.SpawnJetBot();
-
-
-
-		//InitializeMapWithObstacles();
 	}
 
 	public GameObject spawnJetbot()
 	{
-
 		print("before spawn jetbot in GameManager");
 		return this.obstacleMapManager.SpawnJetBot();
 	}
@@ -126,64 +119,71 @@ public class GameManager : MonoBehaviour
 
 	}
 
-
 	public void InitializeMapWithObstacles()
+	{
+		Debug.LogWarning("this method should not be called anymore");
+	}
+
+	public void InitializeMapWithObstaclesFromFile(string loadObstacleMapFilePath, int idOfCurrentRun)
 	{
 
 		// load a already generated map
-		if (loadObstacles)
+
+		obstacleList = this.obstacleMapManager.LoadObastacleMap(this.loadObstacleMapFilePath, this.idOfCurrentRun);
+
+		// TODO why is there no:
+		// this.obstacleMapManager.IntantiateObstacles(obstacleList);
+
+	}
+
+
+	public void initializeMapWithObstaclesEvaluation(int currentMapIndex, int idOfCurrentRun)
+	{
+		if (currentMapIndex == evaluationMaps.Length - 1 && idOfCurrentRun == numberOfRunsPerMap - 1 && isEvaluation)
 		{
-			obstacleList = this.obstacleMapManager.LoadObastacleMap(this.loadObstacleMapFilePath, this.idOfCurrentRun);
+			UnityEditor.EditorApplication.isPlaying = false;
+			UnityEditor.EditorApplication.ExitPlaymode();
+
+			Debug.LogWarning("will quit caused by gamemanager");
+			Application.Quit();
 		}
-		else if (!isEvaluation)
-		{
-
-			// generate a new map with new obstacle, decide which type of map should be generated
-			obstacleList = this.obstacleMapManager.GenerateObstacleMap(this.mapTypeGeneratedMap, this.idOfCurrentRun);
-			this.obstacleMapManager.IntantiateObstacles(obstacleList);
-
-
-			if (this.saveObstacles)
-			{
-				this.obstacleMapManager.SaveObstacleMap(this.saveObstacleMapFilePath,
-					this.idOfCurrentRun, obstacleList);
-
-			}
-		}
-
 		else
 		{
 
-			if (currentMapIndex == evaluationMaps.Length - 1 && idOfCurrentRun == numberOfRunsPerMap - 1 && isEvaluation)
+			this.mapTypeGeneratedMap = this.evaluationMaps[currentMapIndex];
+			obstacleList = this.obstacleMapManager.GenerateObstacleMap(this.mapTypeGeneratedMap, this.idOfCurrentRun);
+			// intantiate real objects in unity
+			this.obstacleMapManager.IntantiateObstacles(obstacleList);
+			idOfCurrentRun++;
+
+			if (idOfCurrentRun == numberOfRunsPerMap)
 			{
-				UnityEditor.EditorApplication.isPlaying = false;
-				UnityEditor.EditorApplication.ExitPlaymode();
-
-				Debug.LogWarning("will quit caused by gamemanager");
-				Application.Quit();
-
+				currentMapIndex++;
+				idOfCurrentRun = 0;
 
 			}
-			else
-			{
-				this.mapTypeGeneratedMap = this.evaluationMaps[currentMapIndex];
-				obstacleList = this.obstacleMapManager.GenerateObstacleMap(this.mapTypeGeneratedMap, this.idOfCurrentRun);
-				// intantiate real objects in unity
-				this.obstacleMapManager.IntantiateObstacles(obstacleList);
-				idOfCurrentRun++;
 
-				if (idOfCurrentRun == numberOfRunsPerMap)
-				{
-					currentMapIndex++;
-					idOfCurrentRun = 0;
-
-				}
-
-			}
 		}
 
 
+	}
+	public void InitializeMapWithObstaclesTraining(int currentMapIndex, int idOfCurrentRun)
+	{
+		// TODO rewrite to use the passed parameters
+		// I do not want magic in this function/class here
 
+		Debug.Log($"InitializeMapWithObstacles() called, currentMapIndex: {currentMapIndex}, idOfCurrentRun: {idOfCurrentRun}");
+
+		// generate a new map with new obstacle, decide which type of map should be generated
+		obstacleList = this.obstacleMapManager.GenerateObstacleMap(this.mapTypeGeneratedMap, this.idOfCurrentRun);
+		this.obstacleMapManager.IntantiateObstacles(obstacleList);
+
+
+		if (this.saveObstacles)
+		{
+			this.obstacleMapManager.SaveObstacleMap(this.saveObstacleMapFilePath,
+				this.idOfCurrentRun, obstacleList);
+		}
 	}
 
 	//retuns coords at beginning of the map (start point)
