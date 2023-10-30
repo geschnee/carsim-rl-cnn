@@ -143,6 +143,7 @@ public class EpisodeManager : MonoBehaviour
         info.Add("endEvent", this.endEvent);
         info.Add("duration", this.duration.ToString());
         info.Add("cumreward", this.cumReward.ToString());
+        info.Add("passedGoals", this.passedGoals.ToString());
 
         return info;
     }

@@ -63,7 +63,7 @@ public class PeacefulPieCarCommandReceiver : MonoBehaviour
         }
 
         [JsonRpcMethod]
-        void reset()
+        string reset()
         {
             if (this.car != null)
             {
@@ -98,6 +98,8 @@ public class PeacefulPieCarCommandReceiver : MonoBehaviour
 
             // TODO does reset need to return something?
             // TOOD yes, need to return an observation
+
+            return GetCameraInput();
         }
 
         [JsonRpcMethod]
