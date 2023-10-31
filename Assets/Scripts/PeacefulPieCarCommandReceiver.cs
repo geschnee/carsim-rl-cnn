@@ -8,6 +8,7 @@ using System.Text;
 using System.IO;
 using System.Linq;
 
+
 public class StepReturnObject
 {
     public string observation;
@@ -27,12 +28,29 @@ public class StepReturnObject
     }
 }
 
+public class Arena
+{
+    GameManager gameManager;
+
+    GameObject car;
+    Camera carCam;
+
+    AIEngine aIEngine;
+
+    private float rewardAsync = 0f;
+
+    public Arena(int instanceNumber)
+    {
+        // initialize new arena at the correct position
+
+        // then initialize the private variables
+    }
+}
+
 public class PeacefulPieCarCommandReceiver : MonoBehaviour
 {
     class Rpc : JsonRpcService
     {
-        PeacefulPieCarCommandReceiver sphere;
-        //GameObject car;
 
         GameManager gameManager;
 
@@ -41,12 +59,12 @@ public class PeacefulPieCarCommandReceiver : MonoBehaviour
 
         AIEngine aIEngine;
 
-        bool simRunning = true;
+        private float rewardAsync = 0f;
 
-        public Rpc(PeacefulPieCarCommandReceiver sphere, GameObject gameManagerObject)
+        public Rpc(, GameObject gameManagerObject)
         {
             this.gameManager = gameManagerObject.GetComponent<GameManager>();
-            this.sphere = sphere;
+
         }
 
         [JsonRpcMethod]
@@ -109,18 +127,6 @@ public class PeacefulPieCarCommandReceiver : MonoBehaviour
         }
 
         [JsonRpcMethod]
-        MyVector3 getPosition()
-        {
-            return new MyVector3(sphere.transform.position);
-        }
-
-        [JsonRpcMethod]
-        void translate(MyVector3 translate)
-        {
-            sphere.transform.position += translate.ToVector3();
-        }
-
-        [JsonRpcMethod]
         void forwardInputsToCar(float inputAccelerationLeft, float inputAccelerationRight)
         {
             //Debug.Log($"forward left {inputAccelerationLeft} right {inputAccelerationRight}");
@@ -129,10 +135,11 @@ public class PeacefulPieCarCommandReceiver : MonoBehaviour
         }
 
         [JsonRpcMethod]
-        StepReturnObject step(float inputAccelerationLeft, float inputAccelerationRight)
+        StepReturnObject immediateStep(float inputAccelerationLeft, float inputAccelerationRight)
         {
             // TODO maybe move this code to the episodeManager
             aIEngine.SetInput(inputAccelerationLeft, inputAccelerationRight);
+
             float reward = car.GetComponent<EpisodeManager>().GetReward();
             bool done = car.GetComponent<EpisodeManager>().IsTerminated();
             bool terminated = car.GetComponent<EpisodeManager>().IsTerminated();
@@ -144,25 +151,40 @@ public class PeacefulPieCarCommandReceiver : MonoBehaviour
         }
 
         [JsonRpcMethod]
-        void pauseStartSimulation()
+        void asyncStepPart1(float inputAccelerationLeft, float inputAccelerationRight)
         {
-            Debug.Log($"pauseStart simRunning {simRunning}");
-            if (simRunning == true)
-            {
-                simRunning = false;
-                Time.timeScale = 2f; // test fo thr lolz
-                // when pausing completely (timeScale = 0) the entire simulation stops and cannot go back to full tim, this is here not triggered
-                // https://github.com/Astn/JSON-RPC.NET/blob/master/Json-Rpc/JsonRpcService.cs
-            }
-            else
-            {
-                simRunning = true;
-                Time.timeScale = 1;
-            }
+            aIEngine.SetInput(inputAccelerationLeft, inputAccelerationRight);
+            rewardAsync = car.GetComponent<EpisodeManager>().rewardSinceLastGetReward;
+            // part1 sets the actions, python does the waiting, then part2 returns the observation
         }
 
         [JsonRpcMethod]
-        string getObservation()
+        StepReturnObject asyncStepPart2()
+        {
+            float reward = car.GetComponent<EpisodeManager>().GetReward();
+            //Debug.Log($"reward diff: {reward - rewardAsync}");
+
+
+            bool done = car.GetComponent<EpisodeManager>().IsTerminated();
+            bool terminated = car.GetComponent<EpisodeManager>().IsTerminated();
+            string observation = GetCameraInput();
+
+            Dictionary<string, string> info = car.GetComponent<EpisodeManager>().GetInfo();
+
+            return new StepReturnObject(observation, reward, done, terminated, info);
+        }
+
+        [JsonRpcMethod]
+        void startArena(int instancenumber)
+        {
+            // spawn a new arena including gameManager and everything
+
+            // TODO change all other methods to use an instance number
+            // 
+        }
+
+        [JsonRpcMethod]
+        string getObservation(int instancenumber)
         {
             if (car == null)
             {

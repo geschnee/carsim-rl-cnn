@@ -23,7 +23,6 @@ public class EpisodeManager : MonoBehaviour
     //for data frame
     private List<double> velocities = new List<double>();
     private DataFrameManager df;
-    private int steps;
 
     public int passedGoals;
 
@@ -32,7 +31,9 @@ public class EpisodeManager : MonoBehaviour
     private Vector3 lastPosition;
 
     private float cumReward = 0f;
-    private float rewardSinceLastGetReward = 0f;
+    private float distanceReward = 0f;
+    private float velocityReward = 0f;
+    public float rewardSinceLastGetReward = 0f;
 
     private string endEvent = "notEnded";
     private float lastDistance;
@@ -65,6 +66,8 @@ public class EpisodeManager : MonoBehaviour
         this.duration = 0f;
         this.passedGoals = 0;
         this.cumReward = 0f;
+        this.distanceReward = 0f;
+        this.velocityReward = 0f;
         this.rewardSinceLastGetReward = 0f;
         this.lastPosition = this.transform.position;
 
@@ -144,6 +147,8 @@ public class EpisodeManager : MonoBehaviour
         info.Add("duration", this.duration.ToString());
         info.Add("cumreward", this.cumReward.ToString());
         info.Add("passedGoals", this.passedGoals.ToString());
+        info.Add("distanceReward", this.distanceReward.ToString());
+        info.Add("velocityReward", this.velocityReward.ToString());
 
         return info;
     }
@@ -153,6 +158,18 @@ public class EpisodeManager : MonoBehaviour
     {
         this.cumReward += reward;
         this.rewardSinceLastGetReward += reward;
+    }
+
+    public void AddDistanceReward(float reward)
+    {
+        this.distanceReward += reward;
+        AddReward(reward);
+    }
+
+    public void AddVelocityReward(float reward)
+    {
+        this.velocityReward += reward;
+        AddReward(reward);
     }
 
     public float GetDistanceToNextGoal()
@@ -197,13 +214,13 @@ public class EpisodeManager : MonoBehaviour
         // this.AddReward(distanceReward * Time.deltaTime);
         if (velo > 0)
         {
-            AddReward((velo / 10f) * Time.deltaTime);
+            AddVelocityReward((velo / 10f) * Time.deltaTime);
 
         }
 
         // reward for driving towards the next goal middleIndicator
         float distanceReward = this.lastDistance - GetDistanceToNextGoal();
-        AddReward(distanceReward);
+        AddDistanceReward(distanceReward);
         // Debug.Log($"Distance reward: {distanceReward}");
 
         this.lastDistance = GetDistanceToNextGoal();

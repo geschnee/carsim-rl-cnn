@@ -21,12 +21,19 @@ vec_env = make_vec_env(unityGymEnv.BaseUnityCarEnv, n_envs=1)
 #vec_env = DummyVecEnv([env])
 
 model = PPO("CnnPolicy", vec_env, verbose=1, tensorboard_log="./tmp")
+
+continue_training = False
+if continue_training:
+    print(f'loading model from file before learning')
+    model = PPO.load("ppo_test", env=vec_env, tensorboard_log="./tmp")
+
 model.learn(total_timesteps=25000)
 model.save("ppo_test")
 
 del model  # remove to demonstrate saving and loading
 
 model = PPO.load("ppo_test")
+print(f'model loaded')
 
 obs = vec_env.reset()
 while True:
