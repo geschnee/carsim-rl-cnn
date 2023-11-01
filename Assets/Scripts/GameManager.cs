@@ -10,7 +10,7 @@ using UnityEngine;
 public class GameManager : MonoBehaviour
 {
 	/*
-	 *This class controls the Game settings. In Unity & in this class you can choose which type pf map shoudl be
+	 *This class controls the Game settings. In Unity & in this class you can choose which type of map should be
 	 *generated and if there car should be controlled by a human or AI.
 	 */
 
@@ -40,7 +40,9 @@ public class GameManager : MonoBehaviour
 
 	// initialize obstacle Map Generator
 	private ObstacleMapManager obstacleMapManager;
-	private ObstacleList obstacleList;
+
+	// current map
+	private MapData mapData;
 
 	// generate map
 	//could be selected in unity in the GameManager game object 
@@ -84,10 +86,6 @@ public class GameManager : MonoBehaviour
 	// Start is called before the first frame update
 	void Start()
 	{
-		// load obstacles
-		//this.isEvaluation = !isTrainingSpawnRandom;
-		//Debug.LogWarning($"isEvaluation: {isEvaluation}, isTrainingSpawnRandom: {isTrainingSpawnRandom}");
-
 
 		if (this.isTrainingSpawnRandom == false)
 		{
@@ -107,18 +105,6 @@ public class GameManager : MonoBehaviour
 		print("before spawn jetbot in GameManager");
 		return this.obstacleMapManager.SpawnJetBot();
 	}
-
-	void FixedUpdate()//FixedUpdate is called at a constant interval
-	{
-
-	}
-
-	// Update is called once per frame
-	void Update()
-	{
-
-	}
-
 	public void InitializeMapWithObstacles()
 	{
 		Debug.LogWarning("this method should not be called anymore");
@@ -129,7 +115,7 @@ public class GameManager : MonoBehaviour
 
 		// load a already generated map
 
-		obstacleList = this.obstacleMapManager.LoadObastacleMap(this.loadObstacleMapFilePath, this.idOfCurrentRun);
+		mapData = this.obstacleMapManager.LoadObastacleMap(this.loadObstacleMapFilePath, this.idOfCurrentRun);
 
 		// TODO why is there no:
 		// this.obstacleMapManager.IntantiateObstacles(obstacleList);
@@ -151,9 +137,9 @@ public class GameManager : MonoBehaviour
 		{
 
 			this.mapTypeGeneratedMap = this.evaluationMaps[currentMapIndex];
-			obstacleList = this.obstacleMapManager.GenerateObstacleMap(this.mapTypeGeneratedMap, this.idOfCurrentRun);
+			mapData = this.obstacleMapManager.GenerateObstacleMap(this.mapTypeGeneratedMap, this.idOfCurrentRun);
 			// intantiate real objects in unity
-			this.obstacleMapManager.IntantiateObstacles(obstacleList);
+			this.obstacleMapManager.IntantiateObstacles(mapData);
 			idOfCurrentRun++;
 
 			if (idOfCurrentRun == numberOfRunsPerMap)
@@ -175,33 +161,15 @@ public class GameManager : MonoBehaviour
 		Debug.Log($"InitializeMapWithObstacles() called, currentMapIndex: {currentMapIndex}, idOfCurrentRun: {idOfCurrentRun}");
 
 		// generate a new map with new obstacle, decide which type of map should be generated
-		obstacleList = this.obstacleMapManager.GenerateObstacleMap(this.mapTypeGeneratedMap, this.idOfCurrentRun);
-		this.obstacleMapManager.IntantiateObstacles(obstacleList);
+		mapData = this.obstacleMapManager.GenerateObstacleMap(this.mapTypeGeneratedMap, this.idOfCurrentRun);
+		this.obstacleMapManager.IntantiateObstacles(mapData);
 
 
 		if (this.saveObstacles)
 		{
 			this.obstacleMapManager.SaveObstacleMap(this.saveObstacleMapFilePath,
-				this.idOfCurrentRun, obstacleList);
+				this.idOfCurrentRun, mapData);
 		}
-	}
-
-	//retuns coords at beginning of the map (start point)
-	public Vector3 GetStartSpawnPosition()
-	{
-		return this.obstacleMapManager.GetJetBotSpawnCoords();
-	}
-
-	//returns random spawn position on map
-	public Vector3 GetRandomSpawnPosition()
-	{
-		return this.obstacleMapManager.GetJetBotRandomCoords();
-
-	}
-
-	public Quaternion GetRandomSpawnRotation()
-	{
-		return this.obstacleMapManager.JetBotRandomRotation();
 	}
 
 	public void DestroyObstaclesOnMap()
@@ -221,9 +189,6 @@ public class GameManager : MonoBehaviour
 	public String GetMapTypeName()
 	{
 		MapType[] mapTypes = (MapType[])Enum.GetValues(typeof(MapType));
-
 		return mapTypes[(int)this.mapTypeGeneratedMap].ToString();
-
 	}
-
 }

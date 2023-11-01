@@ -13,19 +13,24 @@ from stable_baselines3.common.vec_env import DummyVecEnv
 
 import unityGymEnv
 
-env = unityGymEnv.BaseUnityCarEnv()
+#env = unityGymEnv.BaseUnityCarEnv()
 
 # Parallel environments
-vec_env = make_vec_env(unityGymEnv.BaseUnityCarEnv, n_envs=1)
+vec_env = make_vec_env(unityGymEnv.BaseUnityCarEnv, n_envs=1, env_kwargs={"spawn_point_random": True})
+# the n_envs can quickly be too much since the replay buffer will grow
+# the observations are quite big (float32)
 
-#vec_env = DummyVecEnv([env])
 
-model = PPO("CnnPolicy", vec_env, verbose=1, tensorboard_log="./tmp")
+n_epochs, batch_size = 5, 64
 
-continue_training = False
+model = PPO("CnnPolicy", vec_env, verbose=1,
+            tensorboard_log="./tmp", n_epochs=n_epochs, batch_size=batch_size)
+
+continue_training = True
 if continue_training:
     print(f'loading model from file before learning')
-    model = PPO.load("ppo_test", env=vec_env, tensorboard_log="./tmp")
+    model = PPO.load("ppo_test", env=vec_env, tensorboard_log="./tmp",
+                     n_epochs=n_epochs, batch_size=batch_size)
 
 model.learn(total_timesteps=25000)
 model.save("ppo_test")

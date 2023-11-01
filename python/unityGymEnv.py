@@ -33,7 +33,7 @@ class BaseUnityCarEnv(gym.Env):
     unity_comms: UnityComms = None
     instancenumber = 0
 
-    def __init__(self, width=512, height=256, port=9000, asyncronous=True):
+    def __init__(self, width=512, height=256, port=9000, asyncronous=True, spawn_point_random=False):
 
         self.asynchronous = asyncronous
         self.width = width
@@ -56,7 +56,7 @@ class BaseUnityCarEnv(gym.Env):
         # TODO maybe use 0 for low instead of -1.0 (what did maximilian use?)
         # this box is essentially an array
 
-        print(f'Box sample {self.action_space.sample()}')
+        #print(f'Box sample {self.action_space.sample()}')
         # Box sample [[0.85317516]  [0.07102327]]
 
         if BaseUnityCarEnv.unity_comms is None:
@@ -64,13 +64,18 @@ class BaseUnityCarEnv(gym.Env):
             # they use their self.instancenumber to differentiate between them
             # the PPCCR.cs has to be rewritten to use these instancenumbers
             BaseUnityCarEnv.unity_comms = UnityComms(port=port)
+            BaseUnityCarEnv.unity_comms.deleteAllArenas()
 
         self.instancenumber = BaseUnityCarEnv.instancenumber
-        BaseUnityCarEnv.unity_comms.startArena(self.instancenumber)
+
+        BaseUnityCarEnv.unity_comms.startArena(
+            id=self.instancenumber)
         BaseUnityCarEnv.instancenumber += 1
 
         # TODO check maybe we can also do self.unity_comms = BaseUnityCarEnv.unity_comms
         # this would make the rest of the code more readable
+
+        self.spawn_point_random = spawn_point_random
 
     def step(self, action: Any) -> tuple[Any, SupportsFloat, bool, bool, dict[str, Any]]:
 
@@ -89,7 +94,7 @@ class BaseUnityCarEnv(gym.Env):
         assert right_acceleration >= - \
             1 and right_acceleration <= 1, f'right_acceleration {right_acceleration} is not in range [-1, 1]'
 
-        stepObj = BaseUnityCarEnv.unity_comms.immediateStep(self.instancenumber, inputAccelerationLeft=float(
+        stepObj = BaseUnityCarEnv.unity_comms.immediateStep(id=self.instancenumber, inputAccelerationLeft=float(
             left_acceleration), inputAccelerationRight=float(right_acceleration))
 
         reward = stepObj["reward"]
@@ -99,10 +104,10 @@ class BaseUnityCarEnv(gym.Env):
 
         info_dict = stepObj["info"]
 
-        print(
-            f'left_acceleration {left_acceleration} right_acceleration {right_acceleration}, reward {reward}')
+        # print(
+        #    f'left_acceleration {left_acceleration} right_acceleration {right_acceleration}, reward {reward}')
 
-        if terminated:
+        if terminated and False:
             print(
                 f'stepObj reward {stepObj["reward"]} done {stepObj["done"]} info {stepObj["info"]}', flush=True)
 
@@ -118,12 +123,12 @@ class BaseUnityCarEnv(gym.Env):
         assert right_acceleration >= - \
             1 and right_acceleration <= 1, f'right_acceleration {right_acceleration} is not in range [-1, 1]'
 
-        BaseUnityCarEnv.unity_comms.asyncStepPart1(self.instancenumber, inputAccelerationLeft=float(
+        BaseUnityCarEnv.unity_comms.asyncStepPart1(id=self.instancenumber, inputAccelerationLeft=float(
             left_acceleration), inputAccelerationRight=float(right_acceleration))
 
         time.sleep(0.1)
         stepObj = BaseUnityCarEnv.unity_comms.asyncStepPart2(
-            self.instancenumber)
+            id=self.instancenumber)
 
         reward = stepObj["reward"]
         terminated = stepObj["done"]
@@ -132,10 +137,10 @@ class BaseUnityCarEnv(gym.Env):
 
         info_dict = stepObj["info"]
 
-        print(
-            f'left_acceleration {left_acceleration} right_acceleration {right_acceleration}, reward {reward}')
+        # print(
+        #    f'left_acceleration {left_acceleration} right_acceleration {right_acceleration}, reward {reward}')
 
-        if terminated:
+        if terminated and False:
             print(
                 f'stepObj reward {stepObj["reward"]} done {stepObj["done"]} info {stepObj["info"]}', flush=True)
 
@@ -148,13 +153,14 @@ class BaseUnityCarEnv(gym.Env):
         """Place 2 tiles on empty board."""
         super().reset(seed=seed)  # gynasium migration guide https://gymnasium.farama.org/content/migration-guide/
 
-        obsstring = BaseUnityCarEnv.unity_comms.reset(self.instancenumber)
+        obsstring = BaseUnityCarEnv.unity_comms.reset(
+            id=self.instancenumber, spawn_point_random=self.spawn_point_random)
         info = {}
 
         return self.unityStringToObservation(obsstring), info
 
     def getObservation(self):
-        return self.unityStringToObservation(BaseUnityCarEnv.unity_comms.getObservation(self.instancenumber))
+        return self.unityStringToObservation(BaseUnityCarEnv.unity_comms.getObservation(id=self.instancenumber))
 
     def unityStringToObservation(self, obsstring):
         base64_bytes = obsstring.encode('ascii')
@@ -175,7 +181,8 @@ class BaseUnityCarEnv(gym.Env):
         return pixels
 
     def render(self, mode='human'):
-        obs = BaseUnityCarEnv.unity_comms.getObservation(self.instancenumber)
+        obs = BaseUnityCarEnv.unity_comms.getObservation(
+            id=self.instancenumber)
 
         base64_bytes = obs.encode('ascii')
         message_bytes = base64.b64decode(base64_bytes)

@@ -152,10 +152,26 @@ public class Goal
 
 }
 
-public class ObstacleList
+public class MapData
 {
+    // Maximilian called this class ObstacleList
+    // it was simply a list of goals
+
+    // now also the spawn position of the JetBot is saved in this class
+    // including the spawn rotation of course
+    // makes for more complete serialization and cleaner code since the spawn position is closely related to the goals
+    // finishCheckpoint should also be spawned behind the last goal
+    // else there will be premature success
+    // there should be no collisions with the last obstacle after the last goal is completed
+
+
     public int listId;
     public Goal[] goals;
+
+    Vector3 jetBotSpawnPosition;
+    Vector3 jetBotSpawnRotation;
+
+    Vector3 finishCheckpointPosition;
 }
 
 
@@ -164,7 +180,7 @@ public class ObstacleMapManager : MonoBehaviour
     public List<UnityEngine.Object> obstacles = new List<UnityEngine.Object>();
 
     private Boolean isFinishLineLastGoal;
-    private Boolean isTrainingSpawnRandom;
+
     private bool singleGoalTraining;
 
 
@@ -184,27 +200,12 @@ public class ObstacleMapManager : MonoBehaviour
 
     private List<GameObject> centerIndicators;
 
-    public ObstacleMapManager(Transform gameManagerTransform, GameObject obstacleBlue, GameObject obstacleRed, GameObject goalPassedGameObject, GameObject goalMissedGameObject, GameObject finishlineCheckpoint, Boolean isFinishLine, GameObject JetBot, Boolean isTrainingSpawnRandom, bool singleGoalTraining)
+    public ObstacleMapManager(Transform gameManagerTransform, GameObject obstacleBlue, GameObject obstacleRed, GameObject goalPassedGameObject, GameObject goalMissedGameObject, GameObject finishlineCheckpoint, Boolean isFinishLine, GameObject JetBot, bool singleGoalTraining)
     {
         Debug.LogWarning("ObstacleMapManager constructor called, this is unexpected");
-
-        this.gameManagerTransform = gameManagerTransform;
-        this.gameManagerPosition = gameManagerTransform.position;
-        this.obstacleBlue = obstacleBlue;
-        this.obstacleRed = obstacleRed;
-        this.goalPassedGameOjbect = goalPassedGameObject;
-        this.goalMissedGameObject = goalMissedGameObject;
-        this.finishlineCheckpoint = finishlineCheckpoint;
-        this.isFinishLineLastGoal = isFinishLine;
-        this.isTrainingSpawnRandom = isTrainingSpawnRandom;
-        this.JetBot = JetBot;
-        this.singleGoalTraining = singleGoalTraining;
-
-
-
     }
 
-    public void SetLikeInitialize(Transform gameManagerTransform, GameObject obstacleBlue, GameObject obstacleRed, GameObject goalPassedGameObject, GameObject goalMissedGameObject, GameObject finishlineCheckpoint, GameObject goalMiddleIndicator, Boolean isFinishLine, GameObject JetBot, Boolean isTrainingSpawnRandom, bool singleGoalTraining)
+    public void SetLikeInitialize(Transform gameManagerTransform, GameObject obstacleBlue, GameObject obstacleRed, GameObject goalPassedGameObject, GameObject goalMissedGameObject, GameObject finishlineCheckpoint, GameObject goalMiddleIndicator, Boolean isFinishLine, GameObject JetBot bool singleGoalTraining)
     {
         this.gameManagerTransform = gameManagerTransform;
         this.gameManagerPosition = gameManagerTransform.position;
@@ -217,44 +218,35 @@ public class ObstacleMapManager : MonoBehaviour
 
 
         this.isFinishLineLastGoal = isFinishLine;
-        this.isTrainingSpawnRandom = isTrainingSpawnRandom;
         this.JetBot = JetBot;
         this.singleGoalTraining = singleGoalTraining;
 
     }
 
-    public GameObject SpawnJetBot()
+    public GameObject SpawnJetBot(MapData mapData)
     {
-        Debug.Log($"SpawnJetBot called is random {this.isTrainingSpawnRandom}");
-        Vector3 SpawnPoint;
-        if (this.isTrainingSpawnRandom)
-        {
-            SpawnPoint = this.GetJetBotRandomCoords();
-        }
-        else
-        {
-            SpawnPoint = this.GetJetBotSpawnCoords();
-        }
 
-        GameObject jb = GameObject.Instantiate(original: this.JetBot, position: SpawnPoint, rotation: new Quaternion(0, 1, 0, 1), this.gameManagerTransform.parent);
+        Vector3 spawnPoint = mapData.jetBotSpawnPosition;
+        GameObject jb = GameObject.Instantiate(original: this.JetBot, position: spawnPoint, rotation: new Quaternion(0, 1, 0, 1), this.gameManagerTransform.parent);
 
         jb.GetComponent<EpisodeManager>().setCenterIndicators(this.centerIndicators);
         return jb;
     }
-    public Vector3 GetJetBotSpawnCoords()
+    private Vector3 GetJetBotSpawnCoords()
     {
 
         int minXLocal = (int)(Constants.X_Map_MIN + this.gameManagerPosition.x);
         int z = (int)(this.gameManagerPosition.z + Constants.Z_WIDTH / 2);
         Vector3 SpawnPoint = new(minXLocal, 1, z);
 
+        // in the middle of the short edge (z dimension)
 
         return SpawnPoint;
     }
 
-    public Vector3 GetJetBotRandomCoords()
+    private Vector3 GetJetBotRandomCoords()
     {
-        //local goal post coordinaents depend arena position
+        //local goal post coordinates depend arena position
         float zLeftMax = (2 + this.gameManagerPosition.z);
         // left post of goal max 
         float zRightMax = (this.gameManagerPosition.z + Constants.Z_WIDTH - 2);
@@ -264,12 +256,14 @@ public class ObstacleMapManager : MonoBehaviour
         Random rnd = new Random();
         float zRandomCoord = (float)rnd.NextDouble() * (zRightMax - zLeftMax) + zLeftMax;
         float xRandomCoord = (float)rnd.NextDouble() * (maxXLocal - minXLocal) + minXLocal;
-        Vector3 SpawnPoint = new(xRandomCoord, 1, zRandomCoord);
+        Vector3 spawnPoint = new(xRandomCoord, 1, zRandomCoord);
         this.JetBotXSpawn = xRandomCoord;
 
-        return SpawnPoint;
+        return spawnPoint;
     }
 
+
+    // TODO was this method used in Maximilian code before?
     public Quaternion JetBotRandomRotation()
     {
         Quaternion originalQuaternion = new Quaternion(0, 1, 0, 1);
@@ -289,7 +283,7 @@ public class ObstacleMapManager : MonoBehaviour
     }
 
 
-    public void IntantiateObstacles(ObstacleList goalList)
+    public void IntantiateObstacles(MapData goalList)
     {
 
         allGoals = new GameObject(name: "AllGoals");
@@ -397,14 +391,14 @@ public class ObstacleMapManager : MonoBehaviour
         return null;
     }
 
-    public ObstacleList LoadObastacleMap(string filepath, float id)
+    public MapData LoadObstacleMap(string filepath, float id)
     {
         string fullPath = filepath + id.ToString() + ".json";
         if (File.Exists(fullPath))
         {
             string content = File.ReadAllText(fullPath);
-            ObstacleList obstacleList = JsonUtility.FromJson<ObstacleList>(content);
-            return obstacleList;
+            MapData mapData = JsonUtility.FromJson<MapData>(content);
+            return mapData;
 
         }
         else
@@ -412,24 +406,35 @@ public class ObstacleMapManager : MonoBehaviour
                 "File not found.");
     }
 
-    public void SaveObstacleMap(string filepath, float id, ObstacleList obstacleList)
+    public void SaveObstacleMap(string filepath, float id, MapData mapData)
     {
         string fullPath = filepath + id.ToString() + ".json";
-        string json = JsonUtility.ToJson(obstacleList);
+        string json = JsonUtility.ToJson(mapData);
         File.WriteAllText(fullPath, json);
 
     }
 
 
     // generate maps with different placement of obstacles
-    public ObstacleList GenerateObstacleMap(MapType mapType, int id)
+    public MapData GenerateObstacleMap(MapType mapType, int id, bool spawnRandom)
     {
+
+        Vector3 jetBotSpawnPosition;
+        if (spawnRandom)
+        {
+            jetBotSpawnPosition = this.GetJetBotRandomCoords();
+        }
+        else
+        {
+            jetBotSpawnPosition = this.GetJetBotSpawnCoords();
+        }
+
         Goal[] obstacles = new Goal[0];
 
         switch (mapType)
         {
             case MapType.random:
-                obstacles = this.GenerateRandomObstacleMap();
+                obstacles = this.GenerateRandomObstacleMap(spawnRandom, jetBotSpawnPosition);
                 //Debug.Log("Random Map generated");
                 break;
             case MapType.easyGoalLaneMiddleBlueFirst:
@@ -478,39 +483,32 @@ public class ObstacleMapManager : MonoBehaviour
                 break;
         }
 
-        ObstacleList obstacleList = new ObstacleList { listId = id, goals = obstacles };
 
-        return obstacleList;
+        MapData mapData = new MapData { listId = id, goals = obstacles, jetBotSpawnPosition = jetBotSpawnPosition };
+
+        return mapData;
 
     }
 
-    private Goal[] GenerateRandomObstacleMap()
+    private Goal[] GenerateRandomObstacleMap(bool isJetBotSpawnRandom, Vector3 jetBotSpawnPosition)
     {
         List<Goal> obstacles = new List<Goal>();
         Random rnd = new Random();
         bool randomIsBlueFirst = rnd.Next(0, 2) == 0;
 
-        GameObject actualColorObject;
-        if (randomIsBlueFirst)
-        {
-            actualColorObject = this.obstacleBlue;
-        }
-        else
-        {
-            actualColorObject = this.obstacleRed;
-        }
+        GameObject actualColorObject = getColorObject(isBlueFirst);
 
-        //local goal post coordinaents depend arena position
+        //local goal post coordinates depend arena position
         float zLeftMax = (1 + this.gameManagerPosition.z);
         // left post of goal max 
         float zRightMax = (5.5f + this.gameManagerPosition.z);
         int minXLocal = (int)(Constants.MIN_X + this.gameManagerPosition.x);
         int maxXLocal = minXLocal + Constants.X_WIDTH;
 
-        if (this.isTrainingSpawnRandom)
+        if (isJetBotSpawnRandom)
         {
             //first goal random distance to JetBot
-            minXLocal = (int)(this.JetBotXSpawn + rnd.Next(Constants.MINXDISTANCEGOALS, Constants.MAXXDISTANCEGOALS));
+            minXLocal = (int)(jetBotSpawnPosition.x + rnd.Next(Constants.MINXDISTANCEGOALS, Constants.MAXXDISTANCEGOALS));
 
         }
 
@@ -539,9 +537,6 @@ public class ObstacleMapManager : MonoBehaviour
             actualColorObject = actualColorObject == obstacleBlue ? obstacleRed : obstacleBlue;
         }
 
-
-
-
         return obstacles.ToArray();
     }
 
@@ -556,16 +551,7 @@ public class ObstacleMapManager : MonoBehaviour
 
         int minXLocal = (int)(Constants.MIN_X + this.gameManagerPosition.x);
         int maxXLocal = minXLocal + Constants.X_WIDTH - 2;
-        GameObject actualColorObject;
-
-        if (isBlueFirst)
-        {
-            actualColorObject = this.obstacleBlue;
-        }
-        else
-        {
-            actualColorObject = this.obstacleRed;
-        }
+        GameObject actualColorObject = getColorObject(isBlueFirst);
 
 
         for (int x = minXLocal; x < maxXLocal; x += Constants.MINXDISTANCEGOALS + 1)
@@ -591,15 +577,7 @@ public class ObstacleMapManager : MonoBehaviour
 
         List<Goal> obstacles = new List<Goal>();
 
-        GameObject actualColorObject;
-        if (isBlueFirst)
-        {
-            actualColorObject = this.obstacleBlue;
-        }
-        else
-        {
-            actualColorObject = this.obstacleRed;
-        }
+        GameObject actualColorObject = getColorObject(isBlueFirst);
 
         bool left = isLeftFirst;
 
@@ -648,15 +626,7 @@ public class ObstacleMapManager : MonoBehaviour
 
         List<Goal> obstacles = new List<Goal>();
 
-        GameObject actualColorObject;
-        if (isBlueFirst)
-        {
-            actualColorObject = this.obstacleBlue;
-        }
-        else
-        {
-            actualColorObject = this.obstacleRed;
-        }
+        GameObject actualColorObject = getColorObject(isBlueFirst);
 
         bool left = isLeftFirst;
 
@@ -701,5 +671,17 @@ public class ObstacleMapManager : MonoBehaviour
         }
 
         return obstacles.ToArray();
+    }
+
+    private GameObject getColorObject(bool isBlueFirst)
+    {
+        if (isBlueFirst)
+        {
+            return this.obstacleBlue;
+        }
+        else
+        {
+            return this.obstacleRed;
+        }
     }
 }

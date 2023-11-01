@@ -88,11 +88,11 @@ public class EpisodeManager : MonoBehaviour
         Debug.Log($"centerIndicators found: {this.centerIndicators.Count}");
 
         return;
-        for (int i = 0; i < this.centerIndicators.Count; i++)
+        /*for (int i = 0; i < this.centerIndicators.Count; i++)
         {
             Debug.Log($"centerIndicators[{i}] {this.centerIndicators[i]}");
             Debug.Log($"{this.centerIndicators[i].transform.parent.gameObject.name}");
-        }
+        }*/
     }
 
     public void EndEpisode(string endEvent)
@@ -186,6 +186,8 @@ public class EpisodeManager : MonoBehaviour
         Vector3 nextGoal = this.centerIndicators[this.passedGoals].transform.position;
         Vector3 nextGoalDirection = nextGoal - this.transform.position;
         nextGoalDirection.y = 0; // set y difference to zero (we only care about the distance in the xz plane)
+        // y is the horizontal difference
+
         return nextGoalDirection.magnitude;
 
     }
@@ -220,6 +222,9 @@ public class EpisodeManager : MonoBehaviour
 
         // reward for driving towards the next goal middleIndicator
         float distanceReward = this.lastDistance - GetDistanceToNextGoal();
+
+        // TODO maybe multiply by some constant, the reward is very small
+
         AddDistanceReward(distanceReward);
         // Debug.Log($"Distance reward: {distanceReward}");
 
