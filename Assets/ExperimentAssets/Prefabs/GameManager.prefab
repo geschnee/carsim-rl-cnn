@@ -1,0 +1,61 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &2097835735315236047
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2097835735315236041}
+  - component: {fileID: 2097835735315236042}
+  m_Layer: 0
+  m_Name: GameManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2097835735315236041
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2097835735315236047}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 8.380202, y: -0.3571282, z: 0.5324204}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_RootOrder: 0
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &2097835735315236042
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2097835735315236047}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f8798f8da543e4c3f8e262b5daab4dc2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  idOfCurrentRun: 0
+  obstacleBlue: {fileID: 2786694837747256956, guid: 681200f7d15524e8589d7a28c0376f42,
+    type: 3}
+  obstacleRed: {fileID: 2786694837747256956, guid: bb1e06762c3f749b2869d0767ccf3249,
+    type: 3}
+  goalPassedWallCheckpoint: {fileID: 1821709658331299659, guid: 4ce475aa445dc47488e73e1e4f548ca1,
+    type: 3}
+  goalMissedWallCheckpoint: {fileID: 1821709658331299659, guid: 4b08f220d3a3c48f590fd8652ebf79e1,
+    type: 3}
+  mapTypeGeneratedMap: 2
+  loadObstacles: 0
+  loadObstacleMapFilePath: .
+  saveObstacles: 0
+  saveObstacleMapFilePath: .
+  humanPilot: 0

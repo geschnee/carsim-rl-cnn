@@ -4,6 +4,7 @@ using UnityEngine;
 using AustinHarris.JsonRpc;
 
 using System.Text;
+using System;
 
 using System.IO;
 using System.Linq;
@@ -63,9 +64,12 @@ public class PeacefulPieCarCommandReceiver : MonoBehaviour
 
 
         [JsonRpcMethod]
-        string reset(int id, bool spawnpoint_random)
+        string reset(int id, string mapType, bool spawnpointRandom, bool singleGoalTraining)
         {
-            return arenas[id].reset(spawnpoint_random);
+            Debug.Log($"mapType: {mapType}");
+            MapType mt = (MapType)Enum.Parse(typeof(MapType), mapType);
+            Debug.Log($"mt: {mt}");
+            return arenas[id].reset(mt, spawnpointRandom, singleGoalTraining);
         }
 
 

@@ -44,9 +44,6 @@ public class GameManager : MonoBehaviour
 	// current map
 	private MapData mapData;
 
-	// generate map
-	//could be selected in unity in the GameManager game object 
-	public MapType mapTypeGeneratedMap;
 	public MapType[] evaluationMaps = new MapType[] {
 		//MapType.easyGoalLaneMiddleBlueFirst,
 		//MapType.easyGoalLaneMiddleRedFirst,
@@ -96,18 +93,14 @@ public class GameManager : MonoBehaviour
 
 		this.obstacleMapManager = this.gameObject.GetComponent<ObstacleMapManager>();
 		//this.obstacleMapManager.gameManagerTransform = this.transform;
-		this.obstacleMapManager.SetLikeInitialize(this.transform, obstacleBlue, obstacleRed, goalPassedWallCheckpoint, goalMissedWallCheckpoint, this.FinishLineCheckpoint, goalMiddleIndicator, this.isFinishLineLastGoal, this.JetBot, this.isTrainingSpawnRandom, this.singleGoalTraining);
+		this.obstacleMapManager.SetLikeInitialize(this.transform, obstacleBlue, obstacleRed, goalPassedWallCheckpoint, goalMissedWallCheckpoint, this.FinishLineCheckpoint, goalMiddleIndicator, this.isFinishLineLastGoal, this.JetBot);
 
 	}
 
-	public GameObject spawnJetbot()
+	public GameObject spawnJetbot(MapData md)
 	{
 		print("before spawn jetbot in GameManager");
-		return this.obstacleMapManager.SpawnJetBot();
-	}
-	public void InitializeMapWithObstacles()
-	{
-		Debug.LogWarning("this method should not be called anymore");
+		return this.obstacleMapManager.SpawnJetBot(md);
 	}
 
 	public void InitializeMapWithObstaclesFromFile(string loadObstacleMapFilePath, int idOfCurrentRun)
@@ -115,53 +108,24 @@ public class GameManager : MonoBehaviour
 
 		// load a already generated map
 
-		mapData = this.obstacleMapManager.LoadObastacleMap(this.loadObstacleMapFilePath, this.idOfCurrentRun);
+		mapData = this.obstacleMapManager.LoadObstacleMap(this.loadObstacleMapFilePath, this.idOfCurrentRun);
 
 		// TODO why is there no:
 		// this.obstacleMapManager.IntantiateObstacles(obstacleList);
 
 	}
 
-
-	public void initializeMapWithObstaclesEvaluation(int currentMapIndex, int idOfCurrentRun)
-	{
-		if (currentMapIndex == evaluationMaps.Length - 1 && idOfCurrentRun == numberOfRunsPerMap - 1 && isEvaluation)
-		{
-			UnityEditor.EditorApplication.isPlaying = false;
-			UnityEditor.EditorApplication.ExitPlaymode();
-
-			Debug.LogWarning("will quit caused by gamemanager");
-			Application.Quit();
-		}
-		else
-		{
-
-			this.mapTypeGeneratedMap = this.evaluationMaps[currentMapIndex];
-			mapData = this.obstacleMapManager.GenerateObstacleMap(this.mapTypeGeneratedMap, this.idOfCurrentRun);
-			// intantiate real objects in unity
-			this.obstacleMapManager.IntantiateObstacles(mapData);
-			idOfCurrentRun++;
-
-			if (idOfCurrentRun == numberOfRunsPerMap)
-			{
-				currentMapIndex++;
-				idOfCurrentRun = 0;
-
-			}
-
-		}
-
-
-	}
-	public void InitializeMapWithObstaclesTraining(int currentMapIndex, int idOfCurrentRun)
+	public MapData InitializeMapWithObstacles(MapType currentMapIndex, int idOfCurrentRun, bool jetBotSpawnpointRandom, bool singleGoalTraining)
 	{
 		// TODO rewrite to use the passed parameters
 		// I do not want magic in this function/class here
 
 		Debug.Log($"InitializeMapWithObstacles() called, currentMapIndex: {currentMapIndex}, idOfCurrentRun: {idOfCurrentRun}");
 
+		MapType mapType = currentMapIndex;
+
 		// generate a new map with new obstacle, decide which type of map should be generated
-		mapData = this.obstacleMapManager.GenerateObstacleMap(this.mapTypeGeneratedMap, this.idOfCurrentRun);
+		mapData = this.obstacleMapManager.GenerateObstacleMap(mapType, this.idOfCurrentRun, jetBotSpawnpointRandom, singleGoalTraining);
 		this.obstacleMapManager.IntantiateObstacles(mapData);
 
 
@@ -170,6 +134,8 @@ public class GameManager : MonoBehaviour
 			this.obstacleMapManager.SaveObstacleMap(this.saveObstacleMapFilePath,
 				this.idOfCurrentRun, mapData);
 		}
+
+		return mapData;
 	}
 
 	public void DestroyObstaclesOnMap()
@@ -186,9 +152,8 @@ public class GameManager : MonoBehaviour
 		return this.idOfCurrentRun;
 	}
 
-	public String GetMapTypeName()
+	public String GetMapTypeName(MapType mt)
 	{
-		MapType[] mapTypes = (MapType[])Enum.GetValues(typeof(MapType));
-		return mapTypes[(int)this.mapTypeGeneratedMap].ToString();
+		return mt.ToString();
 	}
 }

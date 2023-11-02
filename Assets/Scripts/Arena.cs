@@ -55,7 +55,7 @@ public class Arena : MonoBehaviour
         gameManager.DestroyObstaclesOnMap();
     }
 
-    public string reset(bool spawnpoint_random)
+    public string reset(MapType mt, bool jetBotSpawnpointRandom, bool singleGoalTraining)
     {
         if (this.car != null)
         {
@@ -71,22 +71,11 @@ public class Arena : MonoBehaviour
 
         Debug.Log($"startEpisode");
 
+        // spawn new obstacles:
+        MapData md = gameManager.InitializeMapWithObstacles(mt, 0, jetBotSpawnpointRandom, singleGoalTraining);
 
 
-
-
-        // spawn new ones:
-        if (spawnpoint_random)
-        {
-            gameManager.InitializeMapWithObstaclesTrainingRandom(0, 0);
-        }
-        else
-        {
-            gameManager.InitializeMapWithObstaclesTraining(0, 0);
-        }
-
-
-        GameObject car = gameManager.spawnJetbot();
+        GameObject car = gameManager.spawnJetbot(md);
 
         this.car = car;
 

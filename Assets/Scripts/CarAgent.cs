@@ -11,7 +11,8 @@ using System.Linq;
 
 public class CarAgent : Agent
 {
-
+    /*
+    // this class is not needed anymore since we don't use ML agents for training anymore
 
     public AIEngine drivingEngine;
     private bool debugSavePictures = false;
@@ -333,4 +334,5 @@ public class CarAgent : Agent
     {
         this.passedGoals++;
     }
+    */
 }

@@ -31,22 +31,20 @@ static class Constants
 
 public enum MapType
 {
-    random,
-    easyGoalLaneMiddleBlueFirst,
-    easyGoalLaneMiddleRedFirst,
+    random = 0,
+    easyGoalLaneMiddleBlueFirst = 1,
+    easyGoalLaneMiddleRedFirst = 2,
 
-    twoGoalLanesBlueFirstLeftMedium,
-    twoGoalLanesBlueFirstRightMedium,
-    twoGoalLanesRedFirstLeftMedium,
-    twoGoalLanesRedFirstRightMedium,
-
-
-    twoGoalLanesBlueFirstLeftHard,
-    twoGoalLanesBlueFirstRightHard,
-    twoGoalLanesRedFirstLeftHard,
-    twoGoalLanesRedFirstRightHard,
+    twoGoalLanesBlueFirstLeftMedium = 3,
+    twoGoalLanesBlueFirstRightMedium = 4,
+    twoGoalLanesRedFirstLeftMedium = 5,
+    twoGoalLanesRedFirstRightMedium = 6,
 
 
+    twoGoalLanesBlueFirstLeftHard = 7,
+    twoGoalLanesBlueFirstRightHard = 8,
+    twoGoalLanesRedFirstLeftHard = 9,
+    twoGoalLanesRedFirstRightHard = 10,
 }
 public class Goal
 {
@@ -168,10 +166,10 @@ public class MapData
     public int listId;
     public Goal[] goals;
 
-    Vector3 jetBotSpawnPosition;
-    Vector3 jetBotSpawnRotation;
+    public Vector3 jetBotSpawnPosition;
+    public Vector3 jetBotSpawnRotation;
 
-    Vector3 finishCheckpointPosition;
+    public Vector3 finishCheckpointPosition;
 }
 
 
@@ -180,8 +178,6 @@ public class ObstacleMapManager : MonoBehaviour
     public List<UnityEngine.Object> obstacles = new List<UnityEngine.Object>();
 
     private Boolean isFinishLineLastGoal;
-
-    private bool singleGoalTraining;
 
 
     public Transform gameManagerTransform;
@@ -200,12 +196,12 @@ public class ObstacleMapManager : MonoBehaviour
 
     private List<GameObject> centerIndicators;
 
-    public ObstacleMapManager(Transform gameManagerTransform, GameObject obstacleBlue, GameObject obstacleRed, GameObject goalPassedGameObject, GameObject goalMissedGameObject, GameObject finishlineCheckpoint, Boolean isFinishLine, GameObject JetBot, bool singleGoalTraining)
+    public ObstacleMapManager(Transform gameManagerTransform, GameObject obstacleBlue, GameObject obstacleRed, GameObject goalPassedGameObject, GameObject goalMissedGameObject, GameObject finishlineCheckpoint, Boolean isFinishLine, GameObject JetBot)
     {
         Debug.LogWarning("ObstacleMapManager constructor called, this is unexpected");
     }
 
-    public void SetLikeInitialize(Transform gameManagerTransform, GameObject obstacleBlue, GameObject obstacleRed, GameObject goalPassedGameObject, GameObject goalMissedGameObject, GameObject finishlineCheckpoint, GameObject goalMiddleIndicator, Boolean isFinishLine, GameObject JetBot bool singleGoalTraining)
+    public void SetLikeInitialize(Transform gameManagerTransform, GameObject obstacleBlue, GameObject obstacleRed, GameObject goalPassedGameObject, GameObject goalMissedGameObject, GameObject finishlineCheckpoint, GameObject goalMiddleIndicator, Boolean isFinishLine, GameObject JetBot)
     {
         this.gameManagerTransform = gameManagerTransform;
         this.gameManagerPosition = gameManagerTransform.position;
@@ -219,7 +215,6 @@ public class ObstacleMapManager : MonoBehaviour
 
         this.isFinishLineLastGoal = isFinishLine;
         this.JetBot = JetBot;
-        this.singleGoalTraining = singleGoalTraining;
 
     }
 
@@ -228,6 +223,7 @@ public class ObstacleMapManager : MonoBehaviour
 
         Vector3 spawnPoint = mapData.jetBotSpawnPosition;
         GameObject jb = GameObject.Instantiate(original: this.JetBot, position: spawnPoint, rotation: new Quaternion(0, 1, 0, 1), this.gameManagerTransform.parent);
+
 
         jb.GetComponent<EpisodeManager>().setCenterIndicators(this.centerIndicators);
         return jb;
@@ -258,6 +254,9 @@ public class ObstacleMapManager : MonoBehaviour
         float xRandomCoord = (float)rnd.NextDouble() * (maxXLocal - minXLocal) + minXLocal;
         Vector3 spawnPoint = new(xRandomCoord, 1, zRandomCoord);
         this.JetBotXSpawn = xRandomCoord;
+
+
+        Debug.LogWarning($"JetBot spawn range x {minXLocal} - {maxXLocal} z {zLeftMax} - {zRightMax}");
 
         return spawnPoint;
     }
@@ -295,31 +294,27 @@ public class ObstacleMapManager : MonoBehaviour
         // TODO the finish line is always placed directly on the last goal
         // maybe the finish line should be a bit behind it.
 
+        // instantiate all goals except the last one
         for (int i = 0; i < goalList.goals.Length - 1; i++)
         {
 
             Goal goal = goalList.goals[i];
             GameObject goalInstantiatedGameObject;
-            if (this.singleGoalTraining && i == 0)
+            /*if (this.singleGoalTraining && i == 0)
             {
                 // in single goal training make the first goal with finish line
                 // this means the training is successfully aborted by passing the first goal
                 goalInstantiatedGameObject = goal.InstantiateGoal(this.finishlineCheckpoint, this.goalMissedGameObject, this.goalMiddleIndicator, this.gameManagerPosition);
+            } else { */
 
-            }
-            else
-            {
-                goalInstantiatedGameObject = goal.InstantiateGoal(this.goalPassedGameOjbect, this.goalMissedGameObject, this.goalMiddleIndicator, this.gameManagerPosition);
-
-            }
+            goalInstantiatedGameObject = goal.InstantiateGoal(this.goalPassedGameOjbect, this.goalMissedGameObject, this.goalMiddleIndicator, this.gameManagerPosition);
             goalInstantiatedGameObject.transform.SetParent(allGoals.transform);
 
             goalInstantiatedGameObject.name = "Goal" + i.ToString();
 
         }
 
-        //make passed checkpoint of last goal to finishLine checkpoint object
-        // only matters in full map training
+        // initialize last goal with finish line checkpoint
         int lastGoalIndex = goalList.goals.Length - 1;
         Goal goalLast = goalList.goals[lastGoalIndex];
         GameObject goalInstantiatedGameObjectLast = goalLast.InstantiateGoal(this.finishlineCheckpoint, this.goalMissedGameObject, this.goalMiddleIndicator, this.gameManagerPosition);
@@ -338,25 +333,30 @@ public class ObstacleMapManager : MonoBehaviour
             GameObject goal = allGoals.transform.GetChild(i).gameObject;
             Debug.Log($"goal {goal}");
 
-            GameObject middle = FindChildWithTag(goal, "GoalPassed");
-            GameObject middleFinished = FindChildWithTag(goal, "FinishCheckpoint");
-            if (middle != null)
+            if (i == allGoals.transform.childCount - 1)
             {
-                Debug.Log("middle");
-                this.centerIndicators.Add(middle);
-
-            }
-            if (middleFinished != null)
-            {
-                Debug.Log("middle finished");
+                GameObject middleFinished = FindChildWithTag(goal, "FinishCheckpoint");
                 this.centerIndicators.Add(middleFinished);
+                if (middleFinished == null)
+                {
+                    Debug.LogWarning($"no child with tag FinishCheckpoint found, big error");
+                }
             }
-        }
-        if (this.centerIndicators.Count != 3)
-        {
-            Debug.LogWarning($"only {this.centerIndicators.Count} center indicators found");
-        }
+            else
+            {
+                GameObject middle = FindChildWithTag(goal, "GoalPassed");
+                this.centerIndicators.Add(middle);
+                if (middle == null)
+                {
+                    Debug.LogWarning($"no child with tag GoalPassed found, big error");
+                }
+            }
 
+        }
+        if (this.centerIndicators.Count != goalList.goals.Length)
+        {
+            Debug.LogWarning($"only {this.centerIndicators.Count} center indicators found but there are {goalList.goals.Length} goals");
+        }
 
     }
 
@@ -411,12 +411,11 @@ public class ObstacleMapManager : MonoBehaviour
         string fullPath = filepath + id.ToString() + ".json";
         string json = JsonUtility.ToJson(mapData);
         File.WriteAllText(fullPath, json);
-
     }
 
 
     // generate maps with different placement of obstacles
-    public MapData GenerateObstacleMap(MapType mapType, int id, bool spawnRandom)
+    public MapData GenerateObstacleMap(MapType mapType, int id, bool spawnRandom, bool singleGoalTraining)
     {
 
         Vector3 jetBotSpawnPosition;
@@ -434,7 +433,7 @@ public class ObstacleMapManager : MonoBehaviour
         switch (mapType)
         {
             case MapType.random:
-                obstacles = this.GenerateRandomObstacleMap(spawnRandom, jetBotSpawnPosition);
+                obstacles = this.GenerateRandomObstacleMap(spawnRandom, jetBotSpawnPosition, singleGoalTraining);
                 //Debug.Log("Random Map generated");
                 break;
             case MapType.easyGoalLaneMiddleBlueFirst:
@@ -445,8 +444,6 @@ public class ObstacleMapManager : MonoBehaviour
                 obstacles = this.GenerateEasyGoalLaneMiddleMap(false);
                 //Debug.Log("Easy middle lane with red obstacles first map generated");
                 break;
-
-
             case MapType.twoGoalLanesBlueFirstLeftMedium:
                 obstacles = this.GenerateTwoGoalLanesMapMedium(true, true);
                 //Debug.Log("Two lanes map with blue obstacles first generated");
@@ -483,20 +480,20 @@ public class ObstacleMapManager : MonoBehaviour
                 break;
         }
 
-
         MapData mapData = new MapData { listId = id, goals = obstacles, jetBotSpawnPosition = jetBotSpawnPosition };
 
         return mapData;
 
     }
 
-    private Goal[] GenerateRandomObstacleMap(bool isJetBotSpawnRandom, Vector3 jetBotSpawnPosition)
+    private Goal[] GenerateRandomObstacleMap(bool isJetBotSpawnRandom, Vector3 jetBotSpawnPosition, bool singleGoalTraining)
     {
+
         List<Goal> obstacles = new List<Goal>();
         Random rnd = new Random();
         bool randomIsBlueFirst = rnd.Next(0, 2) == 0;
 
-        GameObject actualColorObject = getColorObject(isBlueFirst);
+        GameObject actualColorObject = getColorObject(randomIsBlueFirst);
 
         //local goal post coordinates depend arena position
         float zLeftMax = (1 + this.gameManagerPosition.z);
@@ -535,6 +532,12 @@ public class ObstacleMapManager : MonoBehaviour
             obstacles.Add(goal);
 
             actualColorObject = actualColorObject == obstacleBlue ? obstacleRed : obstacleBlue;
+
+            if (singleGoalTraining)
+            {
+                // only one goal in single goal training
+                break;
+            }
         }
 
         return obstacles.ToArray();

@@ -42,6 +42,9 @@ public class EpisodeManager : MonoBehaviour
 
     private GameManager gameManager;
 
+    // multiply by some constant, the reward is very small
+    float distanceCoefficient = 10f;
+
     public void PrepareAgent()
     {
         this.aIEngine = this.GetComponent<AIEngine>();
@@ -222,8 +225,7 @@ public class EpisodeManager : MonoBehaviour
 
         // reward for driving towards the next goal middleIndicator
         float distanceReward = this.lastDistance - GetDistanceToNextGoal();
-
-        // TODO maybe multiply by some constant, the reward is very small
+        distanceReward *= this.distanceCoefficient;
 
         AddDistanceReward(distanceReward);
         // Debug.Log($"Distance reward: {distanceReward}");
@@ -330,9 +332,6 @@ public class EpisodeManager : MonoBehaviour
     // automatically detects when transform to which this is assigned hit another object with a tag
     private void OnTriggerEnter(Collider other)
     {
-        Debug.Log("Triggered by: " + other.tag);
-        //      Debug.Log("Chackpoint manager attached to " + this.name);
-
         // This is attached to the JetBot
 
         if (!this.episodeRunning)

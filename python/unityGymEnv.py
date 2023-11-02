@@ -27,13 +27,29 @@ class StepReturnObject:
     terminated: bool
     info: dict
 
+from enum import Enum
+class MapType(Enum):
+    random = 0,
+    easyGoalLaneMiddleBlueFirst = 1,
+    easyGoalLaneMiddleRedFirst = 2,
+
+    twoGoalLanesBlueFirstLeftMedium = 3,
+    twoGoalLanesBlueFirstRightMedium = 4,
+    twoGoalLanesRedFirstLeftMedium = 5,
+    twoGoalLanesRedFirstRightMedium = 6,
+
+    twoGoalLanesBlueFirstLeftHard = 7,
+    twoGoalLanesBlueFirstRightHard = 8,
+    twoGoalLanesRedFirstLeftHard = 9,
+    twoGoalLanesRedFirstRightHard = 10,
+
 
 class BaseUnityCarEnv(gym.Env):
 
     unity_comms: UnityComms = None
     instancenumber = 0
 
-    def __init__(self, width=512, height=256, port=9000, asyncronous=True, spawn_point_random=False):
+    def __init__(self, width=512, height=256, port=9000, asyncronous=True, spawn_point_random=False, single_goal=False):
 
         self.asynchronous = asyncronous
         self.width = width
@@ -76,6 +92,11 @@ class BaseUnityCarEnv(gym.Env):
         # this would make the rest of the code more readable
 
         self.spawn_point_random = spawn_point_random
+        self.single_goal = single_goal
+
+        self.mapType = MapType.random
+
+        print(f'spawn_point_random {self.spawn_point_random} single_goal {self.single_goal}', flush=True)
 
     def step(self, action: Any) -> tuple[Any, SupportsFloat, bool, bool, dict[str, Any]]:
 
@@ -153,8 +174,8 @@ class BaseUnityCarEnv(gym.Env):
         """Place 2 tiles on empty board."""
         super().reset(seed=seed)  # gynasium migration guide https://gymnasium.farama.org/content/migration-guide/
 
-        obsstring = BaseUnityCarEnv.unity_comms.reset(
-            id=self.instancenumber, spawn_point_random=self.spawn_point_random)
+        obsstring = BaseUnityCarEnv.unity_comms.reset(mapType=self.mapType.name,
+            id=self.instancenumber, spawnpointRandom=self.spawn_point_random, singleGoalTraining=self.single_goal)
         info = {}
 
         return self.unityStringToObservation(obsstring), info
