@@ -24,8 +24,11 @@ public class Arena : MonoBehaviour
 
     private int instancenumber;
 
-    int resWidth = 512; // from CarAgent.cs
-    int resHeight = 256;
+    // from CarAgent.cs width was 512 and height was 256
+    // we reduce the size to make it easier for the python code to handle the images
+    // so more fit in the replay buffer
+    int resWidth = 168;
+    int resHeight = 168;
     // resolution is quite high: https://www.raspberrypi.com/documentation/accessories/camera.html
 
     void Awake()
@@ -142,6 +145,7 @@ public class Arena : MonoBehaviour
     //Get the AI vehicles camera input encode as byte array
     private string GetCameraInput()
     {
+        // TODO should the downsampling to 84 x 84 happen here instead of python?
         RenderTexture rt = new RenderTexture(this.resWidth, this.resHeight, 24);
         carCam.targetTexture = rt;
         Texture2D screenShot = new Texture2D(this.resWidth, this.resHeight, TextureFormat.RGB24, false);

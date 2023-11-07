@@ -13,12 +13,16 @@ from stable_baselines3.common.vec_env import DummyVecEnv
 
 import unityGymEnv
 
-#env = unityGymEnv.BaseUnityCarEnv()
 
-n_envs = 3
+# we use own replay buffer that saves the observation space as uint8 instead of float32
+# int8 is 8bit, float32 is 32bit
+
+n_envs = 10
+
+env_kwargs = {"spawn_point_random": False, "single_goal": False, "frame_stacking": 3, "equalize": True}
 
 # Parallel environments
-vec_env = make_vec_env(unityGymEnv.BaseUnityCarEnv, n_envs=n_envs, env_kwargs={"spawn_point_random": False, "single_goal": False})
+vec_env = make_vec_env(unityGymEnv.BaseUnityCarEnv, n_envs=n_envs, env_kwargs=env_kwargs)
 # the n_envs can quickly be too much since the replay buffer will grow
 # the observations are quite big (float32)
 
@@ -27,7 +31,7 @@ n_epochs, batch_size = 5, 64
 
 model = PPO("CnnPolicy", vec_env, verbose=1,
             tensorboard_log="./tmp", n_epochs=n_epochs, batch_size=batch_size)
-
+# CnnPolicy network architecture can be seen in sb3.common.torch_layers.py
 
 modelname="ppo_test_trained_random"
 continue_training = False
@@ -38,5 +42,5 @@ if continue_training:
 
 # TODO model save callback
 
-model.learn(total_timesteps=25000)
+model.learn(total_timesteps=250000)
 model.save(modelname)

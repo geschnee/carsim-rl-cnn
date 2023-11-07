@@ -9,6 +9,8 @@ import numpy as np
 
 from peaceful_pie.unity_comms import UnityComms
 
+from skimage import color
+from skimage.measure import block_reduce
 
 import PIL.Image as Image
 import io
@@ -18,6 +20,9 @@ from dataclasses import dataclass
 
 import time
 
+from stable_baselines3.common import torch_layers
+
+from histogram_equilization import hist_eq
 
 @dataclass
 class StepReturnObject:
@@ -49,23 +54,56 @@ class BaseUnityCarEnv(gym.Env):
     unity_comms: UnityComms = None
     instancenumber = 0
 
-    def __init__(self, width=512, height=256, port=9000, asyncronous=True, spawn_point_random=False, single_goal=False):
+    def __init__(self, width=168.0, height=168, port=9000,  asyncronous=True, spawn_point_random=False, single_goal=False, frame_stacking=5, grayscale=True, rescale=True, equalize=False):
+        self.equalize = equalize
+        self.downsampling = 2
 
         self.asynchronous = asyncronous
-        self.width = width
-        self.height = height
+        self.width = int(width / self.downsampling)
+        self.height = int(height / self.downsampling)
         # width and height in pixels of the screen
 
         # how are RL algos trained for continuous action spaces?
         # https://medium.com/geekculture/policy-based-methods-for-a-continuous-action-space-7b5ecffac43a
 
+
+        # Frame stacking is quite common in DQN
+        # if we implement the frame stacking in the gym env we get easier code since sb3 and others can reuse the observations easily
+        # for example for the replay buffer
+        # we could also use an observation wrapper
+        # frame stacking of one means there is no stacking done
+        self.frame_stacking = frame_stacking
+
+        self.grayscale = grayscale
+        if grayscale:
+            self.channels=1
+        else:
+            self.channels=3
+
+        # we use the channel to stack the frames, let's see if that works
+        if self.frame_stacking == 1:
+            self.channels_total = self.channels
+        else:
+            self.channels_total = self.channels * self.frame_stacking
+            assert self.channels_total < self.height, f'required for proper is_image_space_channels_first in sb3.common.preprocessing'
+            assert self.channels_total < self.width, f'required for proper is_image_space_channels_first in sb3.common.preprocessing'
+            print(f'channels total {self.channels_total}', flush=True)
+        self.rescale = rescale
+        if rescale:
+            high = 255 # torch_layers / preprocessing.py wants high to be 255
+            # TODO check if CnnPolicy does the normalization somewhere
+            # the same holds for the dtype
+            self.obs_dtype =  np.uint8 # np.float32
+        else:
+            high = 255
+            self.obs_dtype = np.uint8
+            
         self.observation_space = spaces.Box(low=0,
-                                            high=255,
-                                            shape=(self.height, self.width, 3),
-                                            dtype=np.uint8)
-        # shape is height, width, 3 since we use three channels for the colors
-        # the height and width are in that order since the np.array switches them, see unityStringToObservation
-        # sb3 PPO CnnPolicy requires high being 255 and dtype uint8
+                                    high=high,
+                                    shape=(self.height, self.width, self.channels_total),
+                                    dtype=self.obs_dtype)
+
+        print(f'Observation space shape {self.observation_space.shape}', flush=True)
 
         self.action_space = spaces.Box(
             low=-1.0, high=1.0, shape=(2, 1), dtype=np.float32)
@@ -132,7 +170,11 @@ class BaseUnityCarEnv(gym.Env):
             print(
                 f'stepObj reward {stepObj["reward"]} done {stepObj["done"]} info {stepObj["info"]}', flush=True)
 
-        return self.unityStringToObservation(stepObj["observation"]), reward, terminated, truncated, info_dict
+        new_obs = self.unityStringToObservation(stepObj["observation"])
+        if self.frame_stacking > 1:
+            new_obs = self.memory_rollover(new_obs)
+
+        return new_obs, reward, terminated, truncated, info_dict
 
     def stepAsynchronous(self, action):
         """Perform step, return observation, reward, terminated, false, info."""
@@ -165,25 +207,68 @@ class BaseUnityCarEnv(gym.Env):
             print(
                 f'stepObj reward {stepObj["reward"]} done {stepObj["done"]} info {stepObj["info"]}', flush=True)
 
-        return self.unityStringToObservation(stepObj["observation"]), reward, terminated, truncated, info_dict
+
+        new_obs = self.unityStringToObservation(stepObj["observation"])
+        if self.frame_stacking > 1:
+            new_obs = self.memory_rollover(new_obs)
+
+        return new_obs, reward, terminated, truncated, info_dict
         # TODO change the returned tuple to match the new gymnasium step API
         # https://www.gymlibrary.dev/content/api/#stepping
         # TODO check if there is a stable baselines 3 version ready for this new API
 
     def reset(self, seed=None, **kwargs):
-        """Place 2 tiles on empty board."""
         super().reset(seed=seed)  # gynasium migration guide https://gymnasium.farama.org/content/migration-guide/
+
+        if self.frame_stacking > 1:
+            self.memory = np.zeros((self.height, self.width, self.channels_total), dtype=self.obs_dtype)
 
         obsstring = BaseUnityCarEnv.unity_comms.reset(mapType=self.mapType.name,
             id=self.instancenumber, spawnpointRandom=self.spawn_point_random, singleGoalTraining=self.single_goal)
         info = {}
 
-        return self.unityStringToObservation(obsstring), info
+        new_obs = self.unityStringToObservation(obsstring)
+
+        if self.frame_stacking > 1:
+            new_obs = self.memory_rollover(new_obs)
+
+        return new_obs, info
+    
+    def memory_rollover(self, new_obs):
+        # was verified with an RGB example
+        # see all the commented out lines
+
+        #img = Image.fromarray(new_obs, 'RGB')
+        #img.save(f'new_obs.png')
+
+        #for i in range(self.frame_stacking):
+        #    data = self.memory[:,:,i*3:i*3+3]
+        #    img = Image.fromarray(data, 'RGB')
+        #    img.save(f'pre_rollover{i}.png')
+
+        # shift the channels to get rid of old stuff
+        self.memory = np.roll(self.memory, shift=self.channels, axis=2)
+
+        #for i in range(self.frame_stacking):
+        #    img = Image.fromarray(self.memory[:,:,i*3:i*3+3], 'RGB')
+        #    img.save(f'post_rollover{i}.png')
+
+        if self.grayscale:
+            new_obs = np.expand_dims(new_obs, axis=2)
+
+        self.memory[:,:,0:self.channels] = new_obs
+        
+        #for i in range(self.frame_stacking):
+        #    img = Image.fromarray(self.memory[:,:,i*3:i*3+3], 'RGB')
+        #    img.save(f'post_replace{i}.png')
+
+        return self.memory
 
     def getObservation(self):
         return self.unityStringToObservation(BaseUnityCarEnv.unity_comms.getObservation(id=self.instancenumber))
 
-    def unityStringToObservation(self, obsstring):
+
+    def unityStringToObservation(self, obsstring, log=False):
         base64_bytes = obsstring.encode('ascii')
         message_bytes = base64.b64decode(base64_bytes)
 
@@ -193,13 +278,68 @@ class BaseUnityCarEnv(gym.Env):
         #print(f'image type {type(im)}', flush=True)
         # PIL.PngImagePlugin.PngImageFile
 
-        pixels = np.array(im, dtype=np.uint8)
+        pixels_rgb = np.array(im, dtype=np.uint8)
         #print(f'pixels shape {pixels.shape}', flush=True)
         # it looks like this switches the height and width
+        
+        #print(f'unit img max {np.max(pixels_rgb)} min {np.min(pixels_rgb)}', flush=True)
 
-        # pixels = pixels / 255.0
+        if log:
+            img = Image.fromarray(pixels_rgb, 'RGB')
+            img.save("imagelog/image_from_unity.png")
 
-        return pixels
+        pixels_float = np.array(im, dtype=np.float32)
+        #print(f'unit img float max {np.max(pixels_float)} min {np.min(pixels_float)}', flush=True)
+
+        #print(f'pixels float shape {pixels_float.shape}', flush=True)
+
+        if log:
+            pixels_float_uint8 = pixels_float.astype(np.uint8)
+            img = Image.fromarray(pixels_float_uint8, 'RGB')
+            img.save("imagelog/image_from_unity_float.png")
+
+
+        pixels_downsampled = block_reduce(pixels_float, block_size=(2, 2, 1), func=np.mean)
+        # this halves the size along each dim
+
+
+        if log:
+            pixels_downsampled_uint8 = pixels_downsampled.astype(np.uint8)
+            im = Image.fromarray(pixels_downsampled_uint8, 'RGB')
+            im.save("imagelog/image_from_unity_downsampled.png")
+
+        pixels_gray = color.rgb2gray(pixels_downsampled)
+
+        #print(f'pixels gray shape {pixels_gray.shape}', flush=True)
+
+        if log:
+            pixels_gray_uint8 = pixels_gray.astype(np.uint8)
+            im = Image.fromarray(pixels_gray_uint8, 'L') # https://pillow.readthedocs.io/en/stable/handbook/concepts.html#concept-modes
+            im.save("imagelog/image_from_unity_gray.png")
+
+        if self.equalize:
+            assert self.grayscale, f'equalize only works with grayscale images'
+            pixels_equalized, histOrig, histEq = hist_eq(pixels_gray)
+
+            if log:
+                pixels_equalized_uint8 = pixels_equalized.astype(np.uint8)
+                im = Image.fromarray(pixels_equalized_uint8, 'L')
+                im.save("imagelog/image_from_unity_equalized.png")
+
+
+        if self.grayscale:
+            pixels_result = pixels_gray
+        else:
+            pixels_result = pixels_downsampled
+        
+        if self.rescale:
+            pixels_result = pixels_result / 255.0
+        else:
+            pixels_result = pixels_result.astype(np.uint8)
+            # we use uint8 when we use images not in range 0 and 1
+
+
+        return pixels_result
 
     def render(self, mode='human'):
         obs = BaseUnityCarEnv.unity_comms.getObservation(
