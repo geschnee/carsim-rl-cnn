@@ -11,6 +11,8 @@ public class Arena : MonoBehaviour
 {
     // TODO in theory this class could replace the GameManager class in it's responsibilities
 
+    EpisodeManager episodeManager;
+
     public GameObject gameManagerObject;
 
     GameManager gameManager;
@@ -30,6 +32,8 @@ public class Arena : MonoBehaviour
     int resWidth = 168;
     int resHeight = 168;
     // resolution is quite high: https://www.raspberrypi.com/documentation/accessories/camera.html
+
+    int step = 0;
 
     void Awake()
     {
@@ -87,10 +91,10 @@ public class Arena : MonoBehaviour
 
 
 
-        car.GetComponent<EpisodeManager>().StartEpisode();
 
-        // TODO does reset need to return something?
-        // TOOD yes, need to return an observation
+        episodeManager = car.GetComponent<EpisodeManager>();
+        episodeManager.StartEpisode();
+
 
         return GetCameraInput();
     }
@@ -107,39 +111,43 @@ public class Arena : MonoBehaviour
         // TODO maybe move this code to the episodeManager
         aIEngine.SetInput(inputAccelerationLeft, inputAccelerationRight);
 
-        float reward = car.GetComponent<EpisodeManager>().GetReward();
-        bool done = car.GetComponent<EpisodeManager>().IsTerminated();
-        bool terminated = car.GetComponent<EpisodeManager>().IsTerminated();
+        float reward = episodeManager.GetReward();
+        bool done = episodeManager.IsTerminated();
+        bool terminated = episodeManager.IsTerminated();
         string observation = GetCameraInput();
 
-        Dictionary<string, string> info = car.GetComponent<EpisodeManager>().GetInfo();
 
+
+        Dictionary<string, string> info = episodeManager.GetInfo();
+
+        episodeManager.IncreaseSteps();
         return new StepReturnObject(observation, reward, done, terminated, info);
     }
 
     public void asyncStepPart1(float inputAccelerationLeft, float inputAccelerationRight)
     {
         aIEngine.SetInput(inputAccelerationLeft, inputAccelerationRight);
-        rewardAsync = car.GetComponent<EpisodeManager>().rewardSinceLastGetReward;
+        rewardAsync = episodeManager.rewardSinceLastGetReward;
         // part1 sets the actions, python does the waiting, then part2 returns the observation
     }
 
     public StepReturnObject asyncStepPart2()
     {
-        float reward = car.GetComponent<EpisodeManager>().GetReward();
-        //Debug.Log($"reward diff: {reward - rewardAsync}");
+        float new_reward = episodeManager.GetReward();
 
+        float reward_during_waiting = new_reward - rewardAsync;
 
-        bool done = car.GetComponent<EpisodeManager>().IsTerminated();
-        bool terminated = car.GetComponent<EpisodeManager>().IsTerminated();
+        Debug.Log($"reward during waiting: {reward_during_waiting}");
+
+        bool done = episodeManager.IsTerminated();
+        bool terminated = episodeManager.IsTerminated();
         string observation = GetCameraInput();
 
-        Dictionary<string, string> info = car.GetComponent<EpisodeManager>().GetInfo();
+        Dictionary<string, string> info = episodeManager.GetInfo();
 
-        return new StepReturnObject(observation, reward, done, terminated, info);
+        episodeManager.IncreaseSteps();
+        return new StepReturnObject(observation, reward_during_waiting, done, terminated, info);
     }
-
-
 
 
     //Get the AI vehicles camera input encode as byte array

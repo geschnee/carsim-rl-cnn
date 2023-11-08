@@ -29,6 +29,9 @@ vec_env = make_vec_env(unityGymEnv.BaseUnityCarEnv, n_envs=n_envs, env_kwargs=en
 
 n_epochs, batch_size = 5, 64
 
+algo = PPO # or myPPO (handles the ansynchronicity of the envs)
+
+
 model = PPO("CnnPolicy", vec_env, verbose=1,
             tensorboard_log="./tmp", n_epochs=n_epochs, batch_size=batch_size)
 # CnnPolicy network architecture can be seen in sb3.common.torch_layers.py

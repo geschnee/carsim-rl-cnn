@@ -17,6 +17,8 @@ public class EpisodeManager : MonoBehaviour
     public float allowedTime = 20f; // TODO was 10f
     public float duration = 0f;
 
+    public int reward_bootstrap_n = 4;
+
     private AIEngine aIEngine;
     private GameObject finishLine;
 
@@ -30,6 +32,9 @@ public class EpisodeManager : MonoBehaviour
 
     private Vector3 lastPosition;
 
+
+
+    private int step = -1;
     private float cumReward = 0f;
     private float distanceReward = 0f;
     private float velocityReward = 0f;
@@ -45,6 +50,9 @@ public class EpisodeManager : MonoBehaviour
     // multiply by some constant, the reward is very small
     float distanceCoefficient = 10f;
 
+    List<float> step_rewards = new List<float>();
+    // the index indicates the step in which the reward was found
+
     public void PrepareAgent()
     {
         this.aIEngine = this.GetComponent<AIEngine>();
@@ -56,6 +64,10 @@ public class EpisodeManager : MonoBehaviour
         //PrintIndicators();
     }
 
+    public void IncreaseSteps()
+    {
+        this.step++;
+    }
 
 
     public void setCenterIndicators(List<GameObject> indicators)
@@ -73,6 +85,7 @@ public class EpisodeManager : MonoBehaviour
         this.velocityReward = 0f;
         this.rewardSinceLastGetReward = 0f;
         this.lastPosition = this.transform.position;
+        this.step = -1;
 
         this.PrepareAgent();
 
@@ -152,8 +165,33 @@ public class EpisodeManager : MonoBehaviour
         info.Add("passedGoals", this.passedGoals.ToString());
         info.Add("distanceReward", this.distanceReward.ToString());
         info.Add("velocityReward", this.velocityReward.ToString());
+        info.Add("step", this.step.ToString());
+        info.Add("amount_of_steps", this.step_rewards.Count.ToString());
+
+        info.Add("bootstrapped_rewards", this.GetBootstrappedRewards().ToString());
+
 
         return info;
+    }
+
+    private List<float> GetBootstrappedRewards()
+    {
+        List<float> bootstrapped_rewards = new List<float>();
+
+        for (int i = 0; i < this.step_rewards.Count; i++)
+        {
+            float reward = 0f;
+            for (int j = 0; j < this.reward_bootstrap_n; j++)
+            {
+                int index = i + j;
+                if (index < this.step_rewards.Count)
+                {
+                    reward += this.step_rewards[index];
+                }
+            }
+            bootstrapped_rewards.Add(reward);
+        }
+        return bootstrapped_rewards;
     }
 
 
@@ -161,6 +199,26 @@ public class EpisodeManager : MonoBehaviour
     {
         this.cumReward += reward;
         this.rewardSinceLastGetReward += reward;
+
+        int index;
+        if (this.step == -1) // reward that is obtained before a step is performed is given to the first step
+        {
+            index = 0;
+        }
+        else
+        {
+            index = this.step;
+        }
+
+        // add new entry for the step if it does not exist yet
+        if (index >= this.step_rewards.Count)
+        {
+            this.step_rewards.Add(reward);
+        }
+        else
+        {
+            this.step_rewards[index] += reward;
+        }
     }
 
     public void AddDistanceReward(float reward)
