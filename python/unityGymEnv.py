@@ -54,11 +54,13 @@ class BaseUnityCarEnv(gym.Env):
     unity_comms: UnityComms = None
     instancenumber = 0
 
-    def __init__(self, width=168.0, height=168, port=9000,  asyncronous=True, spawn_point_random=False, single_goal=False, frame_stacking=5, grayscale=True, rescale=True, equalize=False):
+    def __init__(self, width=168.0, height=168, port=9000, log=False, asynchronous=True, spawn_point_random=False, single_goal=False, frame_stacking=5, grayscale=True, normalize_images=False, equalize=False):
         self.equalize = equalize
         self.downsampling = 2
 
-        self.asynchronous = asyncronous
+        self.log = log
+
+        self.asynchronous = asynchronous
         self.width = int(width / self.downsampling)
         self.height = int(height / self.downsampling)
         # width and height in pixels of the screen
@@ -88,12 +90,16 @@ class BaseUnityCarEnv(gym.Env):
             assert self.channels_total < self.height, f'required for proper is_image_space_channels_first in sb3.common.preprocessing'
             assert self.channels_total < self.width, f'required for proper is_image_space_channels_first in sb3.common.preprocessing'
             print(f'channels total {self.channels_total}', flush=True)
-        self.rescale = rescale
-        if rescale:
-            high = 255 # torch_layers / preprocessing.py wants high to be 255
-            # TODO check if CnnPolicy does the normalization somewhere
-            # the same holds for the dtype
-            self.obs_dtype =  np.uint8 # np.float32
+        self.normalize_images = normalize_images
+        if normalize_images:
+            high = 1
+
+            # sb3 does not do the normalization itself, we can do it here
+            # TODO we also need to set the parameter normalized_images=True in the CnnPolicy
+            # see https://github.com/DLR-RM/stable-baselines3/blob/b413f4c285bc3bfafa382559b08ce9d64a551d26/stable_baselines3/common/torch_layers.py#L48
+            self.obs_dtype =  np.float32
+
+            assert False, f'not implemented yet, did you set normalized_images=True in the CnnPolicy?'
         else:
             high = 255
             self.obs_dtype = np.uint8
@@ -171,8 +177,11 @@ class BaseUnityCarEnv(gym.Env):
                 f'stepObj reward {stepObj["reward"]} done {stepObj["done"]} info {stepObj["info"]}', flush=True)
 
         new_obs = self.unityStringToObservation(stepObj["observation"])
+
+#        print(f'max new_obs before {np.max(new_obs)} min {np.min(new_obs)}', flush=True)
         if self.frame_stacking > 1:
             new_obs = self.memory_rollover(new_obs)
+ #       print(f'max new_obs after {np.max(new_obs)} min {np.min(new_obs)}', flush=True)
 
         return new_obs, reward, terminated, truncated, info_dict
 
@@ -234,33 +243,82 @@ class BaseUnityCarEnv(gym.Env):
 
         return new_obs, info
     
+
+
+    # TODO try this wrapper instead: https://github.com/DLR-RM/stable-baselines3/blob/b413f4c285bc3bfafa382559b08ce9d64a551d26/stable_baselines3/common/vec_env/vec_frame_stack.py#L12
     def memory_rollover(self, new_obs):
         # was verified with an RGB example
         # see all the commented out lines
 
-        #img = Image.fromarray(new_obs, 'RGB')
-        #img.save(f'new_obs.png')
+        log = self.log
 
-        #for i in range(self.frame_stacking):
-        #    data = self.memory[:,:,i*3:i*3+3]
-        #    img = Image.fromarray(data, 'RGB')
-        #    img.save(f'pre_rollover{i}.png')
+        #print(f'new obs min and max {np.min(new_obs)} {np.max(new_obs)}', flush=True)
+
+        assert new_obs.dtype == self.obs_dtype, f'new_obs.dtype {new_obs.dtype} self.obs_dtype {self.obs_dtype}'
+
+        channels = self.channels
+        #print(f'mem shape {self.memory.shape} {self.memory.dtype} channels {channels} new_obs shape {new_obs.shape} {new_obs.dtype}', flush=True)
+        
+        if log:
+            d = new_obs
+            if self.normalize_images:
+                d = d * 255.0
+            if channels== 3:
+                img = Image.fromarray(d, 'RGB')
+                img.save(f'imagelog/new_obs.png')
+            else:
+                img = Image.fromarray(d, 'L')
+                img.save(f'imagelog/new_obs.png')
+
+
+            for i in range(self.frame_stacking):
+                data = self.memory[:,:,i*channels:i*channels+channels]
+                if self.normalize_images:
+                    data = data * 255.0
+
+                if channels== 3:
+                    img = Image.fromarray(data, 'RGB')
+                    img.save(f'imagelog/pre_rollover{i}.png')
+                else:
+                    #print(f'data shape {data.shape}', flush=True)
+                    data = np.squeeze(data, axis=2)
+                    #print(f'data shape {data.shape}', flush=True)
+                    img = Image.fromarray(data, 'L')
+                    img.save(f'imagelog/pre_rollover{i}.png')
 
         # shift the channels to get rid of old stuff
         self.memory = np.roll(self.memory, shift=self.channels, axis=2)
 
-        #for i in range(self.frame_stacking):
-        #    img = Image.fromarray(self.memory[:,:,i*3:i*3+3], 'RGB')
-        #    img.save(f'post_rollover{i}.png')
+        if log:
+            for i in range(self.frame_stacking):
+                data = self.memory[:,:,i*channels:i*channels+channels]
+                if self.normalize_images:
+                    data = data * 255.0
+                if channels== 3:
+                    img = Image.fromarray(data, 'RGB')
+                    img.save(f'imagelog/post_rollover{i}.png')
+                else: 
+                    data = np.squeeze(data, axis=2)
+                    img = Image.fromarray(data, 'L')
+                    img.save(f'imagelog/post_rollover{i}.png')
 
         if self.grayscale:
             new_obs = np.expand_dims(new_obs, axis=2)
 
         self.memory[:,:,0:self.channels] = new_obs
         
-        #for i in range(self.frame_stacking):
-        #    img = Image.fromarray(self.memory[:,:,i*3:i*3+3], 'RGB')
-        #    img.save(f'post_replace{i}.png')
+        if log:
+            for i in range(self.frame_stacking):
+                data = self.memory[:,:,i*channels:i*channels+channels]
+                if self.normalize_images:
+                    data = data * 255.0
+                if channels== 3:
+                    img = Image.fromarray(data, 'RGB')
+                    img.save(f'imagelog/post_replace{i}.png')
+                else:
+                    data = np.squeeze(data, axis=2)
+                    img = Image.fromarray(data, 'L')
+                    img.save(f'imagelog/post_replace{i}.png')
 
         return self.memory
 
@@ -268,7 +326,10 @@ class BaseUnityCarEnv(gym.Env):
         return self.unityStringToObservation(BaseUnityCarEnv.unity_comms.getObservation(id=self.instancenumber))
 
 
-    def unityStringToObservation(self, obsstring, log=False):
+    def unityStringToObservation(self, obsstring):
+
+        log = self.log
+
         base64_bytes = obsstring.encode('ascii')
         message_bytes = base64.b64decode(base64_bytes)
 
@@ -332,12 +393,17 @@ class BaseUnityCarEnv(gym.Env):
         else:
             pixels_result = pixels_downsampled
         
-        if self.rescale:
+        #print(f'self normalize_images {self.normalize_images} pixels_result max {np.max(pixels_result)} min {np.min(pixels_result)}', flush=True)
+        if self.normalize_images:
+            
             pixels_result = pixels_result / 255.0
-        else:
-            pixels_result = pixels_result.astype(np.uint8)
-            # we use uint8 when we use images not in range 0 and 1
-
+            #print(f'min and max after normalize_images {np.min(pixels_result)} {np.max(pixels_result)}', flush=True)
+        
+        
+        pixels_result = pixels_result.astype(self.obs_dtype)
+        #print(f'min max after dtype change {np.min(pixels_result)} {np.max(pixels_result)}', flush=True)
+        
+        assert pixels_result.dtype == self.obs_dtype, f'pixels_result.dtype {pixels_result.dtype} self.obs_dtype {self.obs_dtype}'
 
         return pixels_result
 
