@@ -322,6 +322,14 @@ class BaseUnityCarEnv(gym.Env):
 
         return self.memory
 
+    def get_observation_including_memory(self):
+        obs_string = BaseUnityCarEnv.unity_comms.getObservation(id=self.instancenumber)
+        obs = self.unityStringToObservation(obs_string)
+
+        if self.frame_stacking > 1:
+            obs = self.memory_rollover(obs)
+        return obs
+
     def getObservation(self):
         return self.unityStringToObservation(BaseUnityCarEnv.unity_comms.getObservation(id=self.instancenumber))
 

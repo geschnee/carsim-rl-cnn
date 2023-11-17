@@ -14,6 +14,8 @@ from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback, Schedul
 from stable_baselines3.common.utils import obs_as_tensor, safe_mean
 from stable_baselines3.common.vec_env import VecEnv
 
+from myPPO.my_buffers import MyRolloutBuffer
+
 SelfOnPolicyAlgorithm = TypeVar(
     "SelfOnPolicyAlgorithm", bound="MyOnPolicyAlgorithm")
 
@@ -53,7 +55,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
     :param supported_action_spaces: The action spaces supported by the algorithm.
     """
 
-    rollout_buffer: RolloutBuffer
+    rollout_buffer: MyRolloutBuffer
     policy: ActorCriticPolicy
 
     def __init__(
@@ -110,7 +112,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         self.set_random_seed(self.seed)
 
         buffer_cls = DictRolloutBuffer if isinstance(
-            self.observation_space, spaces.Dict) else RolloutBuffer
+            self.observation_space, spaces.Dict) else MyRolloutBuffer
 
         self.rollout_buffer = buffer_cls(
             self.n_steps,
@@ -132,7 +134,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         self,
         env: VecEnv,
         callback: BaseCallback,
-        rollout_buffer: RolloutBuffer,
+        rollout_buffer: MyRolloutBuffer,
         n_rollout_steps: int,
     ) -> bool:
         """
@@ -174,9 +176,13 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
 
             with th.no_grad():
                 # Convert to pytorch tensor or to TensorDict
-                fresh_obs = env.get_obs()
-                print(f'fresh obs shape: {fresh_obs.shape}')
+                fresh_obs = get_obs(env)
+                #print(f'fresh obs shape: {fresh_obs.shape}')
+                #print(f'last obs shape: {self._last_obs.shape}')
                 obs_tensor = obs_as_tensor(fresh_obs, self.device)
+                #print(f'obs tensor shape: {obs_tensor.shape}')
+
+                
                 actions, values, log_probs = self.policy(obs_tensor)
             actions = actions.cpu().numpy()
 
@@ -187,8 +193,12 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
                 clipped_actions = np.clip(
                     actions, self.action_space.low, self.action_space.high)
 
-            new_obs, rewards, dones, infos = env.async_step(clipped_actions)
-            print(f'new obs shape: {new_obs.shape}')
+            new_obs, rewards, dones, infos = env.step(clipped_actions)
+            # TODO use the correct step method
+            
+            
+            #print(f'new obs shape: {new_obs.shape}')
+            # is 10, 3, 84, 84
 
             self.num_timesteps += env.num_envs
 
@@ -219,6 +229,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
                             terminal_obs)[0]  # type: ignore[arg-type]
                     rewards[idx] += self.gamma * terminal_value
 
+                if done:
                     done_found = True
           
                     
@@ -233,23 +244,28 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
             )
 
             for idx, info in enumerate(infos):
-                reward_correction_dict[i][info['step']] = insertpos
+                reward_correction_dict[idx][info['step']] = insertpos
 
 
             for idx, done in enumerate(dones):
                 # TODO obtain the real rewards from the env
                 # these rewards should be available from the info dictionary since the env is automatically reset when done
 
+                # TODO the env from unity does not yet return a proper list/dict of rewards
+
                 if done or n_steps >= n_rollout_steps:
-                    # playout finished of cancelling due to enough collected datapoints
+                    # playout finished or cancelling due to enough collected datapoints
                     # TODO it would be better to remove the ones prematurely terminated from the replay buffer
 
+                    print(f'reward correction dict: {reward_correction_dict}')
+
+                    print(f'info for index {idx}: {infos[idx]}')
 
                     env_id = idx
                     for step, bufferpos in reward_correction_dict[env_id].items():
                         rollout_buffer.rewards[bufferpos][env_id] = infos[env_id][f'reward_{step}']
 
-                    assert len(reward_correction_dict[i]) == infos[idx]['step'] +1, "reward correction dict is not complete"
+                    assert len(reward_correction_dict[i]) == int(infos[idx]['step']) +1, "reward correction dict is not complete"
 
                     # reset the reward correction dict
                     reward_correction_dict[env_id] = {}
@@ -271,6 +287,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
 
 
         return True
+    
 
     def train(self) -> None:
         """
@@ -344,3 +361,17 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         state_dicts = ["policy", "policy.optimizer"]
 
         return state_dicts, []
+
+def get_obs(env):
+    # env is a vectorized BaseUnityCarEnv
+    # it is wrapped in a vec_transpose env for the CNN
+
+    # this also changes the observation stored in the dummy_vec_env
+
+    for idx in range(env.num_envs):
+        obs = env.envs[idx].get_observation_including_memory()
+        print(f'get_obs obs shape: {obs.shape}')
+        env._save_obs(idx, obs)
+
+    obs = env._obs_from_buf()
+    return env.transpose_observations(obs)

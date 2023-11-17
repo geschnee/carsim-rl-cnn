@@ -168,13 +168,14 @@ public class EpisodeManager : MonoBehaviour
         info.Add("step", this.step.ToString());
         info.Add("amount_of_steps", this.step_rewards.Count.ToString());
 
-        info.Add("bootstrapped_rewards", this.GetBootstrappedRewards().ToString());
-
+        // info.Add("bootstrapped_rewards", this.GetBootstrappedRewards());
+        // TODO instead send this over not as dict item
+        // (if we send it over here we have to serialize and deserialize it again in python)
 
         return info;
     }
 
-    private List<float> GetBootstrappedRewards()
+    public List<float> GetBootstrappedRewards()
     {
         List<float> bootstrapped_rewards = new List<float>();
 
@@ -184,10 +185,12 @@ public class EpisodeManager : MonoBehaviour
             for (int j = 0; j < this.reward_bootstrap_n; j++)
             {
                 int index = i + j;
-                if (index < this.step_rewards.Count)
+                if (index == this.step_rewards.Count)
                 {
-                    reward += this.step_rewards[index];
+                    break; // there are no more steps/rewards to bootstrap
                 }
+                reward += this.step_rewards[index];
+
             }
             bootstrapped_rewards.Add(reward);
         }

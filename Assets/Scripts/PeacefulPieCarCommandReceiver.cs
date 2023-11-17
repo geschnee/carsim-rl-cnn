@@ -19,13 +19,16 @@ public class StepReturnObject
 
     public Dictionary<string, string> info;
 
-    public StepReturnObject(string observation, float reward, bool done, bool terminated, Dictionary<string, string> info)
+    public float[] bootstrapped_rewards;
+
+    public StepReturnObject(string observation, float reward, bool done, bool terminated, Dictionary<string, string> info, float[] bootstrapped_rewards)
     {
         this.observation = observation;
         this.reward = reward;
         this.done = done;
         this.terminated = terminated;
         this.info = info;
+        this.bootstrapped_rewards = bootstrapped_rewards;
     }
 }
 

@@ -90,11 +90,8 @@ public class Arena : MonoBehaviour
         this.carCam = car.GetComponentInChildren<Camera>();
 
 
-
-
         episodeManager = car.GetComponent<EpisodeManager>();
         episodeManager.StartEpisode();
-
 
         return GetCameraInput();
     }
@@ -117,11 +114,13 @@ public class Arena : MonoBehaviour
         string observation = GetCameraInput();
 
 
+        episodeManager.IncreaseSteps();
 
         Dictionary<string, string> info = episodeManager.GetInfo();
 
-        episodeManager.IncreaseSteps();
-        return new StepReturnObject(observation, reward, done, terminated, info);
+        float[] bootstrapped_rewards = episodeManager.GetBootstrappedRewards();
+
+        return new StepReturnObject(observation, reward, done, terminated, info, bootstrapped_rewards);
     }
 
     public void asyncStepPart1(float inputAccelerationLeft, float inputAccelerationRight)
@@ -143,10 +142,14 @@ public class Arena : MonoBehaviour
         bool terminated = episodeManager.IsTerminated();
         string observation = GetCameraInput();
 
-        Dictionary<string, string> info = episodeManager.GetInfo();
 
         episodeManager.IncreaseSteps();
-        return new StepReturnObject(observation, reward_during_waiting, done, terminated, info);
+        Dictionary<string, string> info = episodeManager.GetInfo();
+
+
+        float[] bootstrapped_rewards = episodeManager.GetBootstrappedRewards();
+
+        return new StepReturnObject(observation, reward_during_waiting, done, terminated, info, bootstrapped_rewards);
     }
 
 
