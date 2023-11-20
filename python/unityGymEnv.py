@@ -31,6 +31,7 @@ class StepReturnObject:
     done: bool
     terminated: bool
     info: dict
+    bootstrapped_rewards: list[float]
 
 from enum import Enum
 class MapType(Enum):
@@ -168,6 +169,7 @@ class BaseUnityCarEnv(gym.Env):
         # TODO differentiate these two
 
         info_dict = stepObj["info"]
+        info_dict["bootstrapped_rewards"] = stepObj["bootstrapped_rewards"]
 
         # print(
         #    f'left_acceleration {left_acceleration} right_acceleration {right_acceleration}, reward {reward}')
@@ -208,6 +210,7 @@ class BaseUnityCarEnv(gym.Env):
         # TODO differentiate these two
 
         info_dict = stepObj["info"]
+        info_dict["bootstrapped_rewards"] = stepObj["bootstrapped_rewards"]
 
         # print(
         #    f'left_acceleration {left_acceleration} right_acceleration {right_acceleration}, reward {reward}')

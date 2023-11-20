@@ -262,8 +262,10 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
                     print(f'info for index {idx}: {infos[idx]}')
 
                     env_id = idx
+                    bootstrapped_rewards = infos[env_id]['bootstrapped_rewards']
+                    assert len(bootstrapped_rewards) == len(reward_correction_dict[env_id]), f"bootstrapped rewards {len(bootstrapped_rewards)} and reward correction dict {len(reward_correction_dict[env_id])} do not match in length"
                     for step, bufferpos in reward_correction_dict[env_id].items():
-                        rollout_buffer.rewards[bufferpos][env_id] = infos[env_id][f'reward_{step}']
+                        rollout_buffer.rewards[bufferpos][env_id] = bootstrapped_rewards[step]
 
                     assert len(reward_correction_dict[i]) == int(infos[idx]['step']) +1, "reward correction dict is not complete"
 
