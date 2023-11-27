@@ -19,9 +19,9 @@ public class StepReturnObject
 
     public Dictionary<string, string> info;
 
-    public float[] bootstrapped_rewards;
+    public List<float> bootstrapped_rewards;
 
-    public StepReturnObject(string observation, float reward, bool done, bool terminated, Dictionary<string, string> info, float[] bootstrapped_rewards)
+    public StepReturnObject(string observation, float reward, bool done, bool terminated, Dictionary<string, string> info, List<float> bootstrapped_rewards)
     {
         this.observation = observation;
         this.reward = reward;

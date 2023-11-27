@@ -55,7 +55,7 @@ class BaseUnityCarEnv(gym.Env):
     unity_comms: UnityComms = None
     instancenumber = 0
 
-    def __init__(self, width=168.0, height=168, port=9000, log=False, asynchronous=True, spawn_point_random=False, single_goal=False, frame_stacking=5, grayscale=True, normalize_images=False, equalize=False):
+    def __init__(self, width=168.0, height=168, port=9000, log=False, asynchronous=True, spawn_point_random=False, single_goal=False, frame_stacking=5, grayscale=True, normalize_images=False, equalize=False, imagelog=False):
         self.equalize = equalize
         self.downsampling = 2
 
@@ -171,6 +171,9 @@ class BaseUnityCarEnv(gym.Env):
         info_dict = stepObj["info"]
         info_dict["bootstrapped_rewards"] = stepObj["bootstrapped_rewards"]
 
+        self.step_nr += 1
+        assert self.step_nr == int(info_dict["step"]), f'self.step {self.step_nr} info_dict["step"] {info_dict["step"]}'
+
         # print(
         #    f'left_acceleration {left_acceleration} right_acceleration {right_acceleration}, reward {reward}')
 
@@ -212,6 +215,9 @@ class BaseUnityCarEnv(gym.Env):
         info_dict = stepObj["info"]
         info_dict["bootstrapped_rewards"] = stepObj["bootstrapped_rewards"]
 
+        self.step_nr += 1
+        assert self.step_nr == int(info_dict["step"]), f'self.step {self.step_nr} info_dict["step"] {info_dict["step"]}'
+
         # print(
         #    f'left_acceleration {left_acceleration} right_acceleration {right_acceleration}, reward {reward}')
 
@@ -232,6 +238,9 @@ class BaseUnityCarEnv(gym.Env):
     def reset(self, seed=None, **kwargs):
         super().reset(seed=seed)  # gynasium migration guide https://gymnasium.farama.org/content/migration-guide/
 
+        self.step_nr = -1
+
+        
         if self.frame_stacking > 1:
             self.memory = np.zeros((self.height, self.width, self.channels_total), dtype=self.obs_dtype)
 

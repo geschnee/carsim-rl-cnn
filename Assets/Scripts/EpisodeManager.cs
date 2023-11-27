@@ -50,7 +50,7 @@ public class EpisodeManager : MonoBehaviour
     // multiply by some constant, the reward is very small
     float distanceCoefficient = 10f;
 
-    List<float> step_rewards = new List<float>();
+    List<float> step_rewards;
     // the index indicates the step in which the reward was found
 
     public void PrepareAgent()
@@ -67,6 +67,19 @@ public class EpisodeManager : MonoBehaviour
     public void IncreaseSteps()
     {
         this.step++;
+        // add new entry in the rewards counting list
+        // with this added 0 reward there is an entry for every step even if there was no reward signal encountered
+        if (this.step != 0)
+        {
+            this.step_rewards.Add(0);
+
+        }
+        if (this.step_rewards.Count != (this.step + 1))
+        {
+            Debug.LogError($"count should be one higher than steps: step_rewards.Count {this.step_rewards.Count} step {this.step}");
+
+        }
+
     }
 
 
@@ -86,6 +99,7 @@ public class EpisodeManager : MonoBehaviour
         this.rewardSinceLastGetReward = 0f;
         this.lastPosition = this.transform.position;
         this.step = -1;
+        initializeStepRewards();
 
         this.PrepareAgent();
 
@@ -96,6 +110,12 @@ public class EpisodeManager : MonoBehaviour
         //Debug.Log($"last distance in startepisode {this.lastDistance}");
 
         this.episodeRunning = true;
+    }
+
+    private void initializeStepRewards()
+    {
+        this.step_rewards = new List<float>();
+        this.step_rewards.Add(0); // for rewards for step 0
     }
 
     private void PrintIndicators()
@@ -157,7 +177,6 @@ public class EpisodeManager : MonoBehaviour
 
     public Dictionary<string, string> GetInfo()
     {
-
         Dictionary<string, string> info = new Dictionary<string, string>();
         info.Add("endEvent", this.endEvent);
         info.Add("duration", this.duration.ToString());
@@ -166,11 +185,7 @@ public class EpisodeManager : MonoBehaviour
         info.Add("distanceReward", this.distanceReward.ToString());
         info.Add("velocityReward", this.velocityReward.ToString());
         info.Add("step", this.step.ToString());
-        info.Add("amount_of_steps", this.step_rewards.Count.ToString());
-
-        // info.Add("bootstrapped_rewards", this.GetBootstrappedRewards());
-        // TODO instead send this over not as dict item
-        // (if we send it over here we have to serialize and deserialize it again in python)
+        info.Add("amount_of_steps", (this.step + 1).ToString());
 
         return info;
     }
@@ -179,13 +194,14 @@ public class EpisodeManager : MonoBehaviour
     {
         List<float> bootstrapped_rewards = new List<float>();
 
-        for (int i = 0; i < this.step_rewards.Count; i++)
+        int amount_of_steps = this.step + 1;
+        for (int i = 0; i < amount_of_steps; i++)
         {
             float reward = 0f;
             for (int j = 0; j < this.reward_bootstrap_n; j++)
             {
                 int index = i + j;
-                if (index == this.step_rewards.Count)
+                if (index == amount_of_steps)
                 {
                     break; // there are no more steps/rewards to bootstrap
                 }
@@ -212,16 +228,8 @@ public class EpisodeManager : MonoBehaviour
         {
             index = this.step;
         }
+        this.step_rewards[index] += reward;
 
-        // add new entry for the step if it does not exist yet
-        if (index >= this.step_rewards.Count)
-        {
-            this.step_rewards.Add(reward);
-        }
-        else
-        {
-            this.step_rewards[index] += reward;
-        }
     }
 
     public void AddDistanceReward(float reward)
@@ -303,8 +311,6 @@ public class EpisodeManager : MonoBehaviour
 
         }
     }
-
-
 
     public void AddTime(float time)
     {

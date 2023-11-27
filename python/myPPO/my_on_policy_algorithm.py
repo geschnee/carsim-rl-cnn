@@ -150,6 +150,10 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         :return: True if function returned with at least `n_rollout_steps`
             collected, False if callback terminated rollout prematurely.
         """
+
+        print(f'collect rollouts started')
+
+
         # Switch to eval mode (this affects batch norm / dropout)
         self.policy.set_training_mode(False)
 
@@ -168,6 +172,9 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
             reward_correction_dict[i] = {}
         # outer dictionary maps env index to inner dictionary
         # inner dictionary maps step number to the corresponding position in rollout_buffer
+
+        env.reset()
+        # we need to reset the env to get the correct bootstrapped rewards
 
         while n_steps < n_rollout_steps:
             if self.use_sde and self.sde_sample_freq > 0 and n_steps % self.sde_sample_freq == 0:
@@ -242,9 +249,27 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
                 values,
                 log_probs,
             )
+            print(f'insertpos: {insertpos}')
+
+            assert len(infos) == env.num_envs, f"infos has wrong length {len(infos)} != {env.num_envs}"
 
             for idx, info in enumerate(infos):
-                reward_correction_dict[idx][info['step']] = insertpos
+                # TODO is the returned step sometimes not correct?
+                # returns the same step multiple times
+                
+
+                assert int(info['step']) not in reward_correction_dict[idx].keys(), f"step {info['step']} already in reward correction dict for env {idx}"
+                if int(info['step']) != 0:
+                    assert int(info["step"]) == max(reward_correction_dict[idx].keys()) + 1, f"step {info['step']} is not the next step in reward correction dict for env {idx}: {reward_correction_dict[idx]}"
+                
+                reward_correction_dict[idx][int(info['step'])] = insertpos
+
+                # TODO es passiert nicht, dass etwas mehrmals in reward_correction_dict eingetragen wird
+                # (es wird nicht ueberschrieben), es muss ein anderes Problem sein
+
+                # reward correction dict fuer index 7 war kaputt:
+                # reward correction dict: {0: {}, 1: {}, 2: {}, 3: {}, 4: {}, 5: {}, 6: {}, 7: {0: 76, 2: 77, 3: 78, 4: 79}, 8: {0: 76, 1: 77, 2: 78, 3: 79}, 9: {0: 76, 1: 77, 2: 78, 3: 79}}
+
 
 
             for idx, done in enumerate(dones):
@@ -258,8 +283,11 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
                     # TODO it would be better to remove the ones prematurely terminated from the replay buffer
 
                     print(f'reward correction dict: {reward_correction_dict}')
+                    print(f'reward correction dict entry {reward_correction_dict[idx]}')
 
                     print(f'info for index {idx}: {infos[idx]}')
+
+                    
 
                     env_id = idx
                     bootstrapped_rewards = infos[env_id]['bootstrapped_rewards']
@@ -267,7 +295,8 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
                     for step, bufferpos in reward_correction_dict[env_id].items():
                         rollout_buffer.rewards[bufferpos][env_id] = bootstrapped_rewards[step]
 
-                    assert len(reward_correction_dict[i]) == int(infos[idx]['step']) +1, "reward correction dict is not complete"
+
+                    assert len(reward_correction_dict[env_id]) == int(infos[idx]['amount_of_steps']), f"reward correction dict is not complete {len(reward_correction_dict[env_id])} != {infos[idx]['amount_of_steps']}"
 
                     # reset the reward correction dict
                     reward_correction_dict[env_id] = {}
@@ -372,7 +401,7 @@ def get_obs(env):
 
     for idx in range(env.num_envs):
         obs = env.envs[idx].get_observation_including_memory()
-        print(f'get_obs obs shape: {obs.shape}')
+        #print(f'get_obs obs shape: {obs.shape}')
         env._save_obs(idx, obs)
 
     obs = env._obs_from_buf()

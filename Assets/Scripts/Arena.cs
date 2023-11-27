@@ -33,7 +33,6 @@ public class Arena : MonoBehaviour
     int resHeight = 168;
     // resolution is quite high: https://www.raspberrypi.com/documentation/accessories/camera.html
 
-    int step = 0;
 
     void Awake()
     {
@@ -107,6 +106,7 @@ public class Arena : MonoBehaviour
     {
         // TODO maybe move this code to the episodeManager
         aIEngine.SetInput(inputAccelerationLeft, inputAccelerationRight);
+        episodeManager.IncreaseSteps();
 
         float reward = episodeManager.GetReward();
         bool done = episodeManager.IsTerminated();
@@ -114,11 +114,10 @@ public class Arena : MonoBehaviour
         string observation = GetCameraInput();
 
 
-        episodeManager.IncreaseSteps();
 
         Dictionary<string, string> info = episodeManager.GetInfo();
 
-        float[] bootstrapped_rewards = episodeManager.GetBootstrappedRewards();
+        List<float> bootstrapped_rewards = episodeManager.GetBootstrappedRewards();
 
         return new StepReturnObject(observation, reward, done, terminated, info, bootstrapped_rewards);
     }
@@ -126,6 +125,8 @@ public class Arena : MonoBehaviour
     public void asyncStepPart1(float inputAccelerationLeft, float inputAccelerationRight)
     {
         aIEngine.SetInput(inputAccelerationLeft, inputAccelerationRight);
+        episodeManager.IncreaseSteps();
+
         rewardAsync = episodeManager.rewardSinceLastGetReward;
         // part1 sets the actions, python does the waiting, then part2 returns the observation
     }
@@ -143,11 +144,10 @@ public class Arena : MonoBehaviour
         string observation = GetCameraInput();
 
 
-        episodeManager.IncreaseSteps();
         Dictionary<string, string> info = episodeManager.GetInfo();
 
 
-        float[] bootstrapped_rewards = episodeManager.GetBootstrappedRewards();
+        List<float> bootstrapped_rewards = episodeManager.GetBootstrappedRewards();
 
         return new StepReturnObject(observation, reward_during_waiting, done, terminated, info, bootstrapped_rewards);
     }

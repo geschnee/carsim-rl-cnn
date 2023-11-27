@@ -57,5 +57,5 @@ if continue_training:
 
 # TODO model save callback
 
-model.learn(total_timesteps=250000)
+model.learn(total_timesteps=2500000)
 model.save(modelname)
