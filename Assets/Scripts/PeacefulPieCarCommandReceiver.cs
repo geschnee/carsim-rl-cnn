@@ -137,6 +137,12 @@ public class PeacefulPieCarCommandReceiver : MonoBehaviour
             return arenas[id].getObservation();
         }
 
+        [JsonRpcMethod]
+        string getArenaScreenshot(int id)
+        {
+            return arenas[id].getArenaScreenshot();
+        }
+
     }
 
     Rpc rpc;

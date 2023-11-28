@@ -55,9 +55,11 @@ class BaseUnityCarEnv(gym.Env):
     unity_comms: UnityComms = None
     instancenumber = 0
 
-    def __init__(self, width=168.0, height=168, port=9000, log=False, asynchronous=True, spawn_point_random=False, single_goal=False, frame_stacking=5, grayscale=True, normalize_images=False, equalize=False, imagelog=False):
+    def __init__(self, width=168.0, height=168, port=9000, log=False, asynchronous=True, spawn_point_random=False, single_goal=False, frame_stacking=5, grayscale=True, normalize_images=False, equalize=False):
         self.equalize = equalize
         self.downsampling = 2
+
+        self.lighting = 1
 
         self.log = log
 
@@ -235,7 +237,7 @@ class BaseUnityCarEnv(gym.Env):
         # https://www.gymlibrary.dev/content/api/#stepping
         # TODO check if there is a stable baselines 3 version ready for this new API
 
-    def reset(self, seed=None, **kwargs):
+    def reset(self, seed=None):
         super().reset(seed=seed)  # gynasium migration guide https://gymnasium.farama.org/content/migration-guide/
 
         self.step_nr = -1
@@ -441,6 +443,15 @@ class BaseUnityCarEnv(gym.Env):
 
         im.save("savepath.png")
 
+
+    def get_arena_screenshot(self, savepath):
+        screenshot = BaseUnityCarEnv.unity_comms.getArenaScreenshot(id=self.instancenumber)
+        base64_bytes = screenshot.encode('ascii')
+        message_bytes = base64.b64decode(base64_bytes)
+
+        im = Image.open(io.BytesIO(message_bytes))
+
+        im.save(savepath)
 
 if __name__ == '__main__':
 

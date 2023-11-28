@@ -33,6 +33,9 @@ public class Arena : MonoBehaviour
     int resHeight = 168;
     // resolution is quite high: https://www.raspberrypi.com/documentation/accessories/camera.html
 
+    public Camera arenaCam;
+    public int arenaResWidth = 512;
+    public int arenaResHeight = 512;
 
     void Awake()
     {
@@ -92,7 +95,7 @@ public class Arena : MonoBehaviour
         episodeManager = car.GetComponent<EpisodeManager>();
         episodeManager.StartEpisode();
 
-        return GetCameraInput();
+        return GetCameraInput(this.carCam, this.resWidth, this.resHeight, "observation.png");
     }
 
     public void forwardInputsToCar(float inputAccelerationLeft, float inputAccelerationRight)
@@ -111,7 +114,7 @@ public class Arena : MonoBehaviour
         float reward = episodeManager.GetReward();
         bool done = episodeManager.IsTerminated();
         bool terminated = episodeManager.IsTerminated();
-        string observation = GetCameraInput();
+        string observation = GetCameraInput(this.carCam, this.resWidth, this.resHeight, "observation.png");
 
 
 
@@ -141,7 +144,7 @@ public class Arena : MonoBehaviour
 
         bool done = episodeManager.IsTerminated();
         bool terminated = episodeManager.IsTerminated();
-        string observation = GetCameraInput();
+        string observation = GetCameraInput(this.carCam, this.resWidth, this.resHeight, "observation.png");
 
 
         Dictionary<string, string> info = episodeManager.GetInfo();
@@ -154,27 +157,25 @@ public class Arena : MonoBehaviour
 
 
     //Get the AI vehicles camera input encode as byte array
-    private string GetCameraInput()
+    private string GetCameraInput(Camera cam, int resWidth, int resHeight, string filename)
     {
         // TODO should the downsampling to 84 x 84 happen here instead of python?
-        RenderTexture rt = new RenderTexture(this.resWidth, this.resHeight, 24);
-        carCam.targetTexture = rt;
-        Texture2D screenShot = new Texture2D(this.resWidth, this.resHeight, TextureFormat.RGB24, false);
-        carCam.Render();
+        RenderTexture rt = new RenderTexture(resWidth, resHeight, 24);
+        cam.targetTexture = rt;
+        Texture2D screenShot = new Texture2D(resWidth, resHeight, TextureFormat.RGB24, false);
+        cam.Render();
         RenderTexture.active = rt;
         screenShot.ReadPixels(new Rect(0, 0, resWidth, resHeight), 0, 0);
 
         System.Byte[] pictureInBytes = screenShot.EncodeToPNG(); // the length of the array changes depending on the content
                                                                  // screenShot.EncodeToJPG(); auch möglich
 
-        carCam.targetTexture = null;
+        cam.targetTexture = null;
         RenderTexture.active = null; // JC: added to avoid errors
         Destroy(rt);
         Destroy(screenShot);
 
-        File.WriteAllBytes("observation.png", pictureInBytes);
-
-
+        File.WriteAllBytes(filename, pictureInBytes);
 
         string base64_string = System.Convert.ToBase64String(pictureInBytes);
 
@@ -205,7 +206,14 @@ public class Arena : MonoBehaviour
         }
 
         //Debug.Log("getObservation");
-        string cameraPicture = GetCameraInput();
+        string cameraPicture = GetCameraInput(this.carCam, this.resWidth, this.resHeight, "observation.png");
         return cameraPicture;
     }
+
+    public string getArenaScreenshot()
+    {
+        string cameraPicture = GetCameraInput(this.arenaCam, this.arenaResWidth, this.arenaResHeight, "arena.png");
+        return cameraPicture;
+    }
+
 }
