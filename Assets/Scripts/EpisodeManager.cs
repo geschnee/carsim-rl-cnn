@@ -39,6 +39,7 @@ public class EpisodeManager : MonoBehaviour
     private float cumReward;
     private float distanceReward;
     private float velocityReward;
+    private float otherReward;
     public float rewardSinceLastGetReward;
 
     private string endEvent = "notEnded";
@@ -102,6 +103,7 @@ public class EpisodeManager : MonoBehaviour
         this.cumReward = 0f;
         this.distanceReward = 0f;
         this.velocityReward = 0f;
+        this.otherReward = 0f;
         this.rewardSinceLastGetReward = 0f;
         this.lastPosition = this.transform.position;
         this.step = -1;
@@ -190,6 +192,7 @@ public class EpisodeManager : MonoBehaviour
         info.Add("passedGoals", this.passedGoals.ToString());
         info.Add("numberOfGoals", this.centerIndicators.Count.ToString());
         info.Add("distanceReward", this.distanceReward.ToString());
+        info.Add("otherReward", this.otherReward.ToString());
         info.Add("velocityReward", this.velocityReward.ToString());
         info.Add("step", this.step.ToString());
         info.Add("amount_of_steps", (this.step + 1).ToString());
@@ -240,6 +243,12 @@ public class EpisodeManager : MonoBehaviour
         }
         this.step_rewards[index] += reward;
 
+    }
+
+    public void AddOtherReward(float reward)
+    {
+        this.otherReward += reward;
+        AddReward(reward);
     }
 
     public void AddDistanceReward(float reward)
@@ -344,7 +353,7 @@ public class EpisodeManager : MonoBehaviour
 
     public void finishCheckpoint()
     {
-        AddReward(100f);
+        AddOtherReward(100f);
         IncreasePassedGoals();
 
         EndEpisode("success");
@@ -352,7 +361,7 @@ public class EpisodeManager : MonoBehaviour
 
     public void hitWall()
     {
-        AddReward(-1f);
+        AddOtherReward(-1f);
 
 
         string endEvent = "wall";
@@ -361,7 +370,7 @@ public class EpisodeManager : MonoBehaviour
 
     public void goalMissed()
     {
-        AddReward(-1f);
+        AddOtherReward(-1f);
 
         // TODO also save the color of the missed goal?
         string endEvent = "goalMissed";
@@ -373,7 +382,7 @@ public class EpisodeManager : MonoBehaviour
 
         AddTime(10f);
 
-        AddReward(1f);
+        AddOtherReward(1f);
 
         IncreasePassedGoals();
         centerIndicators.RemoveAt(0); // remove an indicator
@@ -392,7 +401,7 @@ public class EpisodeManager : MonoBehaviour
 
     public void obstacleHit()
     {
-        AddReward(-1f);
+        AddOtherReward(-1f);
     }
 
     public void redObstacleHit()

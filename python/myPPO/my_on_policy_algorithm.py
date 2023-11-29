@@ -165,7 +165,9 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
 
         callback.on_rollout_start()
 
-        completed_games, successfully_completed_games, number_of_goals, successfully_passed_goals, total_reward, total_timesteps, distance_reward, velocity_reward= 0, 0, 0, 0, 0, 0, 0, 0
+        completed_games, successfully_completed_games, number_of_goals, successfully_passed_goals, total_reward, total_timesteps, distance_reward, velocity_reward, other_reward = 0, 0, 0, 0, 0, 0, 0, 0, 0
+        # other reward is the reward that is not distance or velocity reward
+        # such as collisions, passed goals and episode terminated
 
         reward_correction_dict = {}
         for i in range(env.num_envs):
@@ -248,6 +250,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
 
                     distance_reward += float(infos[idx]["distanceReward"])
                     velocity_reward += float(infos[idx]["velocityReward"])
+                    other_reward += float(infos[idx]["otherReward"])
                     
 
             insertpos = rollout_buffer.add(
@@ -336,7 +339,8 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         mean_episode_length = total_timesteps / completed_games
         mean_distance_reward = distance_reward / completed_games
         mean_velocity_reward = velocity_reward / completed_games
-        return True, success_rate, goal_completion_rate, mean_reward, mean_episode_length, mean_distance_reward, mean_velocity_reward
+        mean_other_reward = other_reward / completed_games
+        return True, success_rate, goal_completion_rate, mean_reward, mean_episode_length, mean_distance_reward, mean_velocity_reward, mean_other_reward
     
 
     def train(self) -> None:
@@ -370,7 +374,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         assert self.env is not None
 
         while self.num_timesteps < total_timesteps:
-            continue_training, success_rate, goal_completion_rate, mean_reward, mean_episode_length, mean_distance_reward, mean_velocity_reward = self.collect_rollouts(
+            continue_training, success_rate, goal_completion_rate, mean_reward, mean_episode_length, mean_distance_reward, mean_velocity_reward, mean_other_reward = self.collect_rollouts(
                 self.env, callback, self.rollout_buffer, n_rollout_steps=self.n_steps)
 
             if continue_training is False:
@@ -413,6 +417,9 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
                 self.logger.record("rollout/mean_episode_length", mean_episode_length)
                 self.logger.record("rollout/mean_distance_reward", mean_distance_reward)
                 self.logger.record("rollout/mean_velocity_reward", mean_velocity_reward)
+                self.logger.record("rollout/mean_other_reward", mean_other_reward) # rewards such as collisions, goals passed and timeouts
+                # this reward should not negatively dominate the other rewards
+                # the penalties for expired time and collisions should not discourage the agent from moving
 
                 self.logger.dump(step=self.num_timesteps)
 
