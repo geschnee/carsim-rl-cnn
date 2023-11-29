@@ -165,7 +165,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
 
         callback.on_rollout_start()
 
-        done_found = False
+        completed_games, successfully_completed_games, number_of_goals, successfully_passed_goals, total_reward, total_timesteps, distance_reward, velocity_reward= 0, 0, 0, 0, 0, 0, 0, 0
 
         reward_correction_dict = {}
         for i in range(env.num_envs):
@@ -237,8 +237,17 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
                     rewards[idx] += self.gamma * terminal_value
 
                 if done:
-                    done_found = True
-          
+                    completed_games += 1
+                
+                    if infos[idx]["endEvent"] == "success":
+                        successfully_completed_games += 1
+                    successfully_passed_goals += int(infos[idx]["passedGoals"])
+                    number_of_goals += int(infos[idx]["numberOfGoals"])
+                    total_reward += float(infos[idx]["cumreward"])
+                    total_timesteps += int(infos[idx]["amount_of_steps"])
+
+                    distance_reward += float(infos[idx]["distanceReward"])
+                    velocity_reward += float(infos[idx]["velocityReward"])
                     
 
             insertpos = rollout_buffer.add(
@@ -314,10 +323,20 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
 
         callback.on_rollout_end()
 
-        assert done_found, "not a single playout was complete, finished too fast"
+        assert completed_games>0, "not a single playout was complete, finished too fast"
 
+        success_rate = successfully_completed_games / completed_games
+        goal_completion_rate = successfully_passed_goals / number_of_goals
 
-        return True
+        if successfully_passed_goals > 0:
+            print(f'passed a goal succesfully, rate is {goal_completion_rate}')
+            assert goal_completion_rate > 0.0, "goal completion rate is 0 although a goal was passed"
+
+        mean_reward = total_reward / completed_games
+        mean_episode_length = total_timesteps / completed_games
+        mean_distance_reward = distance_reward / completed_games
+        mean_velocity_reward = velocity_reward / completed_games
+        return True, success_rate, goal_completion_rate, mean_reward, mean_episode_length, mean_distance_reward, mean_velocity_reward
     
 
     def train(self) -> None:
@@ -351,7 +370,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         assert self.env is not None
 
         while self.num_timesteps < total_timesteps:
-            continue_training = self.collect_rollouts(
+            continue_training, success_rate, goal_completion_rate, mean_reward, mean_episode_length, mean_distance_reward, mean_velocity_reward = self.collect_rollouts(
                 self.env, callback, self.rollout_buffer, n_rollout_steps=self.n_steps)
 
             if continue_training is False:
@@ -363,6 +382,13 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
 
             # Display training infos
             if log_interval is not None and iteration % log_interval == 0:
+
+                # TODO check how ep_info_buffer is filled
+                # is it accurate although we do our special bootstrapping?
+                # no it is not, it is filled from the directly returned rewards
+                # not from the rewards in the info dict at final step
+
+
                 assert self.ep_info_buffer is not None
                 time_elapsed = max(
                     (time.time_ns() - self.start_time) / 1e9, sys.float_info.epsilon)
@@ -370,16 +396,24 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
                     (self.num_timesteps - self._num_timesteps_at_start) / time_elapsed)
                 self.logger.record("time/iterations",
                                    iteration, exclude="tensorboard")
-                if len(self.ep_info_buffer) > 0 and len(self.ep_info_buffer[0]) > 0:
+                '''if len(self.ep_info_buffer) > 0 and len(self.ep_info_buffer[0]) > 0:
                     self.logger.record(
                         "rollout/ep_rew_mean", safe_mean([ep_info["r"] for ep_info in self.ep_info_buffer]))
                     self.logger.record(
-                        "rollout/ep_len_mean", safe_mean([ep_info["l"] for ep_info in self.ep_info_buffer]))
+                        "rollout/ep_len_mean", safe_mean([ep_info["l"] for ep_info in self.ep_info_buffer]))'''
                 self.logger.record("time/fps", fps)
                 self.logger.record("time/time_elapsed",
                                    int(time_elapsed), exclude="tensorboard")
                 self.logger.record("time/total_timesteps",
                                    self.num_timesteps, exclude="tensorboard")
+                
+                self.logger.record("rollout/success_rate", success_rate)
+                self.logger.record("rollout/goal_completion_rate", goal_completion_rate)
+                self.logger.record("rollout/mean_reward", mean_reward)
+                self.logger.record("rollout/mean_episode_length", mean_episode_length)
+                self.logger.record("rollout/mean_distance_reward", mean_distance_reward)
+                self.logger.record("rollout/mean_velocity_reward", mean_velocity_reward)
+
                 self.logger.dump(step=self.num_timesteps)
 
             self.train()

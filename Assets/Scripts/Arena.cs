@@ -29,7 +29,7 @@ public class Arena : MonoBehaviour
     // from CarAgent.cs width was 512 and height was 256
     // we reduce the size to make it easier for the python code to handle the images
     // so more fit in the replay buffer
-    int resWidth = 168;
+    int resWidth = 336;
     int resHeight = 168;
     // resolution is quite high: https://www.raspberrypi.com/documentation/accessories/camera.html
 
@@ -64,7 +64,7 @@ public class Arena : MonoBehaviour
         gameManager.DestroyObstaclesOnMap();
     }
 
-    public string reset(MapType mt, bool jetBotSpawnpointRandom, bool singleGoalTraining)
+    public string reset(MapType mt, bool jetBotSpawnpointRandom, bool singleGoalTraining, int bootstrap_n)
     {
         if (this.car != null)
         {
@@ -86,13 +86,16 @@ public class Arena : MonoBehaviour
 
         GameObject car = gameManager.spawnJetbot(md);
 
+
         this.car = car;
+
 
         this.aIEngine = car.GetComponent<AIEngine>();
         this.carCam = car.GetComponentInChildren<Camera>();
 
 
         episodeManager = car.GetComponent<EpisodeManager>();
+        episodeManager.SetBootstrapN(bootstrap_n);
         episodeManager.StartEpisode();
 
         return GetCameraInput(this.carCam, this.resWidth, this.resHeight, "observation.png");

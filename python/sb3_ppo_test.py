@@ -27,7 +27,9 @@ asynch = False
 # false is of course much faster
 # the new modified PPO with the delayed rewards will not require this asynch and will be much faster
 
-env_kwargs = {"asynchronous":asynch, "spawn_point_random": False, "single_goal": False, "frame_stacking": 3, "equalize": True, "normalize_images": normalize_images}
+env_kwargs = {"asynchronous":asynch, "spawn_point_random": False, "single_goal": False, "frame_stacking": 3, 
+              "equalize": True, "normalize_images": normalize_images,
+              "bootstrap_n": 1}
 
 # Parallel environments
 vec_env = make_vec_env(unityGymEnv.BaseUnityCarEnv, n_envs=n_envs, env_kwargs=env_kwargs)

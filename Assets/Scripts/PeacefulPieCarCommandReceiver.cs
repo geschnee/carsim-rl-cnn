@@ -67,12 +67,12 @@ public class PeacefulPieCarCommandReceiver : MonoBehaviour
 
 
         [JsonRpcMethod]
-        string reset(int id, string mapType, bool spawnpointRandom, bool singleGoalTraining)
+        string reset(int id, string mapType, bool spawnpointRandom, bool singleGoalTraining, int bootstrap_n)
         {
             Debug.Log($"mapType: {mapType}");
             MapType mt = (MapType)Enum.Parse(typeof(MapType), mapType);
             Debug.Log($"mt: {mt}");
-            return arenas[id].reset(mt, spawnpointRandom, singleGoalTraining);
+            return arenas[id].reset(mt, spawnpointRandom, singleGoalTraining, bootstrap_n);
         }
 
 

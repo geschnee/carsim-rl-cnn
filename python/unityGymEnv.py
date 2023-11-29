@@ -55,9 +55,12 @@ class BaseUnityCarEnv(gym.Env):
     unity_comms: UnityComms = None
     instancenumber = 0
 
-    def __init__(self, width=168.0, height=168, port=9000, log=False, asynchronous=True, spawn_point_random=False, single_goal=False, frame_stacking=5, grayscale=True, normalize_images=False, equalize=False):
+    def __init__(self, width=336, height=168, port=9000, log=False, asynchronous=True, spawn_point_random=False, single_goal=False, frame_stacking=5, grayscale=True, normalize_images=False, equalize=False, bootstrap_n=7):
+        # height and width was previous 168, that way we could downsample and reach the same dimensions as the nature paper of 84 x 84
+        
         self.equalize = equalize
         self.downsampling = 2
+        self.bootstrap_n = bootstrap_n
 
         self.lighting = 1
 
@@ -247,7 +250,10 @@ class BaseUnityCarEnv(gym.Env):
             self.memory = np.zeros((self.height, self.width, self.channels_total), dtype=self.obs_dtype)
 
         obsstring = BaseUnityCarEnv.unity_comms.reset(mapType=self.mapType.name,
-            id=self.instancenumber, spawnpointRandom=self.spawn_point_random, singleGoalTraining=self.single_goal)
+            id=self.instancenumber, spawnpointRandom=self.spawn_point_random, singleGoalTraining=self.single_goal, bootstrap_n=self.bootstrap_n) 
+        # TODO lighting lighting=self.lighting)
+
+        
         info = {}
 
         new_obs = self.unityStringToObservation(obsstring)
@@ -370,6 +376,7 @@ class BaseUnityCarEnv(gym.Env):
         if log:
             img = Image.fromarray(pixels_rgb, 'RGB')
             img.save("imagelog/image_from_unity.png")
+            img.save("expose_images/agent_image_from_unity.png")
 
         pixels_float = np.array(im, dtype=np.float32)
         #print(f'unit img float max {np.max(pixels_float)} min {np.min(pixels_float)}', flush=True)
@@ -390,6 +397,7 @@ class BaseUnityCarEnv(gym.Env):
             pixels_downsampled_uint8 = pixels_downsampled.astype(np.uint8)
             im = Image.fromarray(pixels_downsampled_uint8, 'RGB')
             im.save("imagelog/image_from_unity_downsampled.png")
+            im.save("expose_images/agent_downsampled.png")
 
         pixels_gray = color.rgb2gray(pixels_downsampled)
 
@@ -398,7 +406,8 @@ class BaseUnityCarEnv(gym.Env):
         if log:
             pixels_gray_uint8 = pixels_gray.astype(np.uint8)
             im = Image.fromarray(pixels_gray_uint8, 'L') # https://pillow.readthedocs.io/en/stable/handbook/concepts.html#concept-modes
-            im.save("imagelog/image_from_unity_gray.png")
+            im.save("imagelog/image_from_unity_grey.png")
+            im.save("expose_images/agent_grey.png")
 
         if self.equalize:
             assert self.grayscale, f'equalize only works with grayscale images'
@@ -408,7 +417,7 @@ class BaseUnityCarEnv(gym.Env):
                 pixels_equalized_uint8 = pixels_equalized.astype(np.uint8)
                 im = Image.fromarray(pixels_equalized_uint8, 'L')
                 im.save("imagelog/image_from_unity_equalized.png")
-
+                im.save("expose_images/agent_equalized.png")
 
         if self.grayscale:
             pixels_result = pixels_gray
@@ -444,7 +453,7 @@ class BaseUnityCarEnv(gym.Env):
         im.save("savepath.png")
 
 
-    def get_arena_screenshot(self, savepath):
+    def get_arena_screenshot(self, savepath="arena_screenshot.png"):
         screenshot = BaseUnityCarEnv.unity_comms.getArenaScreenshot(id=self.instancenumber)
         base64_bytes = screenshot.encode('ascii')
         message_bytes = base64.b64decode(base64_bytes)
@@ -452,6 +461,7 @@ class BaseUnityCarEnv(gym.Env):
         im = Image.open(io.BytesIO(message_bytes))
 
         im.save(savepath)
+        return im
 
 if __name__ == '__main__':
 

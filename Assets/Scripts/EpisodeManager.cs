@@ -17,7 +17,8 @@ public class EpisodeManager : MonoBehaviour
     public float allowedTime = 20f; // TODO was 10f
     public float duration = 0f;
 
-    public int reward_bootstrap_n = 4;
+    int reward_bootstrap_n;
+    float reward_bootstrap_discount = 0.9f;
 
     private AIEngine aIEngine;
     private GameObject finishLine;
@@ -34,11 +35,11 @@ public class EpisodeManager : MonoBehaviour
 
 
 
-    private int step = -1;
-    private float cumReward = 0f;
-    private float distanceReward = 0f;
-    private float velocityReward = 0f;
-    public float rewardSinceLastGetReward = 0f;
+    private int step;
+    private float cumReward;
+    private float distanceReward;
+    private float velocityReward;
+    public float rewardSinceLastGetReward;
 
     private string endEvent = "notEnded";
     private float lastDistance;
@@ -62,6 +63,11 @@ public class EpisodeManager : MonoBehaviour
 
 
         //PrintIndicators();
+    }
+
+    public void SetBootstrapN(int n)
+    {
+        this.reward_bootstrap_n = n;
     }
 
     public void IncreaseSteps()
@@ -182,6 +188,7 @@ public class EpisodeManager : MonoBehaviour
         info.Add("duration", this.duration.ToString());
         info.Add("cumreward", this.cumReward.ToString());
         info.Add("passedGoals", this.passedGoals.ToString());
+        info.Add("numberOfGoals", this.centerIndicators.Count.ToString());
         info.Add("distanceReward", this.distanceReward.ToString());
         info.Add("velocityReward", this.velocityReward.ToString());
         info.Add("step", this.step.ToString());
@@ -205,7 +212,10 @@ public class EpisodeManager : MonoBehaviour
                 {
                     break; // there are no more steps/rewards to bootstrap
                 }
-                reward += this.step_rewards[index];
+
+                // TODO do we need some kind of discount for bootstrapped rewards?
+                // yes i think so, see the RL book
+                reward += Math.Pow(this.reward_bootstrap_discount, index) * this.step_rewards[index];
 
             }
             bootstrapped_rewards.Add(reward);
@@ -258,7 +268,11 @@ public class EpisodeManager : MonoBehaviour
         Vector3 nextGoal = this.centerIndicators[this.passedGoals].transform.position;
         Vector3 nextGoalDirection = nextGoal - this.transform.position;
         nextGoalDirection.y = 0; // set y difference to zero (we only care about the distance in the xz plane)
-        // y is the horizontal difference
+                                 // y is the horizontal difference
+
+
+        // TODO is the reward correct for the timestep when the egant passes a goal?
+
 
         return nextGoalDirection.magnitude;
 
@@ -333,7 +347,7 @@ public class EpisodeManager : MonoBehaviour
         AddReward(100f);
         IncreasePassedGoals();
 
-        EndEpisode("completeMap");
+        EndEpisode("success");
     }
 
     public void hitWall()

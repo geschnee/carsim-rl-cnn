@@ -41,7 +41,7 @@ def run(args: argparse.Namespace) -> None:
     pygame.init()
 
     # creating display
-    gameDisplay = pygame.display.set_mode((512, 256))
+    gameDisplay = pygame.display.set_mode((1024, 512))
 
     right_acceleration, left_acceleration = 0, 0
 
@@ -135,6 +135,11 @@ def run(args: argparse.Namespace) -> None:
             #print(f'max and min of img {np.max(img)} {np.min(img)}', flush=True)
             
             gameDisplay.blit(img, (0, 0))
+
+            arenaImg = env.get_arena_screenshot()
+            arenaImg = np.rot90(arenaImg, k=1)
+            arenaImg = pygame.surfarray.make_surface(arenaImg)
+            gameDisplay.blit(arenaImg, (256, 0))
 
             pygame.display.update()
 
