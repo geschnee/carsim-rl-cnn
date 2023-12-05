@@ -21,7 +21,7 @@ static class Constants
     public const float RIGHTMOST_Z = 0f;
     public const float Z_WIDTH = 10.5f;
 
-    public const float SPAWNHEIGHT_Y = 1f;
+    public const float SPAWNHEIGHT_Y = 0f;
     public const float MINWIDTH_GOAL = 2;
     public const float MAXWIDTH_GOAL = 4;
     public const int MINXDISTANCEGOALS = 4;
@@ -50,7 +50,6 @@ public class Goal
 {
     public GameObject ObstacleGO;
     public Vector3[] Coords;
-
 
     public Goal(GameObject obstacle, Vector3[] coords, GameObject goalPassedGameObject, GameObject goalMissedCheckpointWall)
     {
@@ -82,8 +81,6 @@ public class Goal
         // middleIndicator
         Vector3 midPoint = this.GetMidPoint(this.Coords[0], this.Coords[1]);
         GameObject.Instantiate(middleIndicator, midPoint, goalRotationQuaternion, goalParentGameObject.transform);
-        // TODO in reality we don't need this, the position of this is equal to the pos of GoalPassedCheckpointWall
-
 
         //instantiate passed checkpoint wall between obstacles 
         Vector3 pos = coords1 - coords0;
@@ -253,7 +250,7 @@ public class ObstacleMapManager : MonoBehaviour
         float zRandomCoord = (float)rnd.NextDouble() * (zRightMax - zLeftMax) + zLeftMax;
         float xRandomCoord = (float)rnd.NextDouble() * (maxXLocal - minXLocal) + minXLocal;
         Vector3 spawnPoint = new(xRandomCoord, 1, zRandomCoord);
-        this.JetBotXSpawn = xRandomCoord;
+        //this.JetBotXSpawn = xRandomCoord;
 
 
         Debug.LogWarning($"JetBot spawn range x {minXLocal} - {maxXLocal} z {zLeftMax} - {zRightMax}");
@@ -261,8 +258,28 @@ public class ObstacleMapManager : MonoBehaviour
         return spawnPoint;
     }
 
+    private Vector3 GetJetBotRandomCoordsEval()
+    {
+        // always spawn on the fixed x line
+
+        //local goal post coordinates depend arena position
+        float zLeftMax = (2 + this.gameManagerPosition.z);
+        // left post of goal max 
+        float zRightMax = (this.gameManagerPosition.z + Constants.Z_WIDTH - 2);
+        int minXLocal = (int)(Constants.X_Map_MIN + this.gameManagerPosition.x);
+
+        Random rnd = new Random();
+        float zRandomCoord = (float)rnd.NextDouble() * (zRightMax - zLeftMax) + zLeftMax;
+        Vector3 spawnPoint = new(minXLocal, 1, zRandomCoord);
+
+
+        Debug.LogWarning($"Eval JetBot spawn x {minXLocal} - range z {zLeftMax} - {zRightMax}");
+
+        return spawnPoint;
+    }
 
     // TODO was this method used in Maximilian code before?
+    // yes, in CarAgent random spawn
     public Quaternion JetBotRandomRotation()
     {
         Quaternion originalQuaternion = new Quaternion(0, 1, 0, 1);
@@ -323,15 +340,15 @@ public class ObstacleMapManager : MonoBehaviour
 
 
         this.centerIndicators = new List<GameObject>();
-        Debug.Log($"allGoals {allGoals}");
-        Debug.Log($"allGoals child amount {allGoals.transform.childCount}");
+        //Debug.Log($"allGoals {allGoals}");
+        //Debug.Log($"allGoals child amount {allGoals.transform.childCount}");
 
         this.centerIndicators = new List<GameObject>();
 
         for (int i = 0; i < allGoals.transform.childCount; i++)
         {
             GameObject goal = allGoals.transform.GetChild(i).gameObject;
-            Debug.Log($"goal {goal}");
+            //Debug.Log($"goal {goal}");
 
             if (i == allGoals.transform.childCount - 1)
             {
@@ -363,10 +380,7 @@ public class ObstacleMapManager : MonoBehaviour
 
     public void DestroyMap()
     {
-        //DestroyImmediate(this.allGoals);
         Destroy(this.allGoals);
-
-
     }
 
     public void DestroyObstacles()
@@ -418,14 +432,23 @@ public class ObstacleMapManager : MonoBehaviour
     public MapData GenerateObstacleMap(MapType mapType, int id, bool spawnRandom, bool singleGoalTraining)
     {
 
+
         Vector3 jetBotSpawnPosition;
-        if (spawnRandom)
+        if (spawnRandom == false)
+        {
+            jetBotSpawnPosition = this.GetJetBotSpawnCoords();
+
+        }
+        else if (mapType == MapType.random)
         {
             jetBotSpawnPosition = this.GetJetBotRandomCoords();
+            Debug.Log($"Random JetBot spawn position {jetBotSpawnPosition}");
         }
         else
         {
-            jetBotSpawnPosition = this.GetJetBotSpawnCoords();
+            // the mapType is not random (it is an evaluation track)
+            // we cannot use the same random spawn for these
+            jetBotSpawnPosition = this.GetJetBotRandomCoordsEval();
         }
 
         Goal[] obstacles = new Goal[0];
@@ -450,15 +473,15 @@ public class ObstacleMapManager : MonoBehaviour
                 break;
             case MapType.twoGoalLanesBlueFirstRightMedium:
                 obstacles = this.GenerateTwoGoalLanesMapMedium(true, false);
-                Debug.Log("Two lanes map with blue obstacles first generated");
+                //Debug.Log("Two lanes map with blue obstacles first generated");
                 break;
             case MapType.twoGoalLanesRedFirstLeftMedium:
                 obstacles = this.GenerateTwoGoalLanesMapMedium(false, true);
-                Debug.Log("Two lanes map with red obstacles first generated");
+                //Debug.Log("Two lanes map with red obstacles first generated");
                 break;
             case MapType.twoGoalLanesRedFirstRightMedium:
                 obstacles = this.GenerateTwoGoalLanesMapMedium(false, false);
-                Debug.Log("Two lanes map with red obstacles first generated");
+                //Debug.Log("Two lanes map with red obstacles first generated");
                 break;
 
 
@@ -468,15 +491,15 @@ public class ObstacleMapManager : MonoBehaviour
                 break;
             case MapType.twoGoalLanesBlueFirstRightHard:
                 obstacles = this.GenerateTwoGoalLanesMapHard(true, false);
-                Debug.Log("Two lanes map with blue obstacles first generated");
+                //Debug.Log("Two lanes map with blue obstacles first generated");
                 break;
             case MapType.twoGoalLanesRedFirstLeftHard:
                 obstacles = this.GenerateTwoGoalLanesMapHard(false, true);
-                Debug.Log("Two lanes map with red obstacles first generated");
+                //Debug.Log("Two lanes map with red obstacles first generated");
                 break;
             case MapType.twoGoalLanesRedFirstRightHard:
                 obstacles = this.GenerateTwoGoalLanesMapHard(false, false);
-                Debug.Log("Two lanes map with red obstacles first generated");
+                //Debug.Log("Two lanes map with red obstacles first generated");
                 break;
         }
 
@@ -506,7 +529,7 @@ public class ObstacleMapManager : MonoBehaviour
         {
             //first goal random distance to JetBot
             minXLocal = (int)(jetBotSpawnPosition.x + rnd.Next(Constants.MINXDISTANCEGOALS, Constants.MAXXDISTANCEGOALS));
-
+            Debug.Log($"minXLocal {minXLocal} maxXLocal {maxXLocal}");
         }
 
         // choose random distance between goals every round

@@ -120,7 +120,7 @@ public class GameManager : MonoBehaviour
 		// TODO rewrite to use the passed parameters
 		// I do not want magic in this function/class here
 
-		Debug.Log($"InitializeMapWithObstacles() called, currentMapIndex: {currentMapIndex}, idOfCurrentRun: {idOfCurrentRun}");
+		//Debug.Log($"InitializeMapWithObstacles() called, currentMapIndex: {currentMapIndex}, idOfCurrentRun: {idOfCurrentRun}");
 
 		MapType mapType = currentMapIndex;
 

@@ -241,7 +241,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
                 if done:
                     completed_games += 1
                 
-                    if infos[idx]["endEvent"] == "success":
+                    if infos[idx]["endEvent"] == "Success":
                         successfully_completed_games += 1
                     successfully_passed_goals += int(infos[idx]["passedGoals"])
                     number_of_goals += int(infos[idx]["numberOfGoals"])
@@ -326,20 +326,26 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
 
         callback.on_rollout_end()
 
-        assert completed_games>0, "not a single playout was complete, finished too fast"
+        #assert completed_games>0, "not a single playout was complete, finished too fast"
 
-        success_rate = successfully_completed_games / completed_games
+        
         goal_completion_rate = successfully_passed_goals / number_of_goals
+
+        
+        if completed_games != 0:
+            success_rate = successfully_completed_games / completed_games
+            mean_reward = total_reward / completed_games
+            mean_episode_length = total_timesteps / completed_games
+            mean_distance_reward = distance_reward / completed_games
+            mean_velocity_reward = velocity_reward / completed_games
+            mean_other_reward = other_reward / completed_games
+        else:
+            success_rate, mean_reward, mean_episode_length, mean_distance_reward, mean_velocity_reward, mean_other_reward = 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+
 
         if successfully_passed_goals > 0:
             print(f'passed a goal succesfully, rate is {goal_completion_rate}')
             assert goal_completion_rate > 0.0, "goal completion rate is 0 although a goal was passed"
-
-        mean_reward = total_reward / completed_games
-        mean_episode_length = total_timesteps / completed_games
-        mean_distance_reward = distance_reward / completed_games
-        mean_velocity_reward = velocity_reward / completed_games
-        mean_other_reward = other_reward / completed_games
         return True, success_rate, goal_completion_rate, mean_reward, mean_episode_length, mean_distance_reward, mean_velocity_reward, mean_other_reward
     
 
@@ -374,8 +380,11 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         assert self.env is not None
 
         while self.num_timesteps < total_timesteps:
+            # collect_rollouts
+            cr_time = time.time() 
             continue_training, success_rate, goal_completion_rate, mean_reward, mean_episode_length, mean_distance_reward, mean_velocity_reward, mean_other_reward = self.collect_rollouts(
                 self.env, callback, self.rollout_buffer, n_rollout_steps=self.n_steps)
+            cr_time = time.time() - cr_time
 
             if continue_training is False:
                 break
@@ -384,13 +393,11 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
             self._update_current_progress_remaining(
                 self.num_timesteps, total_timesteps)
 
+
             # Display training infos
             if log_interval is not None and iteration % log_interval == 0:
-
-                # TODO check how ep_info_buffer is filled
-                # is it accurate although we do our special bootstrapping?
-                # no it is not, it is filled from the directly returned rewards
-                # not from the rewards in the info dict at final step
+                # log interval is 0, thus after every ollect rollouts the tb logging is done
+                # the log x axis is self.num_timesteps, which is modified in collect_rollouts
 
 
                 assert self.ep_info_buffer is not None
@@ -411,6 +418,8 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
                 self.logger.record("time/total_timesteps",
                                    self.num_timesteps, exclude="tensorboard")
                 
+
+                self.logger.record("time/collection_time_seconds", cr_time)
                 self.logger.record("rollout/success_rate", success_rate)
                 self.logger.record("rollout/goal_completion_rate", goal_completion_rate)
                 self.logger.record("rollout/mean_reward", mean_reward)
@@ -423,7 +432,20 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
 
                 self.logger.dump(step=self.num_timesteps)
 
+            train_time = time.time()
             self.train()
+            self.logger.record("time/train_time_seconds", time.time() - train_time)
+
+            # model eval 
+            if log_interval is not None and iteration % log_interval == 0:
+
+                eval_time = time.time()
+                num_evals_per_difficulty = 10
+                self.eval_model_track(num_evals_per_difficulty, "easy")
+                self.eval_model_track(num_evals_per_difficulty, "medium")
+                self.eval_model_track(num_evals_per_difficulty, "hard")
+
+                self.logger.record("time/eval_time_seconds", time.time() - eval_time)
 
         callback.on_training_end()
 
@@ -433,6 +455,98 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         state_dicts = ["policy", "policy.optimizer"]
 
         return state_dicts, []
+    
+    def eval_model_track(
+        self: SelfOnPolicyAlgorithm,
+        n_eval_episodes: int = 10,
+        difficulty: str = "easy",
+        # TODO also the lighting level and random spawn position should be varied
+    ):
+        env = self.env
+        n_envs = env.num_envs
+        episode_rewards = []
+        episode_lengths = []
+        success_count, finished_episodes, passed_goals, number_of_goals = 0, 0, 0, 0
+
+        episode_counts = np.zeros(n_envs, dtype="int")
+        # Divides episodes among different sub environments in the vector as evenly as possible
+        episode_count_targets = np.array([(n_eval_episodes + i) // n_envs for i in range(n_envs)], dtype="int")
+        # episode_count_targets represents the amount of games that have to be played in the corresponding env
+        # the sum of these values is equal to n_eval_episodes
+
+        current_rewards = np.zeros(n_envs)
+        current_lengths = np.zeros(n_envs, dtype="int")
+
+        
+        env.env_method(
+            method_name="reset_difficulty",
+            indices=range(n_envs),
+            difficulty=difficulty,
+        )
+
+        while (episode_counts < episode_count_targets).any():
+    
+            with th.no_grad():
+                # Convert to pytorch tensor or to TensorDict
+                fresh_obs = get_obs(env)
+                obs_tensor = obs_as_tensor(fresh_obs, self.device)
+                actions, values, log_probs = self.policy(obs_tensor)
+            actions = actions.cpu().numpy()
+
+            # Rescale and perform action
+            clipped_actions = actions
+            # Clip the actions to avoid out of bound error
+            if isinstance(self.action_space, spaces.Box):
+                clipped_actions = np.clip(
+                    actions, self.action_space.low, self.action_space.high)
+            
+            observations, rewards, dones, infos = env.step(clipped_actions)
+            
+            current_lengths += 1
+            for i in range(n_envs):
+                if episode_counts[i] < episode_count_targets[i]:
+
+                    if dones[i]:
+                        
+                        episode_rewards.append(float(infos[i]["cumreward"]))
+                        episode_lengths.append(current_lengths[i])
+                        episode_counts[i] += 1
+                        current_rewards[i] = 0
+                        current_lengths[i] = 0
+                        finished_episodes += 1
+                        passed_goals += int(infos[i]["passedGoals"])
+                        number_of_goals += int(infos[i]["numberOfGoals"])
+
+                        print(f'end event: {infos[i]["endEvent"]}')
+
+                        if infos[i]["endEvent"] == "Success":
+                            success_count += 1
+
+                        # due to auto reset we have to reset the env again with the right parameters:
+                        env.env_method(
+                            method_name="reset_difficulty",
+                            indices=[i],
+                            difficulty=difficulty,
+                        )
+
+        assert np.sum(episode_counts) == n_eval_episodes, f"not all episodes were finished, {np.sum(episode_counts)} != {n_eval_episodes}"
+        assert finished_episodes == n_eval_episodes, f"not all episodes were finished, {finished_episodes} != {n_eval_episodes}"
+        
+
+        print(f'episode_rewards: {episode_rewards}')
+        mean_reward = np.mean(episode_rewards)
+        std_reward = np.std(episode_rewards)
+        
+        success_rate = success_count / n_eval_episodes
+        rate_of_passed_goals = passed_goals / number_of_goals
+
+        self.logger.record(f'eval/{difficulty}_mean_reward', mean_reward)
+        self.logger.record(f'eval/{difficulty}_std_reward', std_reward)
+        self.logger.record(f'eval/{difficulty}_success_rate', success_rate)
+        self.logger.record(f'eval/{difficulty}_rate_passed_goals', rate_of_passed_goals)
+
+
+        return mean_reward, std_reward, success_rate
 
 def get_obs(env):
     # env is a vectorized BaseUnityCarEnv
@@ -447,3 +561,4 @@ def get_obs(env):
 
     obs = env._obs_from_buf()
     return env.transpose_observations(obs)
+

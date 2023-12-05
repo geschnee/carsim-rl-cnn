@@ -35,19 +35,52 @@ class StepReturnObject:
 
 from enum import Enum
 class MapType(Enum):
-    random = 0,
-    easyGoalLaneMiddleBlueFirst = 1,
-    easyGoalLaneMiddleRedFirst = 2,
+    random = 0
+    easyGoalLaneMiddleBlueFirst = 1
+    easyGoalLaneMiddleRedFirst = 2
 
-    twoGoalLanesBlueFirstLeftMedium = 3,
-    twoGoalLanesBlueFirstRightMedium = 4,
-    twoGoalLanesRedFirstLeftMedium = 5,
-    twoGoalLanesRedFirstRightMedium = 6,
+    twoGoalLanesBlueFirstLeftMedium = 3
+    twoGoalLanesBlueFirstRightMedium = 4
+    twoGoalLanesRedFirstLeftMedium = 5
+    twoGoalLanesRedFirstRightMedium = 6
 
-    twoGoalLanesBlueFirstLeftHard = 7,
-    twoGoalLanesBlueFirstRightHard = 8,
-    twoGoalLanesRedFirstLeftHard = 9,
-    twoGoalLanesRedFirstRightHard = 10,
+    twoGoalLanesBlueFirstLeftHard = 7
+    twoGoalLanesBlueFirstRightHard = 8
+    twoGoalLanesRedFirstLeftHard = 9
+    twoGoalLanesRedFirstRightHard = 10
+
+    @classmethod
+    def getRandomEasy(myEnum):
+        return MapType(np.random.choice([1,2]))
+    
+    @classmethod
+    def getRandomMedium(myEnum):
+        return MapType(np.random.choice([3,4,5,6]))
+    
+    @classmethod
+    def getRandomHard(myEnum):
+        return MapType(np.random.choice([7,8,9,10]))
+    
+    @classmethod
+    def getMapTypeFromDifficulty(myEnum, difficulty):
+        if difficulty == "easy":
+            return myEnum.getRandomEasy()
+        elif difficulty == "medium":
+            return myEnum.getRandomMedium()
+        elif difficulty == "hard":
+            return myEnum.getRandomHard()
+        else:
+            assert False, f'unknown difficulty {difficulty}'
+
+class EndEvent(Enum):
+    NotEnded = 0
+    Success = 1
+    OutOfTime = 2
+    WallHit = 3
+    GoalMissed = 4
+    RedObstacle = 5
+    BlueObstacle = 6
+
 
 
 class BaseUnityCarEnv(gym.Env):
@@ -177,7 +210,21 @@ class BaseUnityCarEnv(gym.Env):
         info_dict["bootstrapped_rewards"] = stepObj["bootstrapped_rewards"]
 
         self.step_nr += 1
-        assert self.step_nr == int(info_dict["step"]), f'self.step {self.step_nr} info_dict["step"] {info_dict["step"]}'
+
+        if self.step_nr != int(info_dict["step"]):
+            print(f'old step mistake step {self.step_mistake_step}, current mistake step {self.step_nr}, env {self.instancenumber}', flush=True)
+            self.step_mistakes += 1
+            self.step_mistake_step = self.step_nr
+            info_dict["step"] = self.step_nr
+
+            # if step mistake happens in one env, it will happen for all subsequent step calls
+           
+            print(f'step_mistakes {self.step_mistakes}', flush=True)
+            # TODO how often does this mistake occur?
+        #assert self.step_nr == int(info_dict["step"]), f'self.step {self.step_nr} info_dict["step"] {info_dict["step"]}'
+
+        assert info_dict["amount_of_steps"] == info_dict["amount_of_steps_based_on_rewardlist"], f'info_dict["amount_of_steps"] {info_dict["amount_of_steps"]}, baed on rewardlist {info_dict["amount_of_steps_based_on_rewardlist"]}'
+
 
         # print(
         #    f'left_acceleration {left_acceleration} right_acceleration {right_acceleration}, reward {reward}')
@@ -240,21 +287,28 @@ class BaseUnityCarEnv(gym.Env):
         # https://www.gymlibrary.dev/content/api/#stepping
         # TODO check if there is a stable baselines 3 version ready for this new API
 
-    def reset(self, seed=None):
+    def reset(self, seed=None, mapTypeString = None):
         super().reset(seed=seed)  # gynasium migration guide https://gymnasium.farama.org/content/migration-guide/
 
         self.step_nr = -1
+        self.step_mistakes = 0
+        self.step_mistake_step = -1
 
         
         if self.frame_stacking > 1:
             self.memory = np.zeros((self.height, self.width, self.channels_total), dtype=self.obs_dtype)
 
-        obsstring = BaseUnityCarEnv.unity_comms.reset(mapType=self.mapType.name,
+        if mapTypeString is not None:
+            mp = mapTypeString
+        else:
+            mp = self.mapType.name
+
+        obsstring = BaseUnityCarEnv.unity_comms.reset(mapType=mp,
             id=self.instancenumber, spawnpointRandom=self.spawn_point_random, singleGoalTraining=self.single_goal, bootstrap_n=self.bootstrap_n) 
         # TODO lighting lighting=self.lighting)
 
         
-        info = {}
+        info = {"mapType": mp}
 
         new_obs = self.unityStringToObservation(obsstring)
 
@@ -263,6 +317,12 @@ class BaseUnityCarEnv(gym.Env):
 
         return new_obs, info
     
+    def reset_difficulty(self, difficulty):
+        mpTest = MapType(2)
+
+        mapType = MapType.getMapTypeFromDifficulty(difficulty)
+        return self.reset(mapTypeString=mapType.name)
+
 
 
     # TODO try this wrapper instead: https://github.com/DLR-RM/stable-baselines3/blob/b413f4c285bc3bfafa382559b08ce9d64a551d26/stable_baselines3/common/vec_env/vec_frame_stack.py#L12

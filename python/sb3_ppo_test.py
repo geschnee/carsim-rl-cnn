@@ -27,7 +27,7 @@ asynch = False
 # false is of course much faster
 # the new modified PPO with the delayed rewards will not require this asynch and will be much faster
 
-env_kwargs = {"asynchronous":asynch, "spawn_point_random": False, "single_goal": False, "frame_stacking": 3, 
+env_kwargs = {"asynchronous":asynch, "spawn_point_random": True, "single_goal": False, "frame_stacking": 3, 
               "equalize": True, "normalize_images": normalize_images,
               "bootstrap_n": 1}
 
@@ -54,7 +54,7 @@ modelname="ppo_test_trained_random"
 continue_training = False
 if continue_training:
     print(f'loading model from file before learning')
-    model = PPO.load(modelname, env=vec_env, tensorboard_log="./tmp",
+    model = algo.load(modelname, env=vec_env, tensorboard_log="./tmp",
                      n_epochs=n_epochs, batch_size=batch_size)
 
 # TODO model save callback

@@ -30,7 +30,7 @@ public class AIEngine : MonoBehaviour
 
     public void Start()
     {
-        Debug.Log($"AIEngine started");
+        //Debug.Log($"AIEngine started");
         //Debug.Log($"left front wheeel rotation {frontLeftWheelCollider.transform.rotation.eulerAngles}");
         //Debug.Log($"Motor torque start left {frontLeftWheelCollider.motorTorque} right {frontRightWheelCollider.motorTorque}");
 

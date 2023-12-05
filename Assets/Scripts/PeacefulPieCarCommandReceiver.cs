@@ -69,9 +69,9 @@ public class PeacefulPieCarCommandReceiver : MonoBehaviour
         [JsonRpcMethod]
         string reset(int id, string mapType, bool spawnpointRandom, bool singleGoalTraining, int bootstrap_n)
         {
-            Debug.Log($"mapType: {mapType}");
+            //Debug.Log($"mapType: {mapType}");
             MapType mt = (MapType)Enum.Parse(typeof(MapType), mapType);
-            Debug.Log($"mt: {mt}");
+            //Debug.Log($"mt: {mt}");
             return arenas[id].reset(mt, spawnpointRandom, singleGoalTraining, bootstrap_n);
         }
 
@@ -110,8 +110,6 @@ public class PeacefulPieCarCommandReceiver : MonoBehaviour
         void startArena(int id)
         {
             // spawn a new arena including gameManager and everything
-
-            Debug.LogWarning($"startArena {id}");
 
             if (id > arenas.Count)
             {

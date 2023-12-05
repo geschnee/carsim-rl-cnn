@@ -56,7 +56,7 @@ public class Arena : MonoBehaviour
     {
         if (this.car != null)
         {
-            Debug.Log($"will destroy existing car");
+            //Debug.Log($"will destroy existing car");
             Destroy(this.car);
         }
 
@@ -68,7 +68,7 @@ public class Arena : MonoBehaviour
     {
         if (this.car != null)
         {
-            Debug.Log($"will destroy existing car");
+            //Debug.Log($"will destroy existing car");
             this.car.SetActive(false);
             // else there was strange behaviour when the new objects were spawned
             // it looked like there was collision detection for the Destroyed car
@@ -78,7 +78,7 @@ public class Arena : MonoBehaviour
         // destroy previous obstacles:
         gameManager.DestroyObstaclesOnMap();
 
-        Debug.Log($"startEpisode");
+        //Debug.Log($"startEpisode");
 
         // spawn new obstacles:
         MapData md = gameManager.InitializeMapWithObstacles(mt, 0, jetBotSpawnpointRandom, singleGoalTraining);
@@ -143,7 +143,7 @@ public class Arena : MonoBehaviour
 
         float reward_during_waiting = new_reward - rewardAsync;
 
-        Debug.Log($"reward during waiting: {reward_during_waiting}");
+        //Debug.Log($"reward during waiting: {reward_during_waiting}");
 
         bool done = episodeManager.IsTerminated();
         bool terminated = episodeManager.IsTerminated();

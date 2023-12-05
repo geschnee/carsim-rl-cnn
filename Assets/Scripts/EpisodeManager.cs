@@ -8,28 +8,53 @@ using System;
 using System.IO;
 using System.Linq;
 
+
+public enum EndEvent
+{
+    NotEnded = 0,
+    Success = 1,
+    OutOfTime = 2,
+    WallHit = 3,
+    GoalMissed = 4,
+    RedObstacle = 5,
+    BlueObstacle = 6
+}
+
 // this script counts the obtained rewards and ends the episode if the time is up or another end event is triggered
 // this responsibility was previously a part of the CheckpointManager and other scripts
 public class EpisodeManager : MonoBehaviour
 {
 
     // for debugging its public, then you can lift the TimeLimit in unity
-    public float allowedTime = 20f; // TODO was 10f
-    public float duration = 0f;
+    public float allowedTimeDefault = 20f; // TODO was 10f
+    public float allowedTimePerGoal = 10f; // TODO was 10f
 
-    int reward_bootstrap_n;
+    // multiply by some constant, the reward is very small
+    float distanceCoefficient = 10f;
+
+    public float finishCheckpointReward = 100f;
+    public float wallHitReward = -1f;
+    public float obstacleHitReward = -1f;
+    public float timeoutReward = -1f;
+    public float goalMissedReward = -1f;
+    public float goalPassedReward = 1f;
+
+    int reward_bootstrap_n; // this is set by python env
     float reward_bootstrap_discount = 0.9f;
+
+    public float duration;
+    public float allowedTime;
 
     private AIEngine aIEngine;
     private GameObject finishLine;
 
-    //for data frame
-    private List<double> velocities = new List<double>();
+
     private DataFrameManager df;
 
     public int passedGoals;
 
     private bool episodeRunning = false;
+    private EndEvent endEvent;
 
     private Vector3 lastPosition;
 
@@ -42,15 +67,12 @@ public class EpisodeManager : MonoBehaviour
     private float otherReward;
     public float rewardSinceLastGetReward;
 
-    private string endEvent = "notEnded";
+
     private float lastDistance;
 
     public List<GameObject> centerIndicators = new List<GameObject>();
 
     private GameManager gameManager;
-
-    // multiply by some constant, the reward is very small
-    float distanceCoefficient = 10f;
 
     List<float> step_rewards;
     // the index indicates the step in which the reward was found
@@ -60,10 +82,6 @@ public class EpisodeManager : MonoBehaviour
         this.aIEngine = this.GetComponent<AIEngine>();
 
         gameManager = this.transform.parent.Find("GameManager").GetComponent<GameManager>();
-
-
-
-        //PrintIndicators();
     }
 
     public void SetBootstrapN(int n)
@@ -97,7 +115,6 @@ public class EpisodeManager : MonoBehaviour
 
     public void StartEpisode()
     {
-        Debug.LogWarning($"StartEpisode");
         this.duration = 0f;
         this.passedGoals = 0;
         this.cumReward = 0f;
@@ -107,15 +124,13 @@ public class EpisodeManager : MonoBehaviour
         this.rewardSinceLastGetReward = 0f;
         this.lastPosition = this.transform.position;
         this.step = -1;
+        this.allowedTime = this.allowedTimeDefault;
+        this.endEvent = EndEvent.NotEnded;
         initializeStepRewards();
 
         this.PrepareAgent();
 
-        //PrintIndicators();
-
         this.lastDistance = GetDistanceToNextGoal();
-
-        //Debug.Log($"last distance in startepisode {this.lastDistance}");
 
         this.episodeRunning = true;
     }
@@ -126,20 +141,7 @@ public class EpisodeManager : MonoBehaviour
         this.step_rewards.Add(0); // for rewards for step 0
     }
 
-    private void PrintIndicators()
-    {
-
-        Debug.Log($"centerIndicators found: {this.centerIndicators.Count}");
-
-        return;
-        /*for (int i = 0; i < this.centerIndicators.Count; i++)
-        {
-            Debug.Log($"centerIndicators[{i}] {this.centerIndicators[i]}");
-            Debug.Log($"{this.centerIndicators[i].transform.parent.gameObject.name}");
-        }*/
-    }
-
-    public void EndEpisode(string endEvent)
+    public void EndEpisode(EndEvent endEvent)
     {
         if (this.episodeRunning == false)
         {
@@ -147,7 +149,7 @@ public class EpisodeManager : MonoBehaviour
         }
         else
         {
-            Debug.Log($"EndEpisode called {endEvent}");
+            //Debug.Log($"EndEpisode called {endEvent}");
         }
 
         this.episodeRunning = false;
@@ -171,7 +173,7 @@ public class EpisodeManager : MonoBehaviour
         return !this.episodeRunning;
     }
 
-    public string GetEndEvent()
+    private string GetEndEvent()
     {
         if (this.episodeRunning == true)
         {
@@ -179,14 +181,13 @@ public class EpisodeManager : MonoBehaviour
             Debug.Log("GetEndEvent called but episode is still running");
         }
 
-
-        return this.endEvent;
+        return this.endEvent.ToString();
     }
 
     public Dictionary<string, string> GetInfo()
     {
         Dictionary<string, string> info = new Dictionary<string, string>();
-        info.Add("endEvent", this.endEvent);
+        info.Add("endEvent", this.endEvent.ToString());
         info.Add("duration", this.duration.ToString());
         info.Add("cumreward", this.cumReward.ToString());
         info.Add("passedGoals", this.passedGoals.ToString());
@@ -196,6 +197,7 @@ public class EpisodeManager : MonoBehaviour
         info.Add("velocityReward", this.velocityReward.ToString());
         info.Add("step", this.step.ToString());
         info.Add("amount_of_steps", (this.step + 1).ToString());
+        info.Add("amount_of_steps_based_on_rewardlist", this.step_rewards.Count.ToString());
 
         return info;
     }
@@ -216,9 +218,9 @@ public class EpisodeManager : MonoBehaviour
                     break; // there are no more steps/rewards to bootstrap
                 }
 
-                // TODO do we need some kind of discount for bootstrapped rewards?
+                // do we need some kind of discount for bootstrapped rewards?
                 // yes i think so, see the RL book
-                reward += Math.Pow(this.reward_bootstrap_discount, index) * this.step_rewards[index];
+                reward += (float)Math.Pow((double)this.reward_bootstrap_discount, (double)index) * this.step_rewards[index];
 
             }
             bootstrapped_rewards.Add(reward);
@@ -270,21 +272,16 @@ public class EpisodeManager : MonoBehaviour
         {
             return 0f;
         }
-        //Debug.Log($"passedGoals {this.passedGoals} centerIndicators.Count {this.centerIndicators.Count}");
 
-        //PrintIndicators();
 
         Vector3 nextGoal = this.centerIndicators[this.passedGoals].transform.position;
         Vector3 nextGoalDirection = nextGoal - this.transform.position;
-        nextGoalDirection.y = 0; // set y difference to zero (we only care about the distance in the xz plane)
-                                 // y is the horizontal difference
-
-
-        // TODO is the reward correct for the timestep when the egant passes a goal?
+        nextGoalDirection.y = 0;
+        // set y difference to zero (we only care about the distance in the xz plane)
+        // y is the horizontal difference
 
 
         return nextGoalDirection.magnitude;
-
     }
 
     public void FixedUpdate()
@@ -292,46 +289,32 @@ public class EpisodeManager : MonoBehaviour
 
         if (this.episodeRunning == false)
         {
-            //Debug.Log("episode not running");
+
             return;
         }
-
-        //small reward for speed
-        // Debug.Log(this.drivingEngine.getCarVelocity() / 100f);
 
         this.duration += Time.deltaTime;
 
 
-        //float distance = Vector3.Distance(this.gameObject.transform.localPosition, this.finishLine.transform.localPosition);
-        //float distanceReward = 1 / distance;
-
         float velo = this.aIEngine.getCarVelocity();
-        this.velocities.Add(velo);
-        //Debug.Log(velo);
-        // this.AddReward(distanceReward * Time.deltaTime);
+
         if (velo > 0)
         {
             AddVelocityReward((velo / 10f) * Time.deltaTime);
-
         }
 
         // reward for driving towards the next goal middleIndicator
         float distanceReward = this.lastDistance - GetDistanceToNextGoal();
         distanceReward *= this.distanceCoefficient;
-
         AddDistanceReward(distanceReward);
-        // Debug.Log($"Distance reward: {distanceReward}");
+
 
         this.lastDistance = GetDistanceToNextGoal();
 
-
         if (this.duration >= this.allowedTime)
         {
-            AddReward(-1f);
-
-            string endEvent = "outOfTime";
-            EndEpisode(endEvent);
-
+            AddReward(timeoutReward);
+            EndEpisode(EndEvent.OutOfTime);
         }
     }
 
@@ -353,106 +336,104 @@ public class EpisodeManager : MonoBehaviour
 
     public void finishCheckpoint()
     {
-        AddOtherReward(100f);
+        AddOtherReward(finishCheckpointReward);
         IncreasePassedGoals();
 
-        EndEpisode("success");
+        EndEpisode(EndEvent.Success);
     }
 
     public void hitWall()
     {
-        AddOtherReward(-1f);
+        AddOtherReward(wallHitReward);
 
 
-        string endEvent = "wall";
-        EndEpisode(endEvent);
+
+        EndEpisode(EndEvent.WallHit);
     }
 
     public void goalMissed()
     {
-        AddOtherReward(-1f);
+        AddOtherReward(goalMissedReward);
 
         // TODO also save the color of the missed goal?
-        string endEvent = "goalMissed";
-        EndEpisode(endEvent);
+        EndEpisode(EndEvent.GoalMissed);
     }
 
     public void goalPassed(GameObject goal)
     {
 
-        AddTime(10f);
+        AddTime(allowedTimePerGoal);
 
-        AddOtherReward(1f);
+        AddOtherReward(goalPassedReward);
 
         IncreasePassedGoals();
         centerIndicators.RemoveAt(0); // remove an indicator
 
-        Debug.Log($"will destroy goal {goal.name} {goal.transform.parent.gameObject.name}");
+        //Debug.Log($"will destroy goal {goal.name} {goal.transform.parent.gameObject.name}");
         Destroy(goal);
 
         // TODO also save the color of the completed goal?
 
         // update the distance to the next goal
         this.lastDistance = GetDistanceToNextGoal();
-
-        Debug.Log($"completed a goal");
-        //PrintIndicators();
     }
 
     public void obstacleHit()
     {
-        AddOtherReward(-1f);
+        AddOtherReward(obstacleHitReward);
     }
 
     public void redObstacleHit()
     {
         obstacleHit();
-        string endEvent = "redObstacle";
-        EndEpisode(endEvent);
+        EndEpisode(EndEvent.RedObstacle);
     }
 
     public void blueObstacleHit()
     {
         obstacleHit();
-        string endEvent = "blueObstacle";
-        EndEpisode(endEvent);
+        EndEpisode(EndEvent.BlueObstacle);
     }
 
-
-    // automatically detects when transform to which this is assigned hit another object with a tag
     private void OnTriggerEnter(Collider other)
     {
         // This is attached to the JetBot
 
         if (!this.episodeRunning)
         {
-            Debug.LogWarning("Episode not running, ignore collision");
+            //Debug.LogWarning("Episode not running, ignore collision with " + other.tag);
             return;
         }
-
         if (other.tag == "BlueObstacleTag")
         {
             blueObstacleHit();
+            return;
         }
         if (other.tag == "RedObstacleTag")
         {
             redObstacleHit();
+            return;
         }
         if (other.tag == "GoalPassed")
         {
             goalPassed(other.gameObject);
+            return;
         }
         if (other.tag == "GoalMissed")
         {
             goalMissed();
+            return;
         }
         if (other.tag == "Wall")
         {
             hitWall();
+            return;
         }
         if (other.tag == "FinishCheckpoint")
         {
             finishCheckpoint();
+            return;
         }
+        Debug.LogError($"unknown tag {other.tag}");
     }
 }
