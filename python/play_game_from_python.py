@@ -87,6 +87,9 @@ def run(args: argparse.Namespace) -> None:
                 if event.key == pygame.K_r:
                     env.reset()
 
+                if event.key == pygame.K_p:
+                    env.get_arena_screenshot()
+
                 if right_acceleration > 1:
                     right_acceleration = 1
                 if right_acceleration < -0.1:

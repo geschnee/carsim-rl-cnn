@@ -88,14 +88,14 @@ class BaseUnityCarEnv(gym.Env):
     unity_comms: UnityComms = None
     instancenumber = 0
 
-    def __init__(self, width=336, height=168, port=9000, log=False, asynchronous=True, spawn_point_random=False, single_goal=False, frame_stacking=5, grayscale=True, normalize_images=False, equalize=False, bootstrap_n=7):
+    def __init__(self, width=336, height=168, port=9000, log=False, asynchronous=True, spawn_point_random=False, single_goal=False, frame_stacking=5, grayscale=True, normalize_images=False, equalize=False, bootstrap_n=7, lighting=1):
         # height and width was previous 168, that way we could downsample and reach the same dimensions as the nature paper of 84 x 84
         
         self.equalize = equalize
         self.downsampling = 2
         self.bootstrap_n = bootstrap_n
 
-        self.lighting = 1
+        self.lighting = lighting
 
         self.log = log
 
@@ -304,7 +304,7 @@ class BaseUnityCarEnv(gym.Env):
             mp = self.mapType.name
 
         obsstring = BaseUnityCarEnv.unity_comms.reset(mapType=mp,
-            id=self.instancenumber, spawnpointRandom=self.spawn_point_random, singleGoalTraining=self.single_goal, bootstrap_n=self.bootstrap_n) 
+            id=self.instancenumber, spawnpointRandom=self.spawn_point_random, singleGoalTraining=self.single_goal, bootstrap_n=self.bootstrap_n, lightMultiplier = self.lighting) 
         # TODO lighting lighting=self.lighting)
 
         
@@ -318,8 +318,6 @@ class BaseUnityCarEnv(gym.Env):
         return new_obs, info
     
     def reset_difficulty(self, difficulty):
-        mpTest = MapType(2)
-
         mapType = MapType.getMapTypeFromDifficulty(difficulty)
         return self.reset(mapTypeString=mapType.name)
 
@@ -413,6 +411,17 @@ class BaseUnityCarEnv(gym.Env):
     def getObservation(self):
         return self.unityStringToObservation(BaseUnityCarEnv.unity_comms.getObservation(id=self.instancenumber))
 
+    def saveObservationNoPreprocessing(self, filename):
+        obsstring = BaseUnityCarEnv.unity_comms.getObservation(id=self.instancenumber)
+        base64_bytes = obsstring.encode('ascii')
+        message_bytes = base64.b64decode(base64_bytes)
+
+        im = Image.open(io.BytesIO(message_bytes))
+
+        pixels_rgb = np.array(im, dtype=np.uint8)
+        
+        img = Image.fromarray(pixels_rgb, 'RGB')
+        img.save(filename)
 
     def unityStringToObservation(self, obsstring):
 

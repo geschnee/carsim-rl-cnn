@@ -97,10 +97,9 @@ public class GameManager : MonoBehaviour
 
 	}
 
-	public GameObject spawnJetbot(MapData md)
+	public GameObject spawnJetbot(MapData md, int instanceNumber)
 	{
-		print("before spawn jetbot in GameManager");
-		return this.obstacleMapManager.SpawnJetBot(md);
+		return this.obstacleMapManager.SpawnJetBot(md, instanceNumber);
 	}
 
 	public void InitializeMapWithObstaclesFromFile(string loadObstacleMapFilePath, int idOfCurrentRun)

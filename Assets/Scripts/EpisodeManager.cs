@@ -31,6 +31,8 @@ public class EpisodeManager : MonoBehaviour
 
     // multiply by some constant, the reward is very small
     float distanceCoefficient = 10f;
+    float velocityCoefficient = 0.1f;
+    float orientationCoefficient = 1f;
 
     public float finishCheckpointReward = 100f;
     public float wallHitReward = -1f;
@@ -52,6 +54,7 @@ public class EpisodeManager : MonoBehaviour
     private DataFrameManager df;
 
     public int passedGoals;
+    public int numberOfGoals;
 
     private bool episodeRunning = false;
     private EndEvent endEvent;
@@ -64,6 +67,7 @@ public class EpisodeManager : MonoBehaviour
     private float cumReward;
     private float distanceReward;
     private float velocityReward;
+    private float orientationReward;
     private float otherReward;
     public float rewardSinceLastGetReward;
 
@@ -111,6 +115,7 @@ public class EpisodeManager : MonoBehaviour
     public void setCenterIndicators(List<GameObject> indicators)
     {
         this.centerIndicators = indicators;
+        this.numberOfGoals = indicators.Count;
     }
 
     public void StartEpisode()
@@ -191,8 +196,9 @@ public class EpisodeManager : MonoBehaviour
         info.Add("duration", this.duration.ToString());
         info.Add("cumreward", this.cumReward.ToString());
         info.Add("passedGoals", this.passedGoals.ToString());
-        info.Add("numberOfGoals", this.centerIndicators.Count.ToString());
+        info.Add("numberOfGoals", this.numberOfGoals.ToString());
         info.Add("distanceReward", this.distanceReward.ToString());
+        info.Add("orientationReward", this.orientationReward.ToString());
         info.Add("otherReward", this.otherReward.ToString());
         info.Add("velocityReward", this.velocityReward.ToString());
         info.Add("step", this.step.ToString());
@@ -237,12 +243,10 @@ public class EpisodeManager : MonoBehaviour
         int index;
         if (this.step == -1) // reward that is obtained before a step is performed is given to the first step
         {
-            index = 0;
+            Debug.LogError("Adding reward in step -1");
         }
-        else
-        {
-            index = this.step;
-        }
+        index = this.step;
+        
         this.step_rewards[index] += reward;
 
     }
@@ -259,6 +263,12 @@ public class EpisodeManager : MonoBehaviour
         AddReward(reward);
     }
 
+    public void AddOrientationReward(float reward)
+    {
+        this.orientationReward += reward;
+        AddReward(reward);
+    }
+
     public void AddVelocityReward(float reward)
     {
         this.velocityReward += reward;
@@ -268,13 +278,15 @@ public class EpisodeManager : MonoBehaviour
     public float GetDistanceToNextGoal()
     {
 
-        if (this.passedGoals >= this.centerIndicators.Count)
+        if (this.centerIndicators.Count < 1)
         {
+            Debug.LogWarning($"there are no more centerIndicators {this.centerIndicators.Count} {this.endEvent} {this.step} {this.gameObject.name}");
+            
             return 0f;
         }
 
 
-        Vector3 nextGoal = this.centerIndicators[this.passedGoals].transform.position;
+        Vector3 nextGoal = this.centerIndicators[0].transform.position;
         Vector3 nextGoalDirection = nextGoal - this.transform.position;
         nextGoalDirection.y = 0;
         // set y difference to zero (we only care about the distance in the xz plane)
@@ -284,12 +296,57 @@ public class EpisodeManager : MonoBehaviour
         return nextGoalDirection.magnitude;
     }
 
+    public float GetCosineSimilarityToNextGoal(){
+       
+
+
+        if (this.centerIndicators.Count < 1)
+        {
+            Debug.LogError($"there are no more centerIndicators {this.gameObject.name}");
+            return 0f;
+        }
+
+        Vector3 nextGoal = this.centerIndicators[0].transform.position;
+        Vector3 nextGoalDirection = nextGoal - this.transform.position;
+        //nextGoalDirection.y = 0;
+        // set y difference to zero (we only care about the distance in the xz plane)
+        // y is the horizontal difference
+
+        // TODO check if the jetbot transform.forward points in the correct direction
+        Vector3 agentOrientation = this.transform.forward;
+        
+
+
+        float cosine_similarity = GetCosineSimilarityXZPlane(nextGoalDirection, agentOrientation);
+
+
+        return nextGoalDirection.magnitude;
+    }
+
+    public static float GetCosineSimilarityXZPlane(Vector3 V1, Vector3 V2) {
+        float result = (float)((V1.x*V2.x + V1.z*V2.z) 
+                / ( Math.Sqrt( Math.Pow(V1.x,2)+Math.Pow(V1.z,2)) * 
+                    Math.Sqrt( Math.Pow(V2.x,2)+Math.Pow(V2.z,2))
+                ));
+        
+        if (result >1){
+            Debug.LogError("cosine sim too big");
+        }
+        if (result<-1){
+            Debug.LogError("cosine sim too small");
+        }
+        return result;
+    }
+
     public void FixedUpdate()
     {
 
         if (this.episodeRunning == false)
         {
-
+            return;
+        }
+        if (this.step == -1){
+            // No updates for step -1
             return;
         }
 
@@ -300,7 +357,7 @@ public class EpisodeManager : MonoBehaviour
 
         if (velo > 0)
         {
-            AddVelocityReward((velo / 10f) * Time.deltaTime);
+            AddVelocityReward(this.velocityCoefficient *(velo) * Time.deltaTime);
         }
 
         // reward for driving towards the next goal middleIndicator
@@ -308,6 +365,10 @@ public class EpisodeManager : MonoBehaviour
         distanceReward *= this.distanceCoefficient;
         AddDistanceReward(distanceReward);
 
+        // reward for orientation in direction of next goal
+        float orientationReward = GetCosineSimilarityToNextGoal() * Time.deltaTime;
+        orientationReward *= this.orientationCoefficient;
+        AddOrientationReward(orientationReward);
 
         this.lastDistance = GetDistanceToNextGoal();
 
@@ -404,6 +465,11 @@ public class EpisodeManager : MonoBehaviour
             //Debug.LogWarning("Episode not running, ignore collision with " + other.tag);
             return;
         }
+        // TODO properly unify episodeRunning and step == -1
+        if (this.step == -1){
+            Debug.LogError($"collision although we are in step -1 for {this.gameObject.name} with {other.tag}");
+            return;
+        }
         if (other.tag == "BlueObstacleTag")
         {
             blueObstacleHit();
@@ -416,6 +482,7 @@ public class EpisodeManager : MonoBehaviour
         }
         if (other.tag == "GoalPassed")
         {
+            other.tag = "DestroyedGoal";
             goalPassed(other.gameObject);
             return;
         }
@@ -432,6 +499,10 @@ public class EpisodeManager : MonoBehaviour
         if (other.tag == "FinishCheckpoint")
         {
             finishCheckpoint();
+            return;
+        }
+        if (other.tag == "DestroyedGoal"){
+            // duplicate detection, ignore
             return;
         }
         Debug.LogError($"unknown tag {other.tag}");

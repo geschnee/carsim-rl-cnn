@@ -21,11 +21,13 @@ static class Constants
     public const float RIGHTMOST_Z = 0f;
     public const float Z_WIDTH = 10.5f;
 
-    public const float SPAWNHEIGHT_Y = 0f;
+    public const float SPAWNHEIGHT_Y = 1f;
     public const float MINWIDTH_GOAL = 2;
     public const float MAXWIDTH_GOAL = 4;
     public const int MINXDISTANCEGOALS = 4;
     public const int MAXXDISTANCEGOALS = 6;
+
+    public const float JETBOT_SPAWN_Y = -0.2f;
 }
 
 
@@ -164,7 +166,7 @@ public class MapData
     public Goal[] goals;
 
     public Vector3 jetBotSpawnPosition;
-    public Vector3 jetBotSpawnRotation;
+    public Quaternion jetBotSpawnRotation;
 
     public Vector3 finishCheckpointPosition;
 }
@@ -215,14 +217,20 @@ public class ObstacleMapManager : MonoBehaviour
 
     }
 
-    public GameObject SpawnJetBot(MapData mapData)
+    public GameObject SpawnJetBot(MapData mapData, int instanceNumber)
     {
 
         Vector3 spawnPoint = mapData.jetBotSpawnPosition;
-        GameObject jb = GameObject.Instantiate(original: this.JetBot, position: spawnPoint, rotation: new Quaternion(0, 1, 0, 1), this.gameManagerTransform.parent);
 
+        Quaternion jbRotation = new Quaternion(0, 1, 0, 1); // OLD
+        jbRotation = mapData.jetBotSpawnRotation;
+
+        GameObject jb = GameObject.Instantiate(original: this.JetBot, position: spawnPoint, rotation: jbRotation, this.gameManagerTransform.parent);
+        jb.name = $"JetBot {instanceNumber}";
 
         jb.GetComponent<EpisodeManager>().setCenterIndicators(this.centerIndicators);
+
+        Debug.Log($"Jetbot spawn rotation y {jb.transform.rotation.y}");
         return jb;
     }
     private Vector3 GetJetBotSpawnCoords()
@@ -230,7 +238,7 @@ public class ObstacleMapManager : MonoBehaviour
 
         int minXLocal = (int)(Constants.X_Map_MIN + this.gameManagerPosition.x);
         int z = (int)(this.gameManagerPosition.z + Constants.Z_WIDTH / 2);
-        Vector3 SpawnPoint = new(minXLocal, 1, z);
+        Vector3 SpawnPoint = new(minXLocal, Constants.JETBOT_SPAWN_Y, z);
 
         // in the middle of the short edge (z dimension)
 
@@ -249,11 +257,11 @@ public class ObstacleMapManager : MonoBehaviour
         Random rnd = new Random();
         float zRandomCoord = (float)rnd.NextDouble() * (zRightMax - zLeftMax) + zLeftMax;
         float xRandomCoord = (float)rnd.NextDouble() * (maxXLocal - minXLocal) + minXLocal;
-        Vector3 spawnPoint = new(xRandomCoord, 1, zRandomCoord);
+        Vector3 spawnPoint = new(xRandomCoord, Constants.JETBOT_SPAWN_Y, zRandomCoord);
         //this.JetBotXSpawn = xRandomCoord;
 
 
-        Debug.LogWarning($"JetBot spawn range x {minXLocal} - {maxXLocal} z {zLeftMax} - {zRightMax}");
+        //Debug.Log($"JetBot spawn range x {minXLocal} - {maxXLocal} z {zLeftMax} - {zRightMax}");
 
         return spawnPoint;
     }
@@ -270,7 +278,7 @@ public class ObstacleMapManager : MonoBehaviour
 
         Random rnd = new Random();
         float zRandomCoord = (float)rnd.NextDouble() * (zRightMax - zLeftMax) + zLeftMax;
-        Vector3 spawnPoint = new(minXLocal, 1, zRandomCoord);
+        Vector3 spawnPoint = new(minXLocal, Constants.JETBOT_SPAWN_Y, zRandomCoord);
 
 
         Debug.LogWarning($"Eval JetBot spawn x {minXLocal} - range z {zLeftMax} - {zRightMax}");
@@ -434,6 +442,7 @@ public class ObstacleMapManager : MonoBehaviour
 
 
         Vector3 jetBotSpawnPosition;
+        Quaternion jetBotSpawnRotation;
         if (spawnRandom == false)
         {
             jetBotSpawnPosition = this.GetJetBotSpawnCoords();
@@ -449,6 +458,14 @@ public class ObstacleMapManager : MonoBehaviour
             // the mapType is not random (it is an evaluation track)
             // we cannot use the same random spawn for these
             jetBotSpawnPosition = this.GetJetBotRandomCoordsEval();
+        }
+        if (spawnRandom)
+        {
+            jetBotSpawnRotation = this.JetBotRandomRotation();
+        }
+        else
+        {
+            jetBotSpawnRotation = new Quaternion(0, 1, 0, 1);
         }
 
         Goal[] obstacles = new Goal[0];
@@ -503,7 +520,7 @@ public class ObstacleMapManager : MonoBehaviour
                 break;
         }
 
-        MapData mapData = new MapData { listId = id, goals = obstacles, jetBotSpawnPosition = jetBotSpawnPosition };
+        MapData mapData = new MapData { listId = id, goals = obstacles, jetBotSpawnPosition = jetBotSpawnPosition, jetBotSpawnRotation = jetBotSpawnRotation };
 
         return mapData;
 

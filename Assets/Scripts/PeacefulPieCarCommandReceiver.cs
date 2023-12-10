@@ -42,11 +42,13 @@ public class PeacefulPieCarCommandReceiver : MonoBehaviour
         private List<Arena> arenas = new List<Arena>();
 
         private Vector3 arenaPosition = new Vector3(0, 0, 0);
-        private Vector3 arenaOffset = new Vector3(0, 0, 20);
+        private Vector3 arenaOffset;
 
-        public Rpc(GameObject arenaPrefab)
+
+        public Rpc(GameObject arenaPrefab, Vector3 arenaOffset)
         {
             this.arenaPrefab = arenaPrefab;
+            this.arenaOffset = arenaOffset;
         }
 
         [JsonRpcMethod]
@@ -67,12 +69,12 @@ public class PeacefulPieCarCommandReceiver : MonoBehaviour
 
 
         [JsonRpcMethod]
-        string reset(int id, string mapType, bool spawnpointRandom, bool singleGoalTraining, int bootstrap_n)
+        string reset(int id, string mapType, bool spawnpointRandom, bool singleGoalTraining, int bootstrap_n, float lightMultiplier)
         {
             //Debug.Log($"mapType: {mapType}");
             MapType mt = (MapType)Enum.Parse(typeof(MapType), mapType);
             //Debug.Log($"mt: {mt}");
-            return arenas[id].reset(mt, spawnpointRandom, singleGoalTraining, bootstrap_n);
+            return arenas[id].reset(mt, spawnpointRandom, singleGoalTraining, bootstrap_n, lightMultiplier);
         }
 
 
@@ -121,6 +123,7 @@ public class PeacefulPieCarCommandReceiver : MonoBehaviour
 
 
             GameObject arenaGameObject = Instantiate(arenaPrefab, arenaPosition, Quaternion.identity);
+            arenaGameObject.name = $"Arena {id}";
 
             Arena arena = arenaGameObject.GetComponent<Arena>();
             arena.setInstanceNumber(id);
@@ -147,10 +150,11 @@ public class PeacefulPieCarCommandReceiver : MonoBehaviour
 
     public GameObject arenaPrefab;
 
+    public Vector3 arenaOffset = new Vector3(0, 0, 30);
 
     void Awake()
     {
-        rpc = new Rpc(arenaPrefab);
+        rpc = new Rpc(arenaPrefab, arenaOffset);
         print("rpc started");
     }
 

@@ -37,6 +37,9 @@ public class Arena : MonoBehaviour
     public int arenaResWidth = 512;
     public int arenaResHeight = 512;
 
+    public List<Light> lights;
+    float defaultLightIntensity = 5f;
+
     void Awake()
     {
         // initialize new arena at the correct position
@@ -64,7 +67,7 @@ public class Arena : MonoBehaviour
         gameManager.DestroyObstaclesOnMap();
     }
 
-    public string reset(MapType mt, bool jetBotSpawnpointRandom, bool singleGoalTraining, int bootstrap_n)
+    public string reset(MapType mt, bool jetBotSpawnpointRandom, bool singleGoalTraining, int bootstrap_n, float lightMultiplier)
     {
         if (this.car != null)
         {
@@ -84,7 +87,9 @@ public class Arena : MonoBehaviour
         MapData md = gameManager.InitializeMapWithObstacles(mt, 0, jetBotSpawnpointRandom, singleGoalTraining);
 
 
-        GameObject car = gameManager.spawnJetbot(md);
+        GameObject car = gameManager.spawnJetbot(md, this.instancenumber);
+
+        SetLightIntensity(lightMultiplier);
 
 
         this.car = car;
@@ -99,6 +104,14 @@ public class Arena : MonoBehaviour
         episodeManager.StartEpisode();
 
         return GetCameraInput(this.carCam, this.resWidth, this.resHeight, "observation.png");
+    }
+
+    public void SetLightIntensity(float lightMultiplier)
+    {
+        foreach (Light light in lights)
+        {
+            light.intensity = defaultLightIntensity * lightMultiplier;
+        }
     }
 
     public void forwardInputsToCar(float inputAccelerationLeft, float inputAccelerationRight)

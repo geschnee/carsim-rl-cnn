@@ -35,8 +35,6 @@ env_kwargs = {"asynchronous":asynch,
 
 env = unityGymEnv.BaseUnityCarEnv(**env_kwargs)
 
-# TODO build a method that takes an arena screenshot
-
 # agent preprocessing steps:
 env.mapType = unityGymEnv.MapType.twoGoalLanesBlueFirstLeftHard
 env.log = True
@@ -88,26 +86,20 @@ def obs_to_file(obs, filename):
     im = Image.fromarray(obs, 'L')
     im.save(filename)
 
-print(f'TODO fix lighting')
+# Lighting
 
-print(f'warning maximilian only did tests with ambient lighting, bright and dark')
-print(f'the current standard was not used in the tests')
-print(f'it looks like the training was done with ambient lighting')
+# I do not use the ambient light setting
+# Maximilian used the ambient light setting for the training and also in one of the evaluations
+# instead i only use the directional lights with different intensities
 
-print(f'die Lightquellen sind sehr senkrecht ueber den Objekten, deswegen erkennt man die Farben nicht so gut')
-
-# agent vision with ambient lighting
 env.mapType = unityGymEnv.MapType.twoGoalLanesBlueFirstLeftHard
-env.reset()
-time.sleep(1) # wait for the car to spawn
-obs_to_file(env.getObservation(), "expose_images/light_setting_pov_ambient.png")
-env.get_arena_screenshot("expose_images/light_setting_arena_ambient.png")
 
 
 # agent vision with standard lighting
 env.reset()
 time.sleep(1) # wait for the car to spawn
 obs_to_file(env.getObservation(), "expose_images/light_setting_pov_standard.png")
+env.saveObservationNoPreprocessing("expose_images/light_setting_pov_standard_no_preprocessing.png")
 env.get_arena_screenshot("expose_images/light_setting_arena_standard.png")
 
 
@@ -116,6 +108,7 @@ env.lighting = 0.5
 env.reset()
 time.sleep(1) # wait for the car to spawn
 obs_to_file(env.getObservation(), "expose_images/light_setting_pov_reduced_lighting.png")
+env.saveObservationNoPreprocessing("expose_images/light_setting_pov_reduced_lighting_no_preprocessing.png")
 env.get_arena_screenshot("expose_images/light_setting_arena_reduced_lighting.png")
 
 
@@ -125,13 +118,14 @@ env.lighting = 1.5
 env.reset()
 time.sleep(1) # wait for the car to spawn
 obs_to_file(env.getObservation(), "expose_images/light_setting_pov_increased_lighting.png")
+env.saveObservationNoPreprocessing("expose_images/light_setting_pov_increased_lighting_no_preprocessing.png")
 env.get_arena_screenshot("expose_images/light_setting_arena_increased_lighting.png")
+env.lighting = 1 # default lighting
 
 # agent data augmented POV screenshots:
 # agent with salt and pepper noise
 
 env.mapType = unityGymEnv.MapType.random
-env.lighting = 1 # default lighting
 env.reset()
 time.sleep(1) # wait for the car to spawn
 obs = env.getObservation()
