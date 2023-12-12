@@ -63,20 +63,6 @@ env.reset()
 time.sleep(1) # wait for the car to spawn
 env.get_arena_screenshot("expose_images/evaluation_hard.png")
 
-# training parcour
-env.mapType = unityGymEnv.MapType.random
-env.reset()
-time.sleep(1) # wait for the car to spawn
-env.get_arena_screenshot("expose_images/training_parcour.png")
-
-# single goal training parcour
-env.mapType = unityGymEnv.MapType.random
-env.single_goal = True
-env.reset()
-time.sleep(1) # wait for the car to spawn
-env.get_arena_screenshot("expose_images/training_single.png")
-
-env.single_goal = False
 
 # agent POV screenshots:
 import PIL.Image as Image
@@ -141,8 +127,20 @@ obs_to_file(obs_gaussian, f'expose_images/data_entry_augmented_gaussian_sigma_{s
 
 
 
-# TODO training regimes:
+# training regimes:
 
-training_regime_sgt.png
-training_regime_fmt.png
-training_regime_fixed.png
+env.mapType = unityGymEnv.MapType.random
+env.single_goal = True
+env.reset()
+time.sleep(1) # wait for the car to spawn
+env.get_arena_screenshot("expose_images/training_regime_sgt.png")
+
+env.single_goal = False
+env.reset()
+time.sleep(1) # wait for the car to spawn
+env.get_arena_screenshot("expose_images/training_regime_fmt.png")
+
+env.mapType = unityGymEnv.MapType.twoGoalLanesBlueFirstLeftHard
+env.reset()
+time.sleep(1) # wait for the car to spawn
+env.get_arena_screenshot("expose_images/training_regime_fixed_hard.png")
