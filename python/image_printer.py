@@ -94,6 +94,7 @@ def obs_to_file(obs, filename):
 
 env.mapType = unityGymEnv.MapType.twoGoalLanesBlueFirstLeftHard
 
+# TODO images with and without histogram equalization
 
 # agent vision with standard lighting
 env.reset()
@@ -137,3 +138,11 @@ obs_to_file(obs_salt_pepper, "expose_images/data_entry_augmented_salt_and_pepper
 sigma = 5
 obs_gaussian = da.gaussian_noise(obs, mean=0, sigma=sigma)
 obs_to_file(obs_gaussian, f'expose_images/data_entry_augmented_gaussian_sigma_{sigma}.png')
+
+
+
+# TODO training regimes:
+
+training_regime_sgt.png
+training_regime_fmt.png
+training_regime_fixed.png
