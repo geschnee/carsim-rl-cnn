@@ -67,7 +67,7 @@ public class Arena : MonoBehaviour
         gameManager.DestroyObstaclesOnMap();
     }
 
-    public string reset(MapType mt, bool jetBotSpawnpointRandom, bool singleGoalTraining, int bootstrap_n, float lightMultiplier)
+    public string reset(MapType mt, bool jetBotSpawnpointRandom, bool singleGoalTraining, float lightMultiplier)
     {
         if (this.car != null)
         {
@@ -100,7 +100,6 @@ public class Arena : MonoBehaviour
 
 
         episodeManager = car.GetComponent<EpisodeManager>();
-        episodeManager.SetBootstrapN(bootstrap_n);
         episodeManager.StartEpisode();
 
         return GetCameraInput(this.carCam, this.resWidth, this.resHeight, "observation.png");
@@ -121,30 +120,33 @@ public class Arena : MonoBehaviour
 
     }
 
-    public StepReturnObject immediateStep(float inputAccelerationLeft, float inputAccelerationRight)
+    public StepReturnObject immediateStep(int step, float inputAccelerationLeft, float inputAccelerationRight)
     {
         // TODO maybe move this code to the episodeManager
+
+        //Debug.LogWarning($"immediateStep {step} {inputAccelerationLeft} {inputAccelerationRight} for {this.car.name}");
+        // when the error happens is the other input the same?
+
         aIEngine.SetInput(inputAccelerationLeft, inputAccelerationRight);
-        episodeManager.IncreaseSteps();
+        episodeManager.IncreaseSteps(step);
+
 
         float reward = episodeManager.GetReward();
         bool done = episodeManager.IsTerminated();
         bool terminated = episodeManager.IsTerminated();
         string observation = GetCameraInput(this.carCam, this.resWidth, this.resHeight, "observation.png");
 
-
-
         Dictionary<string, string> info = episodeManager.GetInfo();
 
-        List<float> bootstrapped_rewards = episodeManager.GetBootstrappedRewards();
+        List<float> rewards = episodeManager.GetRewards();
 
-        return new StepReturnObject(observation, reward, done, terminated, info, bootstrapped_rewards);
+        return new StepReturnObject(observation, reward, done, terminated, info, rewards);
     }
 
-    public void asyncStepPart1(float inputAccelerationLeft, float inputAccelerationRight)
+    public void asyncStepPart1(int step, float inputAccelerationLeft, float inputAccelerationRight)
     {
         aIEngine.SetInput(inputAccelerationLeft, inputAccelerationRight);
-        episodeManager.IncreaseSteps();
+        episodeManager.IncreaseSteps(step);
 
         rewardAsync = episodeManager.rewardSinceLastGetReward;
         // part1 sets the actions, python does the waiting, then part2 returns the observation
@@ -166,9 +168,9 @@ public class Arena : MonoBehaviour
         Dictionary<string, string> info = episodeManager.GetInfo();
 
 
-        List<float> bootstrapped_rewards = episodeManager.GetBootstrappedRewards();
+        List<float> rewards = episodeManager.GetRewards();
 
-        return new StepReturnObject(observation, reward_during_waiting, done, terminated, info, bootstrapped_rewards);
+        return new StepReturnObject(observation, reward_during_waiting, done, terminated, info, rewards);
     }
 
 

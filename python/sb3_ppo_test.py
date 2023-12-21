@@ -23,13 +23,16 @@ normalize_images = False
 # requires dtype float32
 
 n_envs = 10
-asynch = False
+
+
+
 # false is of course much faster
 # the new modified PPO with the delayed rewards will not require this asynch and will be much faster
 
-env_kwargs = {"asynchronous":asynch, "spawn_point_random": True, "single_goal": False, "frame_stacking": 3, 
-              "equalize": True, "normalize_images": normalize_images,
-              "bootstrap_n": 1}
+env_kwargs = {"spawn_point_random": False, "single_goal": False, "frame_stacking": 3, 
+              "equalize": True, "randomEval": True, "normalize_images": normalize_images}
+
+# TODO some logging of the stacked frames to see what the memory is like
 
 # Parallel environments
 vec_env = make_vec_env(unityGymEnv.BaseUnityCarEnv, n_envs=n_envs, env_kwargs=env_kwargs)

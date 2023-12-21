@@ -19,16 +19,16 @@ public class StepReturnObject
 
     public Dictionary<string, string> info;
 
-    public List<float> bootstrapped_rewards;
+    public List<float> rewards;
 
-    public StepReturnObject(string observation, float reward, bool done, bool terminated, Dictionary<string, string> info, List<float> bootstrapped_rewards)
+    public StepReturnObject(string observation, float reward, bool done, bool terminated, Dictionary<string, string> info, List<float> rewards)
     {
         this.observation = observation;
         this.reward = reward;
         this.done = done;
         this.terminated = terminated;
         this.info = info;
-        this.bootstrapped_rewards = bootstrapped_rewards;
+        this.rewards = rewards;
     }
 }
 
@@ -69,12 +69,12 @@ public class PeacefulPieCarCommandReceiver : MonoBehaviour
 
 
         [JsonRpcMethod]
-        string reset(int id, string mapType, bool spawnpointRandom, bool singleGoalTraining, int bootstrap_n, float lightMultiplier)
+        string reset(int id, string mapType, bool spawnpointRandom, bool singleGoalTraining, float lightMultiplier)
         {
             //Debug.Log($"mapType: {mapType}");
             MapType mt = (MapType)Enum.Parse(typeof(MapType), mapType);
             //Debug.Log($"mt: {mt}");
-            return arenas[id].reset(mt, spawnpointRandom, singleGoalTraining, bootstrap_n, lightMultiplier);
+            return arenas[id].reset(mt, spawnpointRandom, singleGoalTraining, lightMultiplier);
         }
 
 
@@ -91,15 +91,15 @@ public class PeacefulPieCarCommandReceiver : MonoBehaviour
         }
 
         [JsonRpcMethod]
-        StepReturnObject immediateStep(int id, float inputAccelerationLeft, float inputAccelerationRight)
+        StepReturnObject immediateStep(int id, int step, float inputAccelerationLeft, float inputAccelerationRight)
         {
-            return arenas[id].immediateStep(inputAccelerationLeft, inputAccelerationRight);
+            return arenas[id].immediateStep(step, inputAccelerationLeft, inputAccelerationRight);
         }
 
         [JsonRpcMethod]
-        void asyncStepPart1(int id, float inputAccelerationLeft, float inputAccelerationRight)
+        void asyncStepPart1(int id, int step, float inputAccelerationLeft, float inputAccelerationRight)
         {
-            arenas[id].asyncStepPart1(inputAccelerationLeft, inputAccelerationRight);
+            arenas[id].asyncStepPart1(step, inputAccelerationLeft, inputAccelerationRight);
         }
 
         [JsonRpcMethod]

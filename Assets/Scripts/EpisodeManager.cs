@@ -32,7 +32,9 @@ public class EpisodeManager : MonoBehaviour
     // multiply by some constant, the reward is very small
     float distanceCoefficient = 10f;
     float velocityCoefficient = 0.1f;
-    float orientationCoefficient = 1f;
+    float orientationCoefficient = 0.1f;
+
+    float eventCoefficient = 1f;
 
     public float finishCheckpointReward = 100f;
     public float wallHitReward = -1f;
@@ -40,10 +42,6 @@ public class EpisodeManager : MonoBehaviour
     public float timeoutReward = -1f;
     public float goalMissedReward = -1f;
     public float goalPassedReward = 1f;
-
-    int reward_bootstrap_n; // this is set by python env
-    float reward_bootstrap_discount = 0.9f;
-
     public float duration;
     public float allowedTime;
 
@@ -56,19 +54,20 @@ public class EpisodeManager : MonoBehaviour
     public int passedGoals;
     public int numberOfGoals;
 
+    private bool episodeReady = false;
     private bool episodeRunning = false;
     private EndEvent endEvent;
 
     private Vector3 lastPosition;
 
-
+    private GameObject carBody;
 
     private int step;
     private float cumReward;
     private float distanceReward;
     private float velocityReward;
     private float orientationReward;
-    private float otherReward;
+    private float eventReward;
     public float rewardSinceLastGetReward;
 
 
@@ -86,23 +85,37 @@ public class EpisodeManager : MonoBehaviour
         this.aIEngine = this.GetComponent<AIEngine>();
 
         gameManager = this.transform.parent.Find("GameManager").GetComponent<GameManager>();
+        carBody = this.transform.Find("carBody").gameObject;
     }
 
-    public void SetBootstrapN(int n)
+    public void IncreaseSteps(int step)
     {
-        this.reward_bootstrap_n = n;
-    }
+        //Debug.LogWarning($"IncreaseSteps unity {this.step} python {step} {this.transform.parent.name}");
 
-    public void IncreaseSteps()
-    {
+        if (this.episodeReady == true)
+        {
+            this.episodeReady = false;
+            this.episodeRunning = true;
+            if (this.step != -1)
+            {
+                Debug.LogError($"step should be -1 but is {this.step} for {this.transform.parent.name}");
+            }
+        }
+
+        // int step from python is not yet incremented
+        if (this.step != step)
+        {
+            Debug.LogError($"unity step {this.step} != python step {step} for {this.transform.parent.name}");
+            // TODO make this a warning
+            // There was a timeout in python resulting in a second call to the step function with the same arguments
+            return;
+        }
         this.step++;
         // add new entry in the rewards counting list
         // with this added 0 reward there is an entry for every step even if there was no reward signal encountered
-        if (this.step != 0)
-        {
-            this.step_rewards.Add(0);
 
-        }
+
+        this.step_rewards.Add(0);
         if (this.step_rewards.Count != (this.step + 1))
         {
             Debug.LogError($"count should be one higher than steps: step_rewards.Count {this.step_rewards.Count} step {this.step}");
@@ -125,7 +138,7 @@ public class EpisodeManager : MonoBehaviour
         this.cumReward = 0f;
         this.distanceReward = 0f;
         this.velocityReward = 0f;
-        this.otherReward = 0f;
+        this.eventReward = 0f;
         this.rewardSinceLastGetReward = 0f;
         this.lastPosition = this.transform.position;
         this.step = -1;
@@ -137,13 +150,13 @@ public class EpisodeManager : MonoBehaviour
 
         this.lastDistance = GetDistanceToNextGoal();
 
-        this.episodeRunning = true;
+        this.episodeRunning = false;
+        this.episodeReady = true;
     }
 
     private void initializeStepRewards()
     {
         this.step_rewards = new List<float>();
-        this.step_rewards.Add(0); // for rewards for step 0
     }
 
     public void EndEpisode(EndEvent endEvent)
@@ -170,6 +183,8 @@ public class EpisodeManager : MonoBehaviour
 
         this.rewardSinceLastGetReward = 0f;
 
+        // TODO delete this
+        //Debug.LogError($"GetReward called unexpectadly, I think this method can be deleted");
         return r;
     }
 
@@ -199,7 +214,7 @@ public class EpisodeManager : MonoBehaviour
         info.Add("numberOfGoals", this.numberOfGoals.ToString());
         info.Add("distanceReward", this.distanceReward.ToString());
         info.Add("orientationReward", this.orientationReward.ToString());
-        info.Add("otherReward", this.otherReward.ToString());
+        info.Add("eventReward", this.eventReward.ToString());
         info.Add("velocityReward", this.velocityReward.ToString());
         info.Add("step", this.step.ToString());
         info.Add("amount_of_steps", (this.step + 1).ToString());
@@ -208,71 +223,65 @@ public class EpisodeManager : MonoBehaviour
         return info;
     }
 
-    public List<float> GetBootstrappedRewards()
+    public List<float> GetRewards()
     {
-        List<float> bootstrapped_rewards = new List<float>();
+        List<float> rewards = new List<float>();
 
         int amount_of_steps = this.step + 1;
         for (int i = 0; i < amount_of_steps; i++)
         {
-            float reward = 0f;
-            for (int j = 0; j < this.reward_bootstrap_n; j++)
-            {
-                int index = i + j;
-                if (index == amount_of_steps)
-                {
-                    break; // there are no more steps/rewards to bootstrap
-                }
-
-                // do we need some kind of discount for bootstrapped rewards?
-                // yes i think so, see the RL book
-                reward += (float)Math.Pow((double)this.reward_bootstrap_discount, (double)index) * this.step_rewards[index];
-
-            }
-            bootstrapped_rewards.Add(reward);
+            float reward = this.step_rewards[i];
+            rewards.Add(reward);
         }
-        return bootstrapped_rewards;
+        return rewards;
     }
 
 
     public void AddReward(float reward)
     {
+        if (!this.episodeRunning) // reward that is obtained before a step is performed is given to the first step
+        {
+            Debug.LogError($"Adding reward while episode is not running {this.step}");
+            return;
+        }
+
         this.cumReward += reward;
         this.rewardSinceLastGetReward += reward;
 
         int index;
-        if (this.step == -1) // reward that is obtained before a step is performed is given to the first step
-        {
-            Debug.LogError("Adding reward in step -1");
-        }
+
         index = this.step;
-        
+
         this.step_rewards[index] += reward;
 
     }
 
-    public void AddOtherReward(float reward)
+    public void AddEventReward(float reward)
     {
-        this.otherReward += reward;
-        AddReward(reward);
+        float weightedEventReward = reward * eventCoefficient;
+        this.eventReward += weightedEventReward;
+        AddReward(weightedEventReward);
     }
 
     public void AddDistanceReward(float reward)
     {
-        this.distanceReward += reward;
-        AddReward(reward);
+        float weightedDistanceReward = reward * distanceCoefficient;
+        this.distanceReward += weightedDistanceReward;
+        AddReward(weightedDistanceReward);
     }
 
     public void AddOrientationReward(float reward)
     {
-        this.orientationReward += reward;
-        AddReward(reward);
+        float weightedOrientationReward = reward * orientationCoefficient;
+        this.orientationReward += weightedOrientationReward;
+        AddReward(weightedOrientationReward);
     }
 
     public void AddVelocityReward(float reward)
     {
-        this.velocityReward += reward;
-        AddReward(reward);
+        float weightedVelocityReward = reward * velocityCoefficient;
+        this.velocityReward += weightedVelocityReward;
+        AddReward(weightedVelocityReward);
     }
 
     public float GetDistanceToNextGoal()
@@ -281,7 +290,7 @@ public class EpisodeManager : MonoBehaviour
         if (this.centerIndicators.Count < 1)
         {
             Debug.LogWarning($"there are no more centerIndicators {this.centerIndicators.Count} {this.endEvent} {this.step} {this.gameObject.name}");
-            
+
             return 0f;
         }
 
@@ -296,8 +305,9 @@ public class EpisodeManager : MonoBehaviour
         return nextGoalDirection.magnitude;
     }
 
-    public float GetCosineSimilarityToNextGoal(){
-       
+    public float GetCosineSimilarityToNextGoal()
+    {
+
 
 
         if (this.centerIndicators.Count < 1)
@@ -307,32 +317,54 @@ public class EpisodeManager : MonoBehaviour
         }
 
         Vector3 nextGoal = this.centerIndicators[0].transform.position;
-        Vector3 nextGoalDirection = nextGoal - this.transform.position;
-        //nextGoalDirection.y = 0;
+        Vector3 nextGoalDirection = nextGoal - carBody.transform.position;
+        nextGoalDirection.y = 0;
         // set y difference to zero (we only care about the distance in the xz plane)
         // y is the horizontal difference
 
-        // TODO check if the jetbot transform.forward points in the correct direction
         Vector3 agentOrientation = this.transform.forward;
-        
 
+        /*
+        if (this.gameObject.name == "JetBot 0")
+        {
+            //Debug.Log($"agentOrientation {agentOrientation} for {this.gameObject.name}");
+            Debug.LogWarning($"agentOrientation {agentOrientation} for {this.gameObject.name}");
+            Debug.LogWarning($"bodyOrientation {carBody.transform.forward} for {this.gameObject.name}");
+            Debug.LogWarning($"carBody {carBody.transform.position} for {this.gameObject.name}");
+            Debug.LogWarning($"nextGoalDirection {nextGoalDirection} for {this.gameObject.name}");
+            nextGoalDirection.Normalize();
+            Debug.LogWarning($"nextGoalDirection norm {nextGoalDirection} for {this.gameObject.name}");
+        }*/
+
+
+        float angleBetween = Vector3.Angle(agentOrientation, nextGoalDirection);
+
+
+        //Debug.Log($"angle between {angleBetween} for {this.gameObject.name}");
 
         float cosine_similarity = GetCosineSimilarityXZPlane(nextGoalDirection, agentOrientation);
+        /*if (this.gameObject.name == "JetBot 0")
+        {
+            Debug.LogWarning($"angle between {angleBetween} cosine sim {cosine_similarity} for {this.gameObject.name}");
 
+        }*/
 
         return nextGoalDirection.magnitude;
     }
 
-    public static float GetCosineSimilarityXZPlane(Vector3 V1, Vector3 V2) {
-        float result = (float)((V1.x*V2.x + V1.z*V2.z) 
-                / ( Math.Sqrt( Math.Pow(V1.x,2)+Math.Pow(V1.z,2)) * 
-                    Math.Sqrt( Math.Pow(V2.x,2)+Math.Pow(V2.z,2))
+    public static float GetCosineSimilarityXZPlane(Vector3 V1, Vector3 V2)
+    {
+        float result = (float)((V1.x * V2.x + V1.z * V2.z)
+                / (Math.Sqrt(Math.Pow(V1.x, 2) + Math.Pow(V1.z, 2)) *
+                    Math.Sqrt(Math.Pow(V2.x, 2) + Math.Pow(V2.z, 2))
                 ));
-        
-        if (result >1){
+
+        if (result > 1)
+        {
             Debug.LogError("cosine sim too big");
         }
-        if (result<-1){
+        if (result < -1)
+        {
             Debug.LogError("cosine sim too small");
         }
         return result;
@@ -345,10 +377,6 @@ public class EpisodeManager : MonoBehaviour
         {
             return;
         }
-        if (this.step == -1){
-            // No updates for step -1
-            return;
-        }
 
         this.duration += Time.deltaTime;
 
@@ -357,24 +385,23 @@ public class EpisodeManager : MonoBehaviour
 
         if (velo > 0)
         {
-            AddVelocityReward(this.velocityCoefficient *(velo) * Time.deltaTime);
+            AddVelocityReward((velo) * Time.deltaTime);
         }
 
         // reward for driving towards the next goal middleIndicator
         float distanceReward = this.lastDistance - GetDistanceToNextGoal();
-        distanceReward *= this.distanceCoefficient;
+
         AddDistanceReward(distanceReward);
 
         // reward for orientation in direction of next goal
         float orientationReward = GetCosineSimilarityToNextGoal() * Time.deltaTime;
-        orientationReward *= this.orientationCoefficient;
         AddOrientationReward(orientationReward);
 
         this.lastDistance = GetDistanceToNextGoal();
 
         if (this.duration >= this.allowedTime)
         {
-            AddReward(timeoutReward);
+            AddEventReward(timeoutReward);
             EndEpisode(EndEvent.OutOfTime);
         }
     }
@@ -397,7 +424,7 @@ public class EpisodeManager : MonoBehaviour
 
     public void finishCheckpoint()
     {
-        AddOtherReward(finishCheckpointReward);
+        AddEventReward(finishCheckpointReward);
         IncreasePassedGoals();
 
         EndEpisode(EndEvent.Success);
@@ -405,7 +432,7 @@ public class EpisodeManager : MonoBehaviour
 
     public void hitWall()
     {
-        AddOtherReward(wallHitReward);
+        AddEventReward(wallHitReward);
 
 
 
@@ -414,7 +441,7 @@ public class EpisodeManager : MonoBehaviour
 
     public void goalMissed()
     {
-        AddOtherReward(goalMissedReward);
+        AddEventReward(goalMissedReward);
 
         // TODO also save the color of the missed goal?
         EndEpisode(EndEvent.GoalMissed);
@@ -425,7 +452,7 @@ public class EpisodeManager : MonoBehaviour
 
         AddTime(allowedTimePerGoal);
 
-        AddOtherReward(goalPassedReward);
+        AddEventReward(goalPassedReward);
 
         IncreasePassedGoals();
         centerIndicators.RemoveAt(0); // remove an indicator
@@ -433,15 +460,13 @@ public class EpisodeManager : MonoBehaviour
         //Debug.Log($"will destroy goal {goal.name} {goal.transform.parent.gameObject.name}");
         Destroy(goal);
 
-        // TODO also save the color of the completed goal?
-
         // update the distance to the next goal
         this.lastDistance = GetDistanceToNextGoal();
     }
 
     public void obstacleHit()
     {
-        AddOtherReward(obstacleHitReward);
+        AddEventReward(obstacleHitReward);
     }
 
     public void redObstacleHit()
@@ -456,55 +481,51 @@ public class EpisodeManager : MonoBehaviour
         EndEpisode(EndEvent.BlueObstacle);
     }
 
-    private void OnTriggerEnter(Collider other)
+    private void OnTriggerEnter(Collider coll)
     {
         // This is attached to the JetBot
 
         if (!this.episodeRunning)
         {
-            //Debug.LogWarning("Episode not running, ignore collision with " + other.tag);
+            //Debug.LogWarning("Episode not running, ignore collision with " + coll.tag);
             return;
         }
-        // TODO properly unify episodeRunning and step == -1
-        if (this.step == -1){
-            Debug.LogError($"collision although we are in step -1 for {this.gameObject.name} with {other.tag}");
-            return;
-        }
-        if (other.tag == "BlueObstacleTag")
+        if (coll.tag == "BlueObstacleTag")
         {
             blueObstacleHit();
             return;
         }
-        if (other.tag == "RedObstacleTag")
+        if (coll.tag == "RedObstacleTag")
         {
             redObstacleHit();
             return;
         }
-        if (other.tag == "GoalPassed")
+        if (coll.tag == "GoalPassed")
         {
-            other.tag = "DestroyedGoal";
-            goalPassed(other.gameObject);
+            coll.tag = "DestroyedGoal";
+            goalPassed(coll.gameObject);
             return;
         }
-        if (other.tag == "GoalMissed")
+        if (coll.tag == "GoalMissed")
         {
             goalMissed();
             return;
         }
-        if (other.tag == "Wall")
+        if (coll.tag == "Wall")
         {
             hitWall();
             return;
         }
-        if (other.tag == "FinishCheckpoint")
+        if (coll.tag == "FinishCheckpoint")
         {
             finishCheckpoint();
             return;
         }
-        if (other.tag == "DestroyedGoal"){
+        if (coll.tag == "DestroyedGoal")
+        {
             // duplicate detection, ignore
             return;
         }
-        Debug.LogError($"unknown tag {other.tag}");
+        Debug.LogError($"unknown tag {coll.tag}");
     }
 }

@@ -643,8 +643,20 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e861ba74c6d9b9a4984f9d7dc260bcfc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  allowedTime: 10
+  allowedTimeDefault: 20
+  allowedTimePerGoal: 10
+  finishCheckpointReward: 100
+  wallHitReward: -1
+  obstacleHitReward: -1
+  timeoutReward: -1
+  goalMissedReward: -1
+  goalPassedReward: 1
   duration: 0
+  allowedTime: 10
+  passedGoals: 0
+  numberOfGoals: 0
+  rewardSinceLastGetReward: 0
+  centerIndicators: []
 --- !u!1 &3729762528461829137
 GameObject:
   m_ObjectHideFlags: 0

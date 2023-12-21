@@ -165,8 +165,8 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
 
         callback.on_rollout_start()
 
-        completed_games, successfully_completed_games, number_of_goals, successfully_passed_goals, total_reward, total_timesteps, distance_reward, velocity_reward, other_reward, orientation_reward = 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
-        # other reward is the reward that is not distance or velocity reward
+        completed_games, successfully_completed_games, number_of_goals, successfully_passed_goals, total_reward, total_timesteps, distance_reward, velocity_reward, event_reward, orientation_reward = 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+        # event_reward is the reward that is not distance or velocity reward
         # such as collisions, passed goals and episode terminated
 
         reward_correction_dict = {}
@@ -175,8 +175,15 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         # outer dictionary maps env index to inner dictionary
         # inner dictionary maps step number to the corresponding position in rollout_buffer
 
+
+        env.env_method(
+            method_name="setRandomEval",
+            indices=range(env.num_envs),
+            randomEval=True,
+        )
+        
         env.reset()
-        # we need to reset the env to get the correct bootstrapped rewards
+        # we need to reset the env to get the correct rewards
 
         while n_steps < n_rollout_steps:
             if self.use_sde and self.sde_sample_freq > 0 and n_steps % self.sde_sample_freq == 0:
@@ -186,10 +193,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
             with th.no_grad():
                 # Convert to pytorch tensor or to TensorDict
                 fresh_obs = get_obs(env)
-                #print(f'fresh obs shape: {fresh_obs.shape}')
-                #print(f'last obs shape: {self._last_obs.shape}')
                 obs_tensor = obs_as_tensor(fresh_obs, self.device)
-                #print(f'obs tensor shape: {obs_tensor.shape}')
 
                 
                 actions, values, log_probs = self.policy(obs_tensor)
@@ -206,8 +210,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
             # TODO use the correct step method
             
             
-            #print(f'new obs shape: {new_obs.shape}')
-            # is 10, 3, 84, 84
+        
 
             self.num_timesteps += env.num_envs
 
@@ -250,7 +253,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
 
                     distance_reward += float(infos[idx]["distanceReward"])
                     velocity_reward += float(infos[idx]["velocityReward"])
-                    other_reward += float(infos[idx]["otherReward"])
+                    event_reward += float(infos[idx]["eventReward"])
                     orientation_reward += float(infos[idx]["orientationReward"])
                     
 
@@ -262,14 +265,11 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
                 values,
                 log_probs,
             )
-            print(f'insertpos: {insertpos}')
+            #print(f'insertpos: {insertpos}')
 
             assert len(infos) == env.num_envs, f"infos has wrong length {len(infos)} != {env.num_envs}"
 
             for idx, info in enumerate(infos):
-                # TODO is the returned step sometimes not correct?
-                # returns the same step multiple times
-                
 
                 assert int(info['step']) not in reward_correction_dict[idx].keys(), f"step {info['step']} already in reward correction dict for env {idx}"
                 if int(info['step']) != 0:
@@ -277,36 +277,19 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
                 
                 reward_correction_dict[idx][int(info['step'])] = insertpos
 
-                # TODO es passiert nicht, dass etwas mehrmals in reward_correction_dict eingetragen wird
-                # (es wird nicht ueberschrieben), es muss ein anderes Problem sein
-
-                # reward correction dict fuer index 7 war kaputt:
-                # reward correction dict: {0: {}, 1: {}, 2: {}, 3: {}, 4: {}, 5: {}, 6: {}, 7: {0: 76, 2: 77, 3: 78, 4: 79}, 8: {0: 76, 1: 77, 2: 78, 3: 79}, 9: {0: 76, 1: 77, 2: 78, 3: 79}}
-
-
-
             for idx, done in enumerate(dones):
-                # TODO obtain the real rewards from the env
-                # these rewards should be available from the info dictionary since the env is automatically reset when done
-
-                # TODO the env from unity does not yet return a proper list/dict of rewards
+                # obtain the real rewards from the env
+            
 
                 if done or n_steps >= n_rollout_steps:
                     # playout finished or cancelling due to enough collected datapoints
                     # TODO it would be better to remove the ones prematurely terminated from the replay buffer
 
-                    print(f'reward correction dict: {reward_correction_dict}')
-                    print(f'reward correction dict entry {reward_correction_dict[idx]}')
-
-                    print(f'info for index {idx}: {infos[idx]}')
-
-                    
-
                     env_id = idx
-                    bootstrapped_rewards = infos[env_id]['bootstrapped_rewards']
-                    assert len(bootstrapped_rewards) == len(reward_correction_dict[env_id]), f"bootstrapped rewards {len(bootstrapped_rewards)} and reward correction dict {len(reward_correction_dict[env_id])} do not match in length"
+                    rewards = infos[env_id]['rewards']
+                    assert len(rewards) == len(reward_correction_dict[env_id]), f"rewards {len(rewards)} and reward correction dict {len(reward_correction_dict[env_id])} do not match in length"
                     for step, bufferpos in reward_correction_dict[env_id].items():
-                        rollout_buffer.rewards[bufferpos][env_id] = bootstrapped_rewards[step]
+                        rollout_buffer.rewards[bufferpos][env_id] = rewards[step]
 
 
                     assert len(reward_correction_dict[env_id]) == int(infos[idx]['amount_of_steps']), f"reward correction dict is not complete {len(reward_correction_dict[env_id])} != {infos[idx]['amount_of_steps']}"
@@ -339,16 +322,16 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
             mean_episode_length = total_timesteps / completed_games
             mean_distance_reward = distance_reward / completed_games
             mean_velocity_reward = velocity_reward / completed_games
-            mean_other_reward = other_reward / completed_games
+            mean_event_reward = event_reward / completed_games
             mean_orientation_reward = orientation_reward / completed_games
         else:
-            success_rate, mean_reward, mean_episode_length, mean_distance_reward, mean_velocity_reward, mean_other_reward, mean_orientation_reward = 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+            success_rate, mean_reward, mean_episode_length, mean_distance_reward, mean_velocity_reward, mean_event_reward, mean_orientation_reward = 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
 
 
         if successfully_passed_goals > 0:
             print(f'passed a goal succesfully, rate is {goal_completion_rate}')
             assert goal_completion_rate > 0.0, "goal completion rate is 0 although a goal was passed"
-        return True, success_rate, goal_completion_rate, mean_reward, mean_episode_length, mean_distance_reward, mean_velocity_reward, mean_other_reward, mean_orientation_reward
+        return True, success_rate, goal_completion_rate, mean_reward, mean_episode_length, mean_distance_reward, mean_velocity_reward, mean_event_reward, mean_orientation_reward
     
 
     def train(self) -> None:
@@ -384,7 +367,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         while self.num_timesteps < total_timesteps:
             # collect_rollouts
             cr_time = time.time() 
-            continue_training, success_rate, goal_completion_rate, mean_reward, mean_episode_length, mean_distance_reward, mean_velocity_reward, mean_other_reward, mean_orientation_reward = self.collect_rollouts(
+            continue_training, success_rate, goal_completion_rate, mean_reward, mean_episode_length, mean_distance_reward, mean_velocity_reward, mean_event_reward, mean_orientation_reward = self.collect_rollouts(
                 self.env, callback, self.rollout_buffer, n_rollout_steps=self.n_steps)
             cr_time = time.time() - cr_time
 
@@ -429,9 +412,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
                 self.logger.record("rollout/mean_distance_reward", mean_distance_reward)
                 self.logger.record("rollout/mean_velocity_reward", mean_velocity_reward)
                 self.logger.record("rollout/mean_orientation_reward", mean_orientation_reward)
-                self.logger.record("rollout/mean_other_reward", mean_other_reward) # rewards such as collisions, goals passed and timeouts
-                # this reward should not negatively dominate the other rewards
-                # the penalties for expired time and collisions should not discourage the agent from moving
+                self.logger.record("rollout/mean_event_reward", mean_event_reward) 
 
                 self.logger.dump(step=self.num_timesteps)
 
@@ -482,7 +463,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
 
         
         env.env_method(
-            method_name="reset_difficulty",
+            method_name="reset_with_difficulty",
             indices=range(n_envs),
             difficulty=difficulty,
         )
@@ -520,14 +501,14 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
                         passed_goals += int(infos[i]["passedGoals"])
                         number_of_goals += int(infos[i]["numberOfGoals"])
 
-                        print(f'end event: {infos[i]["endEvent"]}')
+                        #print(f'end event: {infos[i]["endEvent"]}')
 
                         if infos[i]["endEvent"] == "Success":
                             success_count += 1
 
                         # due to auto reset we have to reset the env again with the right parameters:
                         env.env_method(
-                            method_name="reset_difficulty",
+                            method_name="reset_with_difficulty",
                             indices=[i],
                             difficulty=difficulty,
                         )

@@ -230,7 +230,7 @@ public class ObstacleMapManager : MonoBehaviour
 
         jb.GetComponent<EpisodeManager>().setCenterIndicators(this.centerIndicators);
 
-        Debug.Log($"Jetbot spawn rotation y {jb.transform.rotation.y}");
+        //Debug.Log($"Jetbot spawn rotation y {jb.transform.rotation.y}");
         return jb;
     }
     private Vector3 GetJetBotSpawnCoords()
@@ -263,6 +263,10 @@ public class ObstacleMapManager : MonoBehaviour
 
         //Debug.Log($"JetBot spawn range x {minXLocal} - {maxXLocal} z {zLeftMax} - {zRightMax}");
 
+        // TODO vielleicht muss die X Position angepasst werden, da die eigene Position des JetBots nun der Position des coarBodys entspricht
+        // das war zuvor nicht der Fall und hat zu stark unterschiedlichen Positionen bei Rotation gefuehrt
+        // PythonJetbot centered prefab
+
         return spawnPoint;
     }
 
@@ -281,7 +285,7 @@ public class ObstacleMapManager : MonoBehaviour
         Vector3 spawnPoint = new(minXLocal, Constants.JETBOT_SPAWN_Y, zRandomCoord);
 
 
-        Debug.LogWarning($"Eval JetBot spawn x {minXLocal} - range z {zLeftMax} - {zRightMax}");
+        //Debug.LogWarning($"Eval JetBot spawn x {minXLocal} - range z {zLeftMax} - {zRightMax}");
 
         return spawnPoint;
     }
@@ -451,7 +455,7 @@ public class ObstacleMapManager : MonoBehaviour
         else if (mapType == MapType.random)
         {
             jetBotSpawnPosition = this.GetJetBotRandomCoords();
-            Debug.Log($"Random JetBot spawn position {jetBotSpawnPosition}");
+            //Debug.Log($"Random JetBot spawn position {jetBotSpawnPosition}");
         }
         else
         {
@@ -546,7 +550,7 @@ public class ObstacleMapManager : MonoBehaviour
         {
             //first goal random distance to JetBot
             minXLocal = (int)(jetBotSpawnPosition.x + rnd.Next(Constants.MINXDISTANCEGOALS, Constants.MAXXDISTANCEGOALS));
-            Debug.Log($"minXLocal {minXLocal} maxXLocal {maxXLocal}");
+            //Debug.Log($"minXLocal {minXLocal} maxXLocal {maxXLocal}");
         }
 
         // choose random distance between goals every round

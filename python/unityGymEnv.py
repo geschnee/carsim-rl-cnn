@@ -31,7 +31,7 @@ class StepReturnObject:
     done: bool
     terminated: bool
     info: dict
-    bootstrapped_rewards: list[float]
+    rewards: list[float]
 
 from enum import Enum
 class MapType(Enum):
@@ -72,6 +72,10 @@ class MapType(Enum):
         else:
             assert False, f'unknown difficulty {difficulty}'
 
+    @classmethod
+    def getRandomEval(myEnum):
+        return MapType(np.random.choice([1,2,3,4,5,6,7,8,9,10]))
+
 class EndEvent(Enum):
     NotEnded = 0
     Success = 1
@@ -88,18 +92,19 @@ class BaseUnityCarEnv(gym.Env):
     unity_comms: UnityComms = None
     instancenumber = 0
 
-    def __init__(self, width=336, height=168, port=9000, log=False, asynchronous=True, spawn_point_random=False, single_goal=False, frame_stacking=5, grayscale=True, normalize_images=False, equalize=False, bootstrap_n=7, lighting=1):
+    def __init__(self, width=336, height=168, port=9000, log=False, randomEval=True, spawn_point_random=False, single_goal=False, frame_stacking=5, grayscale=True, normalize_images=False, equalize=False, lighting=1):
         # height and width was previous 168, that way we could downsample and reach the same dimensions as the nature paper of 84 x 84
         
+        self.randomEval = randomEval
+
         self.equalize = equalize
         self.downsampling = 2
-        self.bootstrap_n = bootstrap_n
 
         self.lighting = lighting
 
         self.log = log
 
-        self.asynchronous = asynchronous
+        self.asynchronous = False
         self.width = int(width / self.downsampling)
         self.height = int(height / self.downsampling)
         # width and height in pixels of the screen
@@ -171,9 +176,6 @@ class BaseUnityCarEnv(gym.Env):
             id=self.instancenumber)
         BaseUnityCarEnv.instancenumber += 1
 
-        # TODO check maybe we can also do self.unity_comms = BaseUnityCarEnv.unity_comms
-        # this would make the rest of the code more readable
-
         self.spawn_point_random = spawn_point_random
         self.single_goal = single_goal
 
@@ -198,7 +200,8 @@ class BaseUnityCarEnv(gym.Env):
         assert right_acceleration >= - \
             1 and right_acceleration <= 1, f'right_acceleration {right_acceleration} is not in range [-1, 1]'
 
-        stepObj = BaseUnityCarEnv.unity_comms.immediateStep(id=self.instancenumber, inputAccelerationLeft=float(
+        #print(f'{self.instancenumber} step {self.step_nr} left {left_acceleration} right {right_acceleration}')
+        stepObj = BaseUnityCarEnv.unity_comms.immediateStep(id=self.instancenumber, step=self.step_nr, inputAccelerationLeft=float(
             left_acceleration), inputAccelerationRight=float(right_acceleration))
 
         reward = stepObj["reward"]
@@ -207,21 +210,10 @@ class BaseUnityCarEnv(gym.Env):
         # TODO differentiate these two
 
         info_dict = stepObj["info"]
-        info_dict["bootstrapped_rewards"] = stepObj["bootstrapped_rewards"]
+        info_dict["rewards"] = stepObj["rewards"]
 
         self.step_nr += 1
-
-        if self.step_nr != int(info_dict["step"]):
-            print(f'old step mistake step {self.step_mistake_step}, current mistake step {self.step_nr}, env {self.instancenumber}', flush=True)
-            self.step_mistakes += 1
-            self.step_mistake_step = self.step_nr
-            info_dict["step"] = self.step_nr
-
-            # if step mistake happens in one env, it will happen for all subsequent step calls
-           
-            print(f'step_mistakes {self.step_mistakes}', flush=True)
-            # TODO how often does this mistake occur?
-        #assert self.step_nr == int(info_dict["step"]), f'self.step {self.step_nr} info_dict["step"] {info_dict["step"]}'
+        assert self.step_nr == int(info_dict["step"]), f'self.step {self.step_nr} info_dict["step"] {info_dict["step"]} for {self.instancenumber}'
 
         assert info_dict["amount_of_steps"] == info_dict["amount_of_steps_based_on_rewardlist"], f'info_dict["amount_of_steps"] {info_dict["amount_of_steps"]}, baed on rewardlist {info_dict["amount_of_steps_based_on_rewardlist"]}'
 
@@ -252,10 +244,14 @@ class BaseUnityCarEnv(gym.Env):
         assert right_acceleration >= - \
             1 and right_acceleration <= 1, f'right_acceleration {right_acceleration} is not in range [-1, 1]'
 
-        BaseUnityCarEnv.unity_comms.asyncStepPart1(id=self.instancenumber, inputAccelerationLeft=float(
+        print(f'{self.instancenumber} step {self.step_nr}')
+        BaseUnityCarEnv.unity_comms.asyncStepPart1(id=self.instancenumber, step=self.step_nr, inputAccelerationLeft=float(
             left_acceleration), inputAccelerationRight=float(right_acceleration))
 
         time.sleep(0.1)
+
+        assert False, f'delete this method'
+
         stepObj = BaseUnityCarEnv.unity_comms.asyncStepPart2(
             id=self.instancenumber)
 
@@ -268,7 +264,7 @@ class BaseUnityCarEnv(gym.Env):
         info_dict["bootstrapped_rewards"] = stepObj["bootstrapped_rewards"]
 
         self.step_nr += 1
-        assert self.step_nr == int(info_dict["step"]), f'self.step {self.step_nr} info_dict["step"] {info_dict["step"]}'
+        assert self.step_nr == int(info_dict["step"]), f'self.step {self.step_nr} info_dict["step"] {info_dict["step"]} for {self.instancenumber}'
 
         # print(
         #    f'left_acceleration {left_acceleration} right_acceleration {right_acceleration}, reward {reward}')
@@ -298,17 +294,14 @@ class BaseUnityCarEnv(gym.Env):
         if self.frame_stacking > 1:
             self.memory = np.zeros((self.height, self.width, self.channels_total), dtype=self.obs_dtype)
 
-        if mapTypeString is not None:
-            mp = mapTypeString
-        else:
-            mp = self.mapType.name
+        mp_name = self.getMapTypeName(mapTypeString=mapTypeString)
 
-        obsstring = BaseUnityCarEnv.unity_comms.reset(mapType=mp,
-            id=self.instancenumber, spawnpointRandom=self.spawn_point_random, singleGoalTraining=self.single_goal, bootstrap_n=self.bootstrap_n, lightMultiplier = self.lighting) 
+        obsstring = BaseUnityCarEnv.unity_comms.reset(mapType=mp_name,
+            id=self.instancenumber, spawnpointRandom=self.spawn_point_random, singleGoalTraining=self.single_goal, lightMultiplier = self.lighting) 
         # TODO lighting lighting=self.lighting)
 
         
-        info = {"mapType": mp}
+        info = {"mapType": mp_name}
 
         new_obs = self.unityStringToObservation(obsstring)
 
@@ -317,10 +310,21 @@ class BaseUnityCarEnv(gym.Env):
 
         return new_obs, info
     
-    def reset_difficulty(self, difficulty):
+    def getMapTypeName(self, mapTypeString):
+        if mapTypeString is not None:
+            mp = mapTypeString
+        elif self.randomEval:
+            mp = MapType.getRandomEval().name
+        else:
+            mp = self.mapType.name
+        return mp
+    
+    def setRandomEval(self, randomEval):
+        self.randomEval = randomEval
+    
+    def reset_with_difficulty(self, difficulty):
         mapType = MapType.getMapTypeFromDifficulty(difficulty)
         return self.reset(mapTypeString=mapType.name)
-
 
 
     # TODO try this wrapper instead: https://github.com/DLR-RM/stable-baselines3/blob/b413f4c285bc3bfafa382559b08ce9d64a551d26/stable_baselines3/common/vec_env/vec_frame_stack.py#L12
