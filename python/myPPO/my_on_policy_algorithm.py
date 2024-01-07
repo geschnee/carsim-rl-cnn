@@ -136,6 +136,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         callback: BaseCallback,
         rollout_buffer: MyRolloutBuffer,
         n_rollout_steps: int,
+        log: bool = False,
     ) -> bool:
         """
         Collect experiences using the current policy and fill a ``RolloutBuffer``.
@@ -151,7 +152,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
             collected, False if callback terminated rollout prematurely.
         """
 
-        print(f'collect rollouts started')
+        print(f'collect rollouts started', flush=True)
 
 
         # Switch to eval mode (this affects batch norm / dropout)
@@ -165,7 +166,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
 
         callback.on_rollout_start()
 
-        completed_games, successfully_completed_games, number_of_goals, successfully_passed_goals, total_reward, total_timesteps, distance_reward, velocity_reward, event_reward, orientation_reward = 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+        completed_games, successfully_completed_games, number_of_goals, successfully_passed_goals, total_reward, total_timesteps, distance_reward, velocity_reward, event_reward, orientation_reward, successfully_passed_first_goals = 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
         # event_reward is the reward that is not distance or velocity reward
         # such as collisions, passed goals and episode terminated
 
@@ -207,9 +208,6 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
                     actions, self.action_space.low, self.action_space.high)
 
             new_obs, rewards, dones, infos = env.step(clipped_actions)
-            # TODO use the correct step method
-            
-            
         
 
             self.num_timesteps += env.num_envs
@@ -255,6 +253,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
                     velocity_reward += float(infos[idx]["velocityReward"])
                     event_reward += float(infos[idx]["eventReward"])
                     orientation_reward += float(infos[idx]["orientationReward"])
+                    successfully_passed_first_goals += int(infos[idx]["passedFirstGoal"])
                     
 
             insertpos = rollout_buffer.add(
@@ -310,8 +309,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
 
         callback.on_rollout_end()
 
-        #assert completed_games>0, "not a single playout was complete, finished too fast"
-
+        
         
         goal_completion_rate = successfully_passed_goals / number_of_goals
 
@@ -324,14 +322,29 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
             mean_velocity_reward = velocity_reward / completed_games
             mean_event_reward = event_reward / completed_games
             mean_orientation_reward = orientation_reward / completed_games
+            first_goal_completion_rate = successfully_passed_first_goals / completed_games
         else:
-            success_rate, mean_reward, mean_episode_length, mean_distance_reward, mean_velocity_reward, mean_event_reward, mean_orientation_reward = 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+            success_rate, mean_reward, mean_episode_length, mean_distance_reward, mean_velocity_reward, mean_event_reward, mean_orientation_reward, first_goal_completion_rate = 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
 
+        print(f'collect rollouts finished', flush=True)
 
         if successfully_passed_goals > 0:
             print(f'passed a goal succesfully, rate is {goal_completion_rate}')
             assert goal_completion_rate > 0.0, "goal completion rate is 0 although a goal was passed"
-        return True, success_rate, goal_completion_rate, mean_reward, mean_episode_length, mean_distance_reward, mean_velocity_reward, mean_event_reward, mean_orientation_reward
+        
+        
+        self.logger.record("rollout/success_rate", success_rate)
+        self.logger.record("rollout/goal_completion_rate", goal_completion_rate)
+        self.logger.record("rollout/mean_reward", mean_reward)
+        self.logger.record("rollout/mean_episode_length", mean_episode_length)
+        self.logger.record("rollout/mean_distance_reward", mean_distance_reward)
+        self.logger.record("rollout/mean_velocity_reward", mean_velocity_reward)
+        self.logger.record("rollout/mean_orientation_reward", mean_orientation_reward)
+        self.logger.record("rollout/mean_event_reward", mean_event_reward)
+        self.logger.record("rollout/first_goal_completion_rate", first_goal_completion_rate)
+        self.logger.record("rollout/completed_games", completed_games)
+        
+        return True
     
 
     def train(self) -> None:
@@ -364,12 +377,17 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
 
         assert self.env is not None
 
+        total_cr_time, total_train_time, total_eval_time = 0, 0, 0
+
         while self.num_timesteps < total_timesteps:
             # collect_rollouts
             cr_time = time.time() 
-            continue_training, success_rate, goal_completion_rate, mean_reward, mean_episode_length, mean_distance_reward, mean_velocity_reward, mean_event_reward, mean_orientation_reward = self.collect_rollouts(
-                self.env, callback, self.rollout_buffer, n_rollout_steps=self.n_steps)
+            should_log = log_interval is not None and iteration % log_interval == 0
+            continue_training = self.collect_rollouts(
+                self.env, callback, self.rollout_buffer, n_rollout_steps=self.n_steps, log=should_log)
             cr_time = time.time() - cr_time
+
+            total_cr_time += cr_time
 
             if continue_training is False:
                 break
@@ -405,31 +423,34 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
                 
 
                 self.logger.record("time/collection_time_seconds", cr_time)
-                self.logger.record("rollout/success_rate", success_rate)
-                self.logger.record("rollout/goal_completion_rate", goal_completion_rate)
-                self.logger.record("rollout/mean_reward", mean_reward)
-                self.logger.record("rollout/mean_episode_length", mean_episode_length)
-                self.logger.record("rollout/mean_distance_reward", mean_distance_reward)
-                self.logger.record("rollout/mean_velocity_reward", mean_velocity_reward)
-                self.logger.record("rollout/mean_orientation_reward", mean_orientation_reward)
-                self.logger.record("rollout/mean_event_reward", mean_event_reward) 
+                
 
                 self.logger.dump(step=self.num_timesteps)
 
             train_time = time.time()
             self.train()
-            self.logger.record("time/train_time_seconds", time.time() - train_time)
+            train_time = time.time() - train_time
+            self.logger.record("time/train_time_seconds", train_time)
+            total_train_time += train_time
 
             # model eval 
             if log_interval is not None and iteration % log_interval == 0:
-
+                print(f'Will eval now as after every {log_interval} collect and trains')
                 eval_time = time.time()
                 num_evals_per_difficulty = 10
                 self.eval_model_track(num_evals_per_difficulty, "easy")
                 self.eval_model_track(num_evals_per_difficulty, "medium")
                 self.eval_model_track(num_evals_per_difficulty, "hard")
 
-                self.logger.record("time/eval_time_seconds", time.time() - eval_time)
+                eval_time = time.time() - eval_time
+                self.logger.record("time/eval_time_seconds", eval_time)
+                print(f'eval finished minutes: {eval_time / 60}')
+                total_eval_time += eval_time
+
+
+                print(f'total_cr_time: {total_cr_time}')
+                print(f'total_train_time: {total_train_time}')
+                print(f'total_eval_time: {total_eval_time}', flush=True)
 
         callback.on_training_end()
 
@@ -450,7 +471,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         n_envs = env.num_envs
         episode_rewards = []
         episode_lengths = []
-        success_count, finished_episodes, passed_goals, number_of_goals = 0, 0, 0, 0
+        success_count, finished_episodes, passed_goals, number_of_goals, first_goals = 0, 0, 0, 0, 0
 
         episode_counts = np.zeros(n_envs, dtype="int")
         # Divides episodes among different sub environments in the vector as evenly as possible
@@ -468,11 +489,15 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
             difficulty=difficulty,
         )
 
+        
+        self.policy.set_training_mode(False)
+
         while (episode_counts < episode_count_targets).any():
     
             with th.no_grad():
                 # Convert to pytorch tensor or to TensorDict
-                fresh_obs = get_obs(env)
+                fresh_obs = get_obs(env) # TODO this does a memory rollover, as well as the step function
+                # should one of them not do it? or does it not matter?
                 obs_tensor = obs_as_tensor(fresh_obs, self.device)
                 actions, values, log_probs = self.policy(obs_tensor)
             actions = actions.cpu().numpy()
@@ -500,6 +525,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
                         finished_episodes += 1
                         passed_goals += int(infos[i]["passedGoals"])
                         number_of_goals += int(infos[i]["numberOfGoals"])
+                        first_goals += int(infos[i]["passedFirstGoal"])
 
                         #print(f'end event: {infos[i]["endEvent"]}')
 
@@ -523,11 +549,13 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         
         success_rate = success_count / n_eval_episodes
         rate_of_passed_goals = passed_goals / number_of_goals
+        rate_of_passed_first_goals = first_goals / n_eval_episodes
 
-        self.logger.record(f'eval/{difficulty}_mean_reward', mean_reward)
-        self.logger.record(f'eval/{difficulty}_std_reward', std_reward)
-        self.logger.record(f'eval/{difficulty}_success_rate', success_rate)
-        self.logger.record(f'eval/{difficulty}_rate_passed_goals', rate_of_passed_goals)
+        self.logger.record(f'eval_{difficulty}/mean_reward', mean_reward)
+        self.logger.record(f'eval_{difficulty}/std_reward', std_reward)
+        self.logger.record(f'eval_{difficulty}/success_rate', success_rate)
+        self.logger.record(f'eval_{difficulty}/rate_passed_goals', rate_of_passed_goals)
+        self.logger.record(f'eval_{difficulty}/rate_first_goal', rate_of_passed_first_goals)
 
 
         return mean_reward, std_reward, success_rate
@@ -540,7 +568,7 @@ def get_obs(env):
 
     for idx in range(env.num_envs):
         obs = env.envs[idx].get_observation_including_memory()
-        #print(f'get_obs obs shape: {obs.shape}')
+        # get_obseration_including memory does a memory rolloer as well
         env._save_obs(idx, obs)
 
     obs = env._obs_from_buf()

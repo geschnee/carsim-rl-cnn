@@ -29,8 +29,9 @@ public class Arena : MonoBehaviour
     // from CarAgent.cs width was 512 and height was 256
     // we reduce the size to make it easier for the python code to handle the images
     // so more fit in the replay buffer
-    int resWidth = 336;
-    int resHeight = 168;
+    // these parameters are set in python config now, we want to be able to control the resolution and width/height ratio
+    public int resWidth; // = 336;
+    public int resHeight; // = 168;
     // resolution is quite high: https://www.raspberrypi.com/documentation/accessories/camera.html
 
     public Camera arenaCam;
@@ -39,6 +40,11 @@ public class Arena : MonoBehaviour
 
     public List<Light> lights;
     float defaultLightIntensity = 5f;
+
+    public float velocityCoefficient;
+    public float orientationCoefficient;
+    public float distanceCoefficient;
+    public float eventCoefficient;
 
     void Awake()
     {
@@ -100,9 +106,15 @@ public class Arena : MonoBehaviour
 
 
         episodeManager = car.GetComponent<EpisodeManager>();
+
+        episodeManager.velocityCoefficient = this.velocityCoefficient;
+        episodeManager.orientationCoefficient = this.orientationCoefficient;
+        episodeManager.distanceCoefficient = this.distanceCoefficient;
+        episodeManager.eventCoefficient = this.eventCoefficient;
+
         episodeManager.StartEpisode();
 
-        return GetCameraInput(this.carCam, this.resWidth, this.resHeight, "observation.png");
+        return this.getObservation();
     }
 
     public void SetLightIntensity(float lightMultiplier)
@@ -120,6 +132,11 @@ public class Arena : MonoBehaviour
 
     }
 
+    public EpisodeManager getEpisodeManager()
+    {
+        return episodeManager;
+    }
+
     public StepReturnObject immediateStep(int step, float inputAccelerationLeft, float inputAccelerationRight)
     {
         // TODO maybe move this code to the episodeManager
@@ -134,7 +151,7 @@ public class Arena : MonoBehaviour
         float reward = episodeManager.GetReward();
         bool done = episodeManager.IsTerminated();
         bool terminated = episodeManager.IsTerminated();
-        string observation = GetCameraInput(this.carCam, this.resWidth, this.resHeight, "observation.png");
+        string observation = this.getObservation();
 
         Dictionary<string, string> info = episodeManager.GetInfo();
 
@@ -143,6 +160,7 @@ public class Arena : MonoBehaviour
         return new StepReturnObject(observation, reward, done, terminated, info, rewards);
     }
 
+    /*
     public void asyncStepPart1(int step, float inputAccelerationLeft, float inputAccelerationRight)
     {
         aIEngine.SetInput(inputAccelerationLeft, inputAccelerationRight);
@@ -171,7 +189,7 @@ public class Arena : MonoBehaviour
         List<float> rewards = episodeManager.GetRewards();
 
         return new StepReturnObject(observation, reward_during_waiting, done, terminated, info, rewards);
-    }
+    }*/
 
 
     //Get the AI vehicles camera input encode as byte array
@@ -224,8 +242,7 @@ public class Arena : MonoBehaviour
         }
 
         //Debug.Log("getObservation");
-        string cameraPicture = GetCameraInput(this.carCam, this.resWidth, this.resHeight, "observation.png");
-        return cameraPicture;
+        return GetCameraInput(this.carCam, this.resWidth, this.resHeight, "observation.png");
     }
 
     public string getArenaScreenshot()

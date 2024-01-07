@@ -30,11 +30,11 @@ public class EpisodeManager : MonoBehaviour
     public float allowedTimePerGoal = 10f; // TODO was 10f
 
     // multiply by some constant, the reward is very small
-    float distanceCoefficient = 10f;
-    float velocityCoefficient = 0.1f;
-    float orientationCoefficient = 0.1f;
+    public float distanceCoefficient;// = 10f;
+    public float velocityCoefficient;// = 0.1f;
+    public float orientationCoefficient;// = 0.1f;
 
-    float eventCoefficient = 1f;
+    public float eventCoefficient;// = 1f;
 
     public float finishCheckpointReward = 100f;
     public float wallHitReward = -1f;
@@ -105,7 +105,7 @@ public class EpisodeManager : MonoBehaviour
         // int step from python is not yet incremented
         if (this.step != step)
         {
-            Debug.LogError($"unity step {this.step} != python step {step} for {this.transform.parent.name}");
+            Debug.LogWarning($"unity step {this.step} != python step {step} for {this.transform.parent.name}");
             // TODO make this a warning
             // There was a timeout in python resulting in a second call to the step function with the same arguments
             return;
@@ -219,6 +219,7 @@ public class EpisodeManager : MonoBehaviour
         info.Add("step", this.step.ToString());
         info.Add("amount_of_steps", (this.step + 1).ToString());
         info.Add("amount_of_steps_based_on_rewardlist", this.step_rewards.Count.ToString());
+        info.Add("passedFirstGoal", this.passedGoals > 0 ? "1" : "0");
 
         return info;
     }

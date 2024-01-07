@@ -7,10 +7,16 @@ fi
 
 echo "$1"
 
-if [[ "$1" == "tensorboard" ]] || [[ "$1" == "tb" ]];
+if [[ "$1" == "tensorboard_old" ]] || [[ "$1" == "tb_old" ]];
 then
     echo "starting tensorboard"
     tensorboard --logdir .\\tmp\\
+fi
+
+if [[ "$1" == "tensorboard" ]] || [[ "$1" == "tb" ]];
+then
+    echo "starting tensorboard"
+    tensorboard --logdir .\\outputs\\
 fi
 
 if [[ "$1" == "ppo_log" ]];

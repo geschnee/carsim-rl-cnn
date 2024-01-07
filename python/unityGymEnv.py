@@ -16,6 +16,8 @@ import PIL.Image as Image
 import io
 import base64
 
+import os
+
 from dataclasses import dataclass
 
 import time
@@ -48,6 +50,26 @@ class MapType(Enum):
     twoGoalLanesBlueFirstRightHard = 8
     twoGoalLanesRedFirstLeftHard = 9
     twoGoalLanesRedFirstRightHard = 10
+
+    # pseudo enums types
+    randomEvalEasy = 11 
+    randomEvalMedium = 12
+    randomEvalHard = 13
+    randomEval=14
+
+    @classmethod
+    def resolvePseudoEnum(myEnum, pseudoEnum):
+        if pseudoEnum.value == 11:
+            return myEnum.getRandomEasy()
+        elif pseudoEnum.value == 12:
+            return myEnum.getRandomMedium()
+        elif pseudoEnum.value == 13:
+            return myEnum.getRandomHard()
+        elif pseudoEnum.value == 14:
+            return myEnum.getRandomEval()
+        else:
+            # pseudoEnum is not a pseudo enum (real enum)
+            return pseudoEnum
 
     @classmethod
     def getRandomEasy(myEnum):
@@ -85,17 +107,13 @@ class EndEvent(Enum):
     RedObstacle = 5
     BlueObstacle = 6
 
-
-
 class BaseUnityCarEnv(gym.Env):
 
     unity_comms: UnityComms = None
     instancenumber = 0
 
-    def __init__(self, width=336, height=168, port=9000, log=False, randomEval=True, spawn_point_random=False, single_goal=False, frame_stacking=5, grayscale=True, normalize_images=False, equalize=False, lighting=1):
+    def __init__(self, width=336, height=168, port=9000, log=False, spawn_point_random=False, mapType=MapType.randomEval, single_goal=False, frame_stacking=5, grayscale=True, normalize_images=False, equalize=False, lighting=1, coefficients=None):
         # height and width was previous 168, that way we could downsample and reach the same dimensions as the nature paper of 84 x 84
-        
-        self.randomEval = randomEval
 
         self.equalize = equalize
         self.downsampling = 2
@@ -104,7 +122,6 @@ class BaseUnityCarEnv(gym.Env):
 
         self.log = log
 
-        self.asynchronous = False
         self.width = int(width / self.downsampling)
         self.height = int(height / self.downsampling)
         # width and height in pixels of the screen
@@ -112,6 +129,11 @@ class BaseUnityCarEnv(gym.Env):
         # how are RL algos trained for continuous action spaces?
         # https://medium.com/geekculture/policy-based-methods-for-a-continuous-action-space-7b5ecffac43a
 
+        assert coefficients is not None, f'coefficients must be set'
+        self.distanceCoefficient = coefficients["distanceCoefficient"]
+        self.orientationCoefficient = coefficients["orientationCoefficient"]
+        self.velocityCoefficient = coefficients["velocityCoefficient"]
+        self.eventCoefficient = coefficients["eventCoefficient"]
 
         # Frame stacking is quite common in DQN
         # if we implement the frame stacking in the gym env we get easier code since sb3 and others can reuse the observations easily
@@ -135,6 +157,7 @@ class BaseUnityCarEnv(gym.Env):
             assert self.channels_total < self.width, f'required for proper is_image_space_channels_first in sb3.common.preprocessing'
             print(f'channels total {self.channels_total}', flush=True)
         self.normalize_images = normalize_images
+        
         if normalize_images:
             high = 1
 
@@ -173,22 +196,19 @@ class BaseUnityCarEnv(gym.Env):
         self.instancenumber = BaseUnityCarEnv.instancenumber
 
         BaseUnityCarEnv.unity_comms.startArena(
-            id=self.instancenumber)
+            id=self.instancenumber, distanceCoefficient=self.distanceCoefficient, orientationCoefficient=self.orientationCoefficient, velocityCoefficient=self.velocityCoefficient, eventCoefficient=self.eventCoefficient, resWidth=width, resHeight=height )
         BaseUnityCarEnv.instancenumber += 1
 
         self.spawn_point_random = spawn_point_random
         self.single_goal = single_goal
 
-        self.mapType = MapType.random
+        self.mapType = mapType
 
         print(f'spawn_point_random {self.spawn_point_random} single_goal {self.single_goal}', flush=True)
 
     def step(self, action: Any) -> tuple[Any, SupportsFloat, bool, bool, dict[str, Any]]:
-
-        if self.asynchronous:
-            return self.stepAsynchronous(action)
-        else:
-            return self.stepSynchronous(action)
+        
+        return self.stepSynchronous(action)
 
     def stepSynchronous(self, action):
         """Perform step, return observation, reward, terminated, false, info."""
@@ -234,56 +254,8 @@ class BaseUnityCarEnv(gym.Env):
 
         return new_obs, reward, terminated, truncated, info_dict
 
-    def stepAsynchronous(self, action):
-        """Perform step, return observation, reward, terminated, false, info."""
 
-        left_acceleration, right_acceleration = action
-
-        assert left_acceleration >= - \
-            1 and left_acceleration <= 1, f'left_acceleration {left_acceleration} is not in range [-1, 1]'
-        assert right_acceleration >= - \
-            1 and right_acceleration <= 1, f'right_acceleration {right_acceleration} is not in range [-1, 1]'
-
-        print(f'{self.instancenumber} step {self.step_nr}')
-        BaseUnityCarEnv.unity_comms.asyncStepPart1(id=self.instancenumber, step=self.step_nr, inputAccelerationLeft=float(
-            left_acceleration), inputAccelerationRight=float(right_acceleration))
-
-        time.sleep(0.1)
-
-        assert False, f'delete this method'
-
-        stepObj = BaseUnityCarEnv.unity_comms.asyncStepPart2(
-            id=self.instancenumber)
-
-        reward = stepObj["reward"]
-        terminated = stepObj["done"]
-        truncated = stepObj["done"]
-        # TODO differentiate these two
-
-        info_dict = stepObj["info"]
-        info_dict["bootstrapped_rewards"] = stepObj["bootstrapped_rewards"]
-
-        self.step_nr += 1
-        assert self.step_nr == int(info_dict["step"]), f'self.step {self.step_nr} info_dict["step"] {info_dict["step"]} for {self.instancenumber}'
-
-        # print(
-        #    f'left_acceleration {left_acceleration} right_acceleration {right_acceleration}, reward {reward}')
-
-        if terminated and False:
-            print(
-                f'stepObj reward {stepObj["reward"]} done {stepObj["done"]} info {stepObj["info"]}', flush=True)
-
-
-        new_obs = self.unityStringToObservation(stepObj["observation"])
-        if self.frame_stacking > 1:
-            new_obs = self.memory_rollover(new_obs)
-
-        return new_obs, reward, terminated, truncated, info_dict
-        # TODO change the returned tuple to match the new gymnasium step API
-        # https://www.gymlibrary.dev/content/api/#stepping
-        # TODO check if there is a stable baselines 3 version ready for this new API
-
-    def reset(self, seed=None, mapTypeString = None):
+    def reset(self, seed=None, mapType = None):
         super().reset(seed=seed)  # gynasium migration guide https://gymnasium.farama.org/content/migration-guide/
 
         self.step_nr = -1
@@ -294,7 +266,7 @@ class BaseUnityCarEnv(gym.Env):
         if self.frame_stacking > 1:
             self.memory = np.zeros((self.height, self.width, self.channels_total), dtype=self.obs_dtype)
 
-        mp_name = self.getMapTypeName(mapTypeString=mapTypeString)
+        mp_name = self.getMapTypeName(mapType=mapType)
 
         obsstring = BaseUnityCarEnv.unity_comms.reset(mapType=mp_name,
             id=self.instancenumber, spawnpointRandom=self.spawn_point_random, singleGoalTraining=self.single_goal, lightMultiplier = self.lighting) 
@@ -303,36 +275,44 @@ class BaseUnityCarEnv(gym.Env):
         
         info = {"mapType": mp_name}
 
-        new_obs = self.unityStringToObservation(obsstring)
+        # do not take the observation from the reset, since the camera needs a frame to get sorted out
+        # between the two jrpc calls this should happen
+        new_obs = self.unityStringToObservation(BaseUnityCarEnv.unity_comms.getObservation(id=self.instancenumber))                                               
+        # obsstring)
+
+        #new_obs = self.unityStringToObservation(obsstring)
 
         if self.frame_stacking > 1:
             new_obs = self.memory_rollover(new_obs)
 
         return new_obs, info
     
-    def getMapTypeName(self, mapTypeString):
-        if mapTypeString is not None:
-            mp = mapTypeString
-        elif self.randomEval:
-            mp = MapType.getRandomEval().name
+    def getMapTypeName(self, mapType):
+
+        #print(f'mapType {mapType} self.mapType {self.mapType}', flush=True)
+        if mapType is not None:
+            mp = mapType
+            assert not isinstance(mp, str), f'mapType must be maptype, not {type(mp)}'
         else:
-            mp = self.mapType.name
-        return mp
+            mp = self.mapType
+        mapTypeName = MapType.resolvePseudoEnum(mp).name
+        return mapTypeName
     
     def setRandomEval(self, randomEval):
         self.randomEval = randomEval
     
     def reset_with_difficulty(self, difficulty):
         mapType = MapType.getMapTypeFromDifficulty(difficulty)
-        return self.reset(mapTypeString=mapType.name)
+        return self.reset(mapType=mapType)
 
 
     # TODO try this wrapper instead: https://github.com/DLR-RM/stable-baselines3/blob/b413f4c285bc3bfafa382559b08ce9d64a551d26/stable_baselines3/common/vec_env/vec_frame_stack.py#L12
-    def memory_rollover(self, new_obs):
+    def memory_rollover(self, new_obs, log = None):
         # was verified with an RGB example
         # see all the commented out lines
 
-        log = self.log
+        if log is None:
+            log = self.log
 
         #print(f'new obs min and max {np.min(new_obs)} {np.max(new_obs)}', flush=True)
 
@@ -342,15 +322,19 @@ class BaseUnityCarEnv(gym.Env):
         #print(f'mem shape {self.memory.shape} {self.memory.dtype} channels {channels} new_obs shape {new_obs.shape} {new_obs.dtype}', flush=True)
         
         if log:
+            
+            if not os.path.exists('imagelog'):
+                os.makedirs('imagelog')
+
             d = new_obs
             if self.normalize_images:
                 d = d * 255.0
             if channels== 3:
                 img = Image.fromarray(d, 'RGB')
-                img.save(f'imagelog/new_obs.png')
+                img.save(f'imagelog/{self.step_nr}_new_obs.png')
             else:
                 img = Image.fromarray(d, 'L')
-                img.save(f'imagelog/new_obs.png')
+                img.save(f'imagelog/{self.step_nr}_new_obs.png')
 
 
             for i in range(self.frame_stacking):
@@ -360,13 +344,13 @@ class BaseUnityCarEnv(gym.Env):
 
                 if channels== 3:
                     img = Image.fromarray(data, 'RGB')
-                    img.save(f'imagelog/pre_rollover{i}.png')
+                    img.save(f'imagelog/{self.step_nr}_pre_rollover{i}.png')
                 else:
                     #print(f'data shape {data.shape}', flush=True)
                     data = np.squeeze(data, axis=2)
                     #print(f'data shape {data.shape}', flush=True)
                     img = Image.fromarray(data, 'L')
-                    img.save(f'imagelog/pre_rollover{i}.png')
+                    img.save(f'imagelog/{self.step_nr}_pre_rollover{i}.png')
 
         # shift the channels to get rid of old stuff
         self.memory = np.roll(self.memory, shift=self.channels, axis=2)
@@ -378,11 +362,11 @@ class BaseUnityCarEnv(gym.Env):
                     data = data * 255.0
                 if channels== 3:
                     img = Image.fromarray(data, 'RGB')
-                    img.save(f'imagelog/post_rollover{i}.png')
+                    img.save(f'imagelog/{self.step_nr}_post_rollover{i}.png')
                 else: 
                     data = np.squeeze(data, axis=2)
                     img = Image.fromarray(data, 'L')
-                    img.save(f'imagelog/post_rollover{i}.png')
+                    img.save(f'imagelog/{self.step_nr}_post_rollover{i}.png')
 
         if self.grayscale:
             new_obs = np.expand_dims(new_obs, axis=2)
@@ -396,21 +380,26 @@ class BaseUnityCarEnv(gym.Env):
                     data = data * 255.0
                 if channels== 3:
                     img = Image.fromarray(data, 'RGB')
-                    img.save(f'imagelog/post_replace{i}.png')
+                    img.save(f'imagelog/{self.step_nr}_post_replace{i}.png')
                 else:
                     data = np.squeeze(data, axis=2)
                     img = Image.fromarray(data, 'L')
-                    img.save(f'imagelog/post_replace{i}.png')
+                    img.save(f'imagelog/{self.step_nr}_post_replace{i}.png')
 
         return self.memory
 
-    def get_observation_including_memory(self):
+    def get_observation_including_memory(self, log=False):
+        # this should not be used for logging some image files
+
         obs_string = BaseUnityCarEnv.unity_comms.getObservation(id=self.instancenumber)
-        obs = self.unityStringToObservation(obs_string)
+        obs = self.unityStringToObservation(obs_string, log)
 
         if self.frame_stacking > 1:
-            obs = self.memory_rollover(obs)
+            obs = self.memory_rollover(obs, log)
         return obs
+    
+    def setLog(self, log):
+        self.log = log
 
     def getObservation(self):
         return self.unityStringToObservation(BaseUnityCarEnv.unity_comms.getObservation(id=self.instancenumber))
@@ -427,9 +416,9 @@ class BaseUnityCarEnv(gym.Env):
         img = Image.fromarray(pixels_rgb, 'RGB')
         img.save(filename)
 
-    def unityStringToObservation(self, obsstring):
-
-        log = self.log
+    def unityStringToObservation(self, obsstring, log=None):
+        if log is None:
+            log = self.log
 
         base64_bytes = obsstring.encode('ascii')
         message_bytes = base64.b64decode(base64_bytes)
@@ -447,6 +436,12 @@ class BaseUnityCarEnv(gym.Env):
         #print(f'unit img max {np.max(pixels_rgb)} min {np.min(pixels_rgb)}', flush=True)
 
         if log:
+
+            if not os.path.exists('imagelog'):
+                os.makedirs('imagelog')
+            if not os.path.exists('expose_images'):
+                os.makedirs('expose_images')
+
             img = Image.fromarray(pixels_rgb, 'RGB')
             img.save("imagelog/image_from_unity.png")
             img.save("expose_images/agent_image_from_unity.png")

@@ -96,7 +96,7 @@ public class PeacefulPieCarCommandReceiver : MonoBehaviour
             return arenas[id].immediateStep(step, inputAccelerationLeft, inputAccelerationRight);
         }
 
-        [JsonRpcMethod]
+        /*[JsonRpcMethod]
         void asyncStepPart1(int id, int step, float inputAccelerationLeft, float inputAccelerationRight)
         {
             arenas[id].asyncStepPart1(step, inputAccelerationLeft, inputAccelerationRight);
@@ -106,10 +106,10 @@ public class PeacefulPieCarCommandReceiver : MonoBehaviour
         StepReturnObject asyncStepPart2(int id)
         {
             return arenas[id].asyncStepPart2();
-        }
+        }*/
 
         [JsonRpcMethod]
-        void startArena(int id)
+        void startArena(int id, float distanceCoefficient, float orientationCoefficient, float velocityCoefficient, float eventCoefficient, int resWidth, int resHeight)
         {
             // spawn a new arena including gameManager and everything
 
@@ -130,6 +130,12 @@ public class PeacefulPieCarCommandReceiver : MonoBehaviour
 
             arenas.Add(arena);
 
+            arena.distanceCoefficient = distanceCoefficient;
+            arena.orientationCoefficient = orientationCoefficient;
+            arena.velocityCoefficient = velocityCoefficient;
+            arena.eventCoefficient = eventCoefficient;
+            arena.resWidth = resWidth;
+            arena.resHeight = resHeight;
         }
 
         [JsonRpcMethod]

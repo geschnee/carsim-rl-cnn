@@ -1,0 +1,27 @@
+
+comment: "With random spawn the first goal might not be visible, will try different camera input sizes (more width)"
+
+n_envs: 10
+n_epochs: 5
+batch_size: 64
+n_steps: 128 # amount of steps to collect per epoch
+
+
+coefficients:
+
+env_kwargs:
+  spawn_point_random: True
+  single_goal: False
+  frame_stacking: 3
+  equalize: True
+  normalize_images: False
+  coefficients:
+    distanceCoefficient: 0.0
+    orientationCoefficient: 1.0
+    velocityCoefficient: 10.0
+    eventCoefficient: 0.0
+  mapType: randomEvalEasy
+  width: 500 #336
+  height: 168
+
+
