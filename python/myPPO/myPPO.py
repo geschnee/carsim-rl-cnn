@@ -306,6 +306,7 @@ class myPPO(MyOnPolicyAlgorithm):
         tb_log_name: str = "PPO",
         reset_num_timesteps: bool = True,
         progress_bar: bool = False,
+        num_evals_per_difficulty: int = 10,
     ) -> SelfPPO:
         return super().learn(
             total_timesteps=total_timesteps,
@@ -314,6 +315,7 @@ class myPPO(MyOnPolicyAlgorithm):
             tb_log_name=tb_log_name,
             reset_num_timesteps=reset_num_timesteps,
             progress_bar=progress_bar,
+            num_evals_per_difficulty=num_evals_per_difficulty,
         )
 
     def visualize_sample(self):

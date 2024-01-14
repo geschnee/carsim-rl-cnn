@@ -278,7 +278,8 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
 
             for idx, done in enumerate(dones):
                 # obtain the real rewards from the env
-            
+                if done:
+                    self.collected_games += 1
 
                 if done or n_steps >= n_rollout_steps:
                     # playout finished or cancelling due to enough collected datapoints
@@ -362,6 +363,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         tb_log_name: str = "OnPolicyAlgorithm",
         reset_num_timesteps: bool = True,
         progress_bar: bool = False,
+        num_evals_per_difficulty: int = 10,
     ) -> SelfOnPolicyAlgorithm:
         iteration = 0
 
@@ -378,6 +380,8 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         assert self.env is not None
 
         total_cr_time, total_train_time, total_eval_time = 0, 0, 0
+        self.collected_games = 0
+        max_total_success_rate = 0
 
         while self.num_timesteps < total_timesteps:
             # collect_rollouts
@@ -420,9 +424,10 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
                                    int(time_elapsed), exclude="tensorboard")
                 self.logger.record("time/total_timesteps",
                                    self.num_timesteps, exclude="tensorboard")
-                
+                self.logger.record("rollout/collected_games", self.collected_games)
 
                 self.logger.record("time/collection_time_seconds", cr_time)
+                self.logger.record("time/iteration", iteration)
                 
 
                 self.logger.dump(step=self.num_timesteps)
@@ -437,10 +442,15 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
             if log_interval is not None and iteration % log_interval == 0:
                 print(f'Will eval now as after every {log_interval} collect and trains')
                 eval_time = time.time()
-                num_evals_per_difficulty = 10
-                self.eval_model_track(num_evals_per_difficulty, "easy")
-                self.eval_model_track(num_evals_per_difficulty, "medium")
-                self.eval_model_track(num_evals_per_difficulty, "hard")
+                
+                easy_success_rate = self.eval_model_track(num_evals_per_difficulty, "easy")
+                medium_success_rate = self.eval_model_track(num_evals_per_difficulty, "medium")
+                hard_success_rate = self.eval_model_track(num_evals_per_difficulty, "hard")
+
+                total_success_rate = (easy_success_rate + medium_success_rate + hard_success_rate) / 3
+                if total_success_rate > max_total_success_rate:
+                    max_total_success_rate = total_success_rate
+                    self.save(f"best_model_episode_{iteration}")
 
                 eval_time = time.time() - eval_time
                 self.logger.record("time/eval_time_seconds", eval_time)
@@ -451,6 +461,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
                 print(f'total_cr_time: {total_cr_time}')
                 print(f'total_train_time: {total_train_time}')
                 print(f'total_eval_time: {total_eval_time}', flush=True)
+            
 
         callback.on_training_end()
 
@@ -491,13 +502,13 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
 
         
         self.policy.set_training_mode(False)
+        # TODO check if that is all we need to do to switch to eval mode (greedy/deterministic action selection)
 
         while (episode_counts < episode_count_targets).any():
     
             with th.no_grad():
                 # Convert to pytorch tensor or to TensorDict
-                fresh_obs = get_obs(env) # TODO this does a memory rollover, as well as the step function
-                # should one of them not do it? or does it not matter?
+                fresh_obs = get_obs(env) 
                 obs_tensor = obs_as_tensor(fresh_obs, self.device)
                 actions, values, log_probs = self.policy(obs_tensor)
             actions = actions.cpu().numpy()
@@ -558,13 +569,18 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         self.logger.record(f'eval_{difficulty}/rate_first_goal', rate_of_passed_first_goals)
 
 
-        return mean_reward, std_reward, success_rate
+        return success_rate
 
 def get_obs(env):
     # env is a vectorized BaseUnityCarEnv
     # it is wrapped in a vec_transpose env for the CNN
 
-    # this also changes the observation stored in the dummy_vec_env
+    
+    # TODO this does a memory rollover, as well as the step function
+    # should one of them not do it? or does it not matter?
+    # the frequent rollovers might result in the history not being deep enough
+
+    # I think the cleanest way to solve this is by simply increasing frame stacking n
 
     for idx in range(env.num_envs):
         obs = env.envs[idx].get_observation_including_memory()
@@ -573,4 +589,3 @@ def get_obs(env):
 
     obs = env._obs_from_buf()
     return env.transpose_observations(obs)
-

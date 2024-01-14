@@ -39,9 +39,9 @@ def run_ppo(cfg):
     # we use own replay buffer that saves the observation space as uint8 instead of float32
     # int8 is 8bit, float32 is 32bit
 
-    normalize_images = False
-    # scales the images to 0-1 range
-    # requires dtype float32
+   
+    # TODO do we need some approaches from RL path/trajectory planning to complete the parcour?
+
 
     n_envs = cfg.n_envs
 
@@ -49,15 +49,16 @@ def run_ppo(cfg):
     env_kwargs["mapType"] = MapType[cfg.env_kwargs.mapType]
     # get proper enum type from string
 
-    # TODO some logging of the stacked frames to see what the memory is like
-    # there is some image printing to the folder
+
 
     # Parallel environments
     vec_env = make_vec_env(unityGymEnv.BaseUnityCarEnv, n_envs=n_envs, env_kwargs=env_kwargs)
     # the n_envs can quickly be too much since the replay buffer will grow
     # the observations are quite big (float32)
 
-    #set one log to true
+    # set one log to true
+    # ---> some logging of the stacked frames to see what the memory is like
+    # there is some image printing to the imagelog folder
     vec_env.env_method(
         method_name="setLog",
         indices=0,
@@ -71,11 +72,24 @@ def run_ppo(cfg):
 
 
     print(f'using {algo} with {n_epochs} epochs, {batch_size} batch size and {n_steps} steps per epoch')
-    policy_kwargs = {"normalize_images": normalize_images}
+    policy_kwargs = {"normalize_images": cfg.env_kwargs.image_preprocessing.normalize_images}
+
+    # normalize_imagess=True scales the images to 0-1 range
+    # requires dtype float32
+    # kwarg to both the env (ObsSpace) and the policy
+
 
     model = algo("CnnPolicy", vec_env, verbose=1,
                 tensorboard_log="./tmp", n_epochs=n_epochs, batch_size=batch_size, n_steps=n_steps, policy_kwargs=policy_kwargs)
     # CnnPolicy network architecture can be seen in sb3.common.torch_layers.py
+
+    # TODO wo ist epsilon definiert?
+    # nimmt epsilon mit der Zeit ab?
+    # es gibt einen ent_coef was exploration fördert
+
+    # TODO preprocessing steps help?
+    # increase contrast of images?
+    # https://stackoverflow.com/questions/39308030/how-do-i-increase-the-contrast-of-an-image-in-python-opencv
 
     modelname="ppo_test_trained_random"
     continue_training = False
@@ -84,11 +98,7 @@ def run_ppo(cfg):
         model = algo.load(modelname, env=vec_env, tensorboard_log="./tmp",
                         n_epochs=n_epochs, batch_size=batch_size)
 
-    # TODO model save callback
-
-
-
-    model.learn(total_timesteps=2500000, log_interval=5)
+    model.learn(total_timesteps=2500000, log_interval=cfg.log_interval, num_evals_per_difficulty = cfg.num_evals_per_difficulty)
     model.save(modelname)
 
 

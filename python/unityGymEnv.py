@@ -59,7 +59,9 @@ class MapType(Enum):
 
     @classmethod
     def resolvePseudoEnum(myEnum, pseudoEnum):
-        if pseudoEnum.value == 11:
+        if pseudoEnum.value == 0:
+            return myEnum.getRandomEval()
+        elif pseudoEnum.value == 11:
             return myEnum.getRandomEasy()
         elif pseudoEnum.value == 12:
             return myEnum.getRandomMedium()
@@ -112,10 +114,11 @@ class BaseUnityCarEnv(gym.Env):
     unity_comms: UnityComms = None
     instancenumber = 0
 
-    def __init__(self, width=336, height=168, port=9000, log=False, spawn_point_random=False, mapType=MapType.randomEval, single_goal=False, frame_stacking=5, grayscale=True, normalize_images=False, equalize=False, lighting=1, coefficients=None):
+    def __init__(self, width=336, height=168, port=9000, log=False, spawn_point_random=False, mapType=MapType.randomEval, single_goal=False, image_preprocessing={}, frame_stacking=5, lighting=1, coefficients=None):
         # height and width was previous 168, that way we could downsample and reach the same dimensions as the nature paper of 84 x 84
+        self.instancenumber = BaseUnityCarEnv.instancenumber
 
-        self.equalize = equalize
+        self.equalize = image_preprocessing["equalize"]
         self.downsampling = 2
 
         self.lighting = lighting
@@ -142,8 +145,9 @@ class BaseUnityCarEnv(gym.Env):
         # frame stacking of one means there is no stacking done
         self.frame_stacking = frame_stacking
 
-        self.grayscale = grayscale
-        if grayscale:
+        self.grayscale = image_preprocessing["grayscale"]
+        
+        if self.grayscale:
             self.channels=1
         else:
             self.channels=3
@@ -155,18 +159,20 @@ class BaseUnityCarEnv(gym.Env):
             self.channels_total = self.channels * self.frame_stacking
             assert self.channels_total < self.height, f'required for proper is_image_space_channels_first in sb3.common.preprocessing'
             assert self.channels_total < self.width, f'required for proper is_image_space_channels_first in sb3.common.preprocessing'
-            print(f'channels total {self.channels_total}', flush=True)
-        self.normalize_images = normalize_images
+            
+            if self.instancenumber == 0:
+                print(f'channels total {self.channels_total}', flush=True)
+        self.normalize_images = image_preprocessing["normalize_images"]
         
-        if normalize_images:
+        if self.normalize_images:
             high = 1
 
             # sb3 does not do the normalization itself, we can do it here
-            # TODO we also need to set the parameter normalized_images=True in the CnnPolicy
+            # TODO we also need to set the parameter normalize_images=True in the CnnPolicy
             # see https://github.com/DLR-RM/stable-baselines3/blob/b413f4c285bc3bfafa382559b08ce9d64a551d26/stable_baselines3/common/torch_layers.py#L48
             self.obs_dtype =  np.float32
 
-            assert False, f'not implemented yet, did you set normalized_images=True in the CnnPolicy?'
+            assert False, f'not implemented yet, did you set normalize_images=True in the CnnPolicy?'
         else:
             high = 255
             self.obs_dtype = np.uint8
@@ -176,15 +182,15 @@ class BaseUnityCarEnv(gym.Env):
                                     shape=(self.height, self.width, self.channels_total),
                                     dtype=self.obs_dtype)
 
-        print(f'Observation space shape {self.observation_space.shape}', flush=True)
+        if self.instancenumber == 0:
+            print(f'Observation space shape {self.observation_space.shape}', flush=True)
 
         self.action_space = spaces.Box(
             low=-1.0, high=1.0, shape=(2, 1), dtype=np.float32)
         # TODO maybe use 0 for low instead of -1.0 (what did maximilian use?)
         # this box is essentially an array
 
-        #print(f'Box sample {self.action_space.sample()}')
-        # Box sample [[0.85317516]  [0.07102327]]
+        
 
         if BaseUnityCarEnv.unity_comms is None:
             # all instances of this class share the same UnityComms instance
@@ -193,7 +199,7 @@ class BaseUnityCarEnv(gym.Env):
             BaseUnityCarEnv.unity_comms = UnityComms(port=port)
             BaseUnityCarEnv.unity_comms.deleteAllArenas()
 
-        self.instancenumber = BaseUnityCarEnv.instancenumber
+        
 
         BaseUnityCarEnv.unity_comms.startArena(
             id=self.instancenumber, distanceCoefficient=self.distanceCoefficient, orientationCoefficient=self.orientationCoefficient, velocityCoefficient=self.velocityCoefficient, eventCoefficient=self.eventCoefficient, resWidth=width, resHeight=height )
@@ -204,7 +210,8 @@ class BaseUnityCarEnv(gym.Env):
 
         self.mapType = mapType
 
-        print(f'spawn_point_random {self.spawn_point_random} single_goal {self.single_goal}', flush=True)
+        if self.instancenumber == 0:
+            print(f'spawn_point_random {self.spawn_point_random} single_goal {self.single_goal}', flush=True)
 
     def step(self, action: Any) -> tuple[Any, SupportsFloat, bool, bool, dict[str, Any]]:
         
@@ -227,7 +234,6 @@ class BaseUnityCarEnv(gym.Env):
         reward = stepObj["reward"]
         terminated = stepObj["done"]
         truncated = stepObj["done"]
-        # TODO differentiate these two
 
         info_dict = stepObj["info"]
         info_dict["rewards"] = stepObj["rewards"]
@@ -238,19 +244,14 @@ class BaseUnityCarEnv(gym.Env):
         assert info_dict["amount_of_steps"] == info_dict["amount_of_steps_based_on_rewardlist"], f'info_dict["amount_of_steps"] {info_dict["amount_of_steps"]}, baed on rewardlist {info_dict["amount_of_steps_based_on_rewardlist"]}'
 
 
-        # print(
-        #    f'left_acceleration {left_acceleration} right_acceleration {right_acceleration}, reward {reward}')
-
         if terminated and False:
             print(
                 f'stepObj reward {stepObj["reward"]} done {stepObj["done"]} info {stepObj["info"]}', flush=True)
 
         new_obs = self.unityStringToObservation(stepObj["observation"])
 
-#        print(f'max new_obs before {np.max(new_obs)} min {np.min(new_obs)}', flush=True)
         if self.frame_stacking > 1:
             new_obs = self.memory_rollover(new_obs)
- #       print(f'max new_obs after {np.max(new_obs)} min {np.min(new_obs)}', flush=True)
 
         return new_obs, reward, terminated, truncated, info_dict
 
@@ -280,7 +281,6 @@ class BaseUnityCarEnv(gym.Env):
         new_obs = self.unityStringToObservation(BaseUnityCarEnv.unity_comms.getObservation(id=self.instancenumber))                                               
         # obsstring)
 
-        #new_obs = self.unityStringToObservation(obsstring)
 
         if self.frame_stacking > 1:
             new_obs = self.memory_rollover(new_obs)
@@ -288,8 +288,6 @@ class BaseUnityCarEnv(gym.Env):
         return new_obs, info
     
     def getMapTypeName(self, mapType):
-
-        #print(f'mapType {mapType} self.mapType {self.mapType}', flush=True)
         if mapType is not None:
             mp = mapType
             assert not isinstance(mp, str), f'mapType must be maptype, not {type(mp)}'
