@@ -1,16 +1,24 @@
-comment: "all maps train with fixed spawn and event + distance reward possible?"
+comment: "all maps train with fixed spawn and distance reward possible? distance reward only should encourage not only moving strait"
 
-n_envs: 100
-num_evals_per_difficulty: 100
+n_envs: 50
+num_evals_per_difficulty: 50
 n_epochs: 5 # amount of training passes oer the replay buffer per timestep
 log_interval: 1
 batch_size: 64
-n_steps: 128 # amount of steps to collect per epoch
 
-coefficients:
+
+n_steps: 32 # amount of steps to collect per collect_rollouts per environment
+# Tesnorboard shows the mean_episode_length is below 3
+# we can reduce the n_steps to make the collection time shorter while still collecting a lot of games
+
+# maybe the fps is too low, the agent does not have many steps to do and cannot react quick enough to learn a better policy than full on ahead
+
+copy_model_from: False # models_and_dumps/best_model_episode_8
+# copy_model_from can be False or a string (filename without .zip suffix)
 
 env_kwargs:
-  spawn_point_random: False
+  spawn_point: OrientationRandom
+  # spawn_point can be Fixed, OrientationRandom and FullyRandom
   single_goal: False
   frame_stacking: 3
   image_preprocessing:
@@ -24,8 +32,7 @@ env_kwargs:
     orientationCoefficient: 0.0
     velocityCoefficient: 0.0
     eventCoefficient: 1.0
-  mapType: randomEvalEasy
+  trainingMapType: randomEvalEasy
   width: 500 #336
   height: 168
-
 

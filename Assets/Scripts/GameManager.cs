@@ -29,6 +29,8 @@ public class GameManager : MonoBehaviour
 	public GameObject goalMissedWallCheckpoint;
 	public GameObject FinishLineCheckpoint;
 
+	public GameObject FinishLineMissedCheckpoint;
+
 	public GameObject goalMiddleIndicator;
 
 	//spawn jetbot random on map if trainnig
@@ -93,7 +95,7 @@ public class GameManager : MonoBehaviour
 
 		this.obstacleMapManager = this.gameObject.GetComponent<ObstacleMapManager>();
 		//this.obstacleMapManager.gameManagerTransform = this.transform;
-		this.obstacleMapManager.SetLikeInitialize(this.transform, obstacleBlue, obstacleRed, goalPassedWallCheckpoint, goalMissedWallCheckpoint, this.FinishLineCheckpoint, goalMiddleIndicator, this.isFinishLineLastGoal, this.JetBot);
+		this.obstacleMapManager.SetLikeInitialize(this.transform, obstacleBlue, obstacleRed, goalPassedWallCheckpoint, goalMissedWallCheckpoint, this.FinishLineCheckpoint, this.FinishLineMissedCheckpoint, goalMiddleIndicator, this.isFinishLineLastGoal, this.JetBot);
 
 	}
 
@@ -114,7 +116,7 @@ public class GameManager : MonoBehaviour
 
 	}
 
-	public MapData InitializeMapWithObstacles(MapType currentMapIndex, int idOfCurrentRun, bool jetBotSpawnpointRandom, bool singleGoalTraining)
+	public MapData InitializeMapWithObstacles(MapType currentMapIndex, int idOfCurrentRun, Spawn jetBotSpawn, bool singleGoalTraining)
 	{
 		// TODO rewrite to use the passed parameters
 		// I do not want magic in this function/class here
@@ -124,7 +126,7 @@ public class GameManager : MonoBehaviour
 		MapType mapType = currentMapIndex;
 
 		// generate a new map with new obstacle, decide which type of map should be generated
-		mapData = this.obstacleMapManager.GenerateObstacleMap(mapType, this.idOfCurrentRun, jetBotSpawnpointRandom, singleGoalTraining);
+		mapData = this.obstacleMapManager.GenerateObstacleMap(mapType, this.idOfCurrentRun, jetBotSpawn, singleGoalTraining);
 		this.obstacleMapManager.IntantiateObstacles(mapData);
 
 

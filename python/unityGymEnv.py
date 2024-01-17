@@ -35,7 +35,15 @@ class StepReturnObject:
     info: dict
     rewards: list[float]
 
+
+
 from enum import Enum
+class Spawn(Enum):
+    Fixed = 0
+    OrientationRandom = 1
+    FullyRandom = 2
+
+
 class MapType(Enum):
     random = 0
     easyGoalLaneMiddleBlueFirst = 1
@@ -114,7 +122,7 @@ class BaseUnityCarEnv(gym.Env):
     unity_comms: UnityComms = None
     instancenumber = 0
 
-    def __init__(self, width=336, height=168, port=9000, log=False, spawn_point_random=False, mapType=MapType.randomEval, single_goal=False, image_preprocessing={}, frame_stacking=5, lighting=1, coefficients=None):
+    def __init__(self, width=336, height=168, port=9000, log=False, spawn_point=None, trainingMapType=MapType.randomEval, single_goal=False, image_preprocessing={}, frame_stacking=5, lighting=1, coefficients=None):
         # height and width was previous 168, that way we could downsample and reach the same dimensions as the nature paper of 84 x 84
         self.instancenumber = BaseUnityCarEnv.instancenumber
 
@@ -197,21 +205,18 @@ class BaseUnityCarEnv(gym.Env):
             # they use their self.instancenumber to differentiate between them
             # the PPCCR.cs has to be rewritten to use these instancenumbers
             BaseUnityCarEnv.unity_comms = UnityComms(port=port)
-            BaseUnityCarEnv.unity_comms.deleteAllArenas()
+            self.unityDeleteAllArenas()
 
-        
-
-        BaseUnityCarEnv.unity_comms.startArena(
-            id=self.instancenumber, distanceCoefficient=self.distanceCoefficient, orientationCoefficient=self.orientationCoefficient, velocityCoefficient=self.velocityCoefficient, eventCoefficient=self.eventCoefficient, resWidth=width, resHeight=height )
+        self.unityStartArena(width, height)
         BaseUnityCarEnv.instancenumber += 1
 
-        self.spawn_point_random = spawn_point_random
+        self.spawn_point = spawn_point
         self.single_goal = single_goal
 
-        self.mapType = mapType
+        self.mapType = trainingMapType
 
         if self.instancenumber == 0:
-            print(f'spawn_point_random {self.spawn_point_random} single_goal {self.single_goal}', flush=True)
+            print(f'spawn_point {self.spawn_point} single_goal {self.single_goal}', flush=True)
 
     def step(self, action: Any) -> tuple[Any, SupportsFloat, bool, bool, dict[str, Any]]:
         
@@ -228,8 +233,7 @@ class BaseUnityCarEnv(gym.Env):
             1 and right_acceleration <= 1, f'right_acceleration {right_acceleration} is not in range [-1, 1]'
 
         #print(f'{self.instancenumber} step {self.step_nr} left {left_acceleration} right {right_acceleration}')
-        stepObj = BaseUnityCarEnv.unity_comms.immediateStep(id=self.instancenumber, step=self.step_nr, inputAccelerationLeft=float(
-            left_acceleration), inputAccelerationRight=float(right_acceleration))
+        stepObj = self.unityImmediateStep(left_acceleration, right_acceleration)
 
         reward = stepObj["reward"]
         terminated = stepObj["done"]
@@ -255,6 +259,29 @@ class BaseUnityCarEnv(gym.Env):
 
         return new_obs, reward, terminated, truncated, info_dict
 
+    # move all calls to seperate functions for profiling
+    def unityImmediateStep(self, left_acceleration, right_acceleration):
+        return BaseUnityCarEnv.unity_comms.immediateStep(id=self.instancenumber, step=self.step_nr, inputAccelerationLeft=float(
+            left_acceleration), inputAccelerationRight=float(right_acceleration))
+
+    def unityReset(self, mp_name):
+        return BaseUnityCarEnv.unity_comms.reset(mapType=mp_name,
+            id=self.instancenumber, spawn=self.spawn_point, singleGoalTraining=self.single_goal, lightMultiplier = self.lighting) 
+
+    def unityGetObservation(self):
+        return BaseUnityCarEnv.unity_comms.getObservation(id=self.instancenumber)
+    
+    def unityStartArena(self, width, height):
+
+        return BaseUnityCarEnv.unity_comms.startArena(
+            id=self.instancenumber, distanceCoefficient=self.distanceCoefficient, orientationCoefficient=self.orientationCoefficient, velocityCoefficient=self.velocityCoefficient, eventCoefficient=self.eventCoefficient, resWidth=width, resHeight=height )
+        
+    def unityDeleteAllArenas(self):
+        BaseUnityCarEnv.unity_comms.deleteAllArenas()
+
+    def unityGetArenaScreenshot(self):
+        return BaseUnityCarEnv.unity_comms.self.unityGetArenaScreenshot(id=self.instancenumber)
+
 
     def reset(self, seed=None, mapType = None):
         super().reset(seed=seed)  # gynasium migration guide https://gymnasium.farama.org/content/migration-guide/
@@ -269,8 +296,7 @@ class BaseUnityCarEnv(gym.Env):
 
         mp_name = self.getMapTypeName(mapType=mapType)
 
-        obsstring = BaseUnityCarEnv.unity_comms.reset(mapType=mp_name,
-            id=self.instancenumber, spawnpointRandom=self.spawn_point_random, singleGoalTraining=self.single_goal, lightMultiplier = self.lighting) 
+        obsstring = self.unityReset(mp_name) 
         # TODO lighting lighting=self.lighting)
 
         
@@ -278,7 +304,7 @@ class BaseUnityCarEnv(gym.Env):
 
         # do not take the observation from the reset, since the camera needs a frame to get sorted out
         # between the two jrpc calls this should happen
-        new_obs = self.unityStringToObservation(BaseUnityCarEnv.unity_comms.getObservation(id=self.instancenumber))                                               
+        new_obs = self.unityStringToObservation(self.unityGetObservation())                                               
         # obsstring)
 
 
@@ -389,7 +415,7 @@ class BaseUnityCarEnv(gym.Env):
     def get_observation_including_memory(self, log=False):
         # this should not be used for logging some image files
 
-        obs_string = BaseUnityCarEnv.unity_comms.getObservation(id=self.instancenumber)
+        obs_string = self.unityGetObservation()
         obs = self.unityStringToObservation(obs_string, log)
 
         if self.frame_stacking > 1:
@@ -400,10 +426,10 @@ class BaseUnityCarEnv(gym.Env):
         self.log = log
 
     def getObservation(self):
-        return self.unityStringToObservation(BaseUnityCarEnv.unity_comms.getObservation(id=self.instancenumber))
+        return self.unityStringToObservation(self.unityGetObservation())
 
     def saveObservationNoPreprocessing(self, filename):
-        obsstring = BaseUnityCarEnv.unity_comms.getObservation(id=self.instancenumber)
+        obsstring = self.unityGetObservation()
         base64_bytes = obsstring.encode('ascii')
         message_bytes = base64.b64decode(base64_bytes)
 
@@ -505,8 +531,7 @@ class BaseUnityCarEnv(gym.Env):
         return pixels_result
 
     def render(self, mode='human'):
-        obs = BaseUnityCarEnv.unity_comms.getObservation(
-            id=self.instancenumber)
+        obs = self.unityGetObservation()
 
         base64_bytes = obs.encode('ascii')
         message_bytes = base64.b64decode(base64_bytes)
@@ -520,7 +545,7 @@ class BaseUnityCarEnv(gym.Env):
 
 
     def get_arena_screenshot(self, savepath="arena_screenshot.png"):
-        screenshot = BaseUnityCarEnv.unity_comms.getArenaScreenshot(id=self.instancenumber)
+        screenshot = self.unityGetArenaScreenshot()
         base64_bytes = screenshot.encode('ascii')
         message_bytes = base64.b64decode(base64_bytes)
 

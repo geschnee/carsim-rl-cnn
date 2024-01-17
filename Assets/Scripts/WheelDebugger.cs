@@ -1,14 +1,14 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class AIEngine : MonoBehaviour
+public class WheelDebugger : MonoBehaviour
 {
 
     public float inputAccelerationLeft = 0;
     public float inputAccelerationRight = 0;
-    private float currentSteerAngle;
+    public float currentSteerAngle;
 
     private float maxTorque = 100f;
     private float maxSteeringAngle = 75f;
@@ -54,7 +54,6 @@ public class AIEngine : MonoBehaviour
         // normal input
         this.inputAccelerationLeft = inputAccelerationLeft;
         this.inputAccelerationRight = inputAccelerationRight;
-        episodeRunning = true;
     }
 
     public void HandleMotor()
@@ -66,7 +65,7 @@ public class AIEngine : MonoBehaviour
 
 
         // this resistance is not used anywhere
-        float resistance = (float)(0f * (Math.Pow(this.getCarVelocity(), 8) * Math.Sign(this.getCarVelocity()) * this.resistanceFactor) + Math.Sign(this.getCarVelocity()) * 5f);
+        //        float resistance = (float)(0f * (Math.Pow(this.getCarVelocity(), 8) * Math.Sign(this.getCarVelocity()) * this.resistanceFactor) + Math.Sign(this.getCarVelocity()) * 5f);
 
 
         //frontLeftWheelCollider.motorTorque = (inputAccelerationLeft * motorForce) - resistance;
@@ -76,19 +75,17 @@ public class AIEngine : MonoBehaviour
         // Calculate steering angle for each wheel based on difference in acceleration
         float accelerationDiff = Math.Abs(this.inputAccelerationRight) - Math.Abs(this.inputAccelerationLeft);
         float steeringAngle = maxSteeringAngle * accelerationDiff;
+        Debug.Log($"accelerationDiff {accelerationDiff} steeringAngle {steeringAngle}");
 
         // Apply differential torque to the wheels based on steering angle
         //leftTorque *= 1 - differentialFactor * Mathf.Abs(steeringAngle);
         //rightTorque *= 1 + differentialFactor * Mathf.Abs(steeringAngle);
 
         // Apply torque and steering angle to the left wheel
-        // float leftTorque = (inputAccelerationLeft * this.maxTorque);
-        // Maximilan's code applied different torques to the two wheels
+        float leftTorque = (inputAccelerationLeft * this.maxTorque);
 
-        float torque = (inputAccelerationLeft + inputAccelerationRight) / 2;
-        torque = (torque * this.maxTorque);
 
-        frontLeftWheelCollider.motorTorque = torque; // leftTorque;
+        frontLeftWheelCollider.motorTorque = leftTorque;
         frontLeftWheelCollider.steerAngle = steeringAngle;
 
         //Debug.Log($"steering angle {steeringAngle} left {frontLeftWheelCollider.steerAngle} right {frontRightWheelCollider.steerAngle}");
@@ -96,7 +93,7 @@ public class AIEngine : MonoBehaviour
 
         // Apply torque and steering angle to the right wheel
         float rightTorque = (inputAccelerationRight * this.maxTorque);
-        frontRightWheelCollider.motorTorque = torque; //rightTorque;
+        frontRightWheelCollider.motorTorque = rightTorque;
         frontRightWheelCollider.steerAngle = steeringAngle;
 
         // TODO why do right and left wheels have different torque?
@@ -147,7 +144,7 @@ public class AIEngine : MonoBehaviour
         Vector3 pos;
         Quaternion rot;
         wheelCollider.GetWorldPose(out pos, out rot);
-
+        Debug.Log($"wheel {wheelCollider.gameObject.name} pos {pos} rot {rot}");
 
         wheelTransform.rotation = rot;
         wheelTransform.position = pos;
@@ -157,23 +154,7 @@ public class AIEngine : MonoBehaviour
         // sieht aus wie dieses Tutorial:
         // https://www.youtube.com/watch?v=rdl66506RY4&list=PL1R2qsKCcUCIdGXBLkZV2Tq_sxa-ADASN
 
-    }
-
-    public float getSteeringAngle()
-    {
-        //TODO check if correct angle gives back 90° should have 0
-        return this.carBody.eulerAngles.y;
-    }
-
-    public float getCarVelocity()
-    {
-        // transform objects that velocity on z axis always indicates the direction -> getting the Sign givs the direction
-        float direction = Math.Sign(this.carBody.InverseTransformDirection(this.frontLeftWheelCollider.attachedRigidbody.velocity).z);
-
-        // signed speed (foreward and backward speed)
-        float velocity = direction * frontLeftWheelCollider.attachedRigidbody.velocity.magnitude;
-
-        return velocity;
+        Debug.Log($"{wheelCollider.gameObject.name} torque {wheelCollider.motorTorque} angularVelocity {wheelCollider.attachedRigidbody.angularVelocity} velocity {wheelCollider.attachedRigidbody.velocity}");
 
     }
 

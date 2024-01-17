@@ -31,6 +31,15 @@ static class Constants
 }
 
 
+
+public enum Spawn
+{
+    Fixed = 0,
+    OrientationRandom = 1,
+    FullyRandom = 2,
+}
+
+
 public enum MapType
 {
     random = 0,
@@ -187,6 +196,8 @@ public class ObstacleMapManager : MonoBehaviour
     public GameObject goalMissedGameObject;
     public GameObject finishlineCheckpoint;
 
+    private GameObject finishMissedGameObject;
+
     public GameObject goalMiddleIndicator;
 
     public GameObject allGoals;
@@ -200,7 +211,7 @@ public class ObstacleMapManager : MonoBehaviour
         Debug.LogWarning("ObstacleMapManager constructor called, this is unexpected");
     }
 
-    public void SetLikeInitialize(Transform gameManagerTransform, GameObject obstacleBlue, GameObject obstacleRed, GameObject goalPassedGameObject, GameObject goalMissedGameObject, GameObject finishlineCheckpoint, GameObject goalMiddleIndicator, Boolean isFinishLine, GameObject JetBot)
+    public void SetLikeInitialize(Transform gameManagerTransform, GameObject obstacleBlue, GameObject obstacleRed, GameObject goalPassedGameObject, GameObject goalMissedGameObject, GameObject finishlineCheckpoint, GameObject FinishLineMissedCheckpoint, GameObject goalMiddleIndicator, Boolean isFinishLine, GameObject JetBot)
     {
         this.gameManagerTransform = gameManagerTransform;
         this.gameManagerPosition = gameManagerTransform.position;
@@ -209,6 +220,7 @@ public class ObstacleMapManager : MonoBehaviour
         this.goalPassedGameOjbect = goalPassedGameObject;
         this.goalMissedGameObject = goalMissedGameObject;
         this.finishlineCheckpoint = finishlineCheckpoint;
+        this.finishMissedGameObject = FinishLineMissedCheckpoint;
         this.goalMiddleIndicator = goalMiddleIndicator;
 
 
@@ -346,7 +358,7 @@ public class ObstacleMapManager : MonoBehaviour
         // initialize last goal with finish line checkpoint
         int lastGoalIndex = goalList.goals.Length - 1;
         Goal goalLast = goalList.goals[lastGoalIndex];
-        GameObject goalInstantiatedGameObjectLast = goalLast.InstantiateGoal(this.finishlineCheckpoint, this.goalMissedGameObject, this.goalMiddleIndicator, this.gameManagerPosition);
+        GameObject goalInstantiatedGameObjectLast = goalLast.InstantiateGoal(this.finishlineCheckpoint, this.finishMissedGameObject, this.goalMiddleIndicator, this.gameManagerPosition);
         goalInstantiatedGameObjectLast.transform.SetParent(allGoals.transform);
         goalInstantiatedGameObjectLast.name = "Goal" + lastGoalIndex.ToString();
 
@@ -441,13 +453,12 @@ public class ObstacleMapManager : MonoBehaviour
 
 
     // generate maps with different placement of obstacles
-    public MapData GenerateObstacleMap(MapType mapType, int id, bool spawnRandom, bool singleGoalTraining)
+    public MapData GenerateObstacleMap(MapType mapType, int id, Spawn jetBotSpawn, bool singleGoalTraining)
     {
 
 
         Vector3 jetBotSpawnPosition;
-        Quaternion jetBotSpawnRotation;
-        if (spawnRandom == false)
+        if (jetBotSpawn == Spawn.Fixed || jetBotSpawn == Spawn.OrientationRandom)
         {
             jetBotSpawnPosition = this.GetJetBotSpawnCoords();
 
@@ -463,7 +474,9 @@ public class ObstacleMapManager : MonoBehaviour
             // we cannot use the same random spawn for these
             jetBotSpawnPosition = this.GetJetBotRandomCoordsEval();
         }
-        if (spawnRandom)
+
+        Quaternion jetBotSpawnRotation;
+        if (jetBotSpawn == Spawn.OrientationRandom | jetBotSpawn == Spawn.FullyRandom)
         {
             jetBotSpawnRotation = this.JetBotRandomRotation();
         }
@@ -477,7 +490,7 @@ public class ObstacleMapManager : MonoBehaviour
         switch (mapType)
         {
             case MapType.random:
-                obstacles = this.GenerateRandomObstacleMap(spawnRandom, jetBotSpawnPosition, singleGoalTraining);
+                obstacles = this.GenerateRandomObstacleMap(jetBotSpawn, jetBotSpawnPosition, singleGoalTraining);
                 //Debug.Log("Random Map generated");
                 break;
             case MapType.easyGoalLaneMiddleBlueFirst:
@@ -530,7 +543,7 @@ public class ObstacleMapManager : MonoBehaviour
 
     }
 
-    private Goal[] GenerateRandomObstacleMap(bool isJetBotSpawnRandom, Vector3 jetBotSpawnPosition, bool singleGoalTraining)
+    private Goal[] GenerateRandomObstacleMap(Spawn jetBotSpawn, Vector3 jetBotSpawnPosition, bool singleGoalTraining)
     {
 
         List<Goal> obstacles = new List<Goal>();
@@ -546,7 +559,7 @@ public class ObstacleMapManager : MonoBehaviour
         int minXLocal = (int)(Constants.MIN_X + this.gameManagerPosition.x);
         int maxXLocal = minXLocal + Constants.X_WIDTH;
 
-        if (isJetBotSpawnRandom)
+        if (jetBotSpawn == Spawn.FullyRandom)
         {
             //first goal random distance to JetBot
             minXLocal = (int)(jetBotSpawnPosition.x + rnd.Next(Constants.MINXDISTANCEGOALS, Constants.MAXXDISTANCEGOALS));

@@ -69,12 +69,13 @@ public class PeacefulPieCarCommandReceiver : MonoBehaviour
 
 
         [JsonRpcMethod]
-        string reset(int id, string mapType, bool spawnpointRandom, bool singleGoalTraining, float lightMultiplier)
+        string reset(int id, string mapType, string spawn, bool singleGoalTraining, float lightMultiplier)
         {
             //Debug.Log($"mapType: {mapType}");
             MapType mt = (MapType)Enum.Parse(typeof(MapType), mapType);
+            Spawn sp = (Spawn)Enum.Parse(typeof(Spawn), spawn);
             //Debug.Log($"mt: {mt}");
-            return arenas[id].reset(mt, spawnpointRandom, singleGoalTraining, lightMultiplier);
+            return arenas[id].reset(mt, sp, singleGoalTraining, lightMultiplier);
         }
 
 
@@ -96,17 +97,7 @@ public class PeacefulPieCarCommandReceiver : MonoBehaviour
             return arenas[id].immediateStep(step, inputAccelerationLeft, inputAccelerationRight);
         }
 
-        /*[JsonRpcMethod]
-        void asyncStepPart1(int id, int step, float inputAccelerationLeft, float inputAccelerationRight)
-        {
-            arenas[id].asyncStepPart1(step, inputAccelerationLeft, inputAccelerationRight);
-        }
 
-        [JsonRpcMethod]
-        StepReturnObject asyncStepPart2(int id)
-        {
-            return arenas[id].asyncStepPart2();
-        }*/
 
         [JsonRpcMethod]
         void startArena(int id, float distanceCoefficient, float orientationCoefficient, float velocityCoefficient, float eventCoefficient, int resWidth, int resHeight)

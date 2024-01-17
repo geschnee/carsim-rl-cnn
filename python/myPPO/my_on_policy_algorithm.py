@@ -169,6 +169,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         completed_games, successfully_completed_games, number_of_goals, successfully_passed_goals, total_reward, total_timesteps, distance_reward, velocity_reward, event_reward, orientation_reward, successfully_passed_first_goals = 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
         # event_reward is the reward that is not distance or velocity reward
         # such as collisions, passed goals and episode terminated
+        timeouts = 0
 
         reward_correction_dict = {}
         for i in range(env.num_envs):
@@ -244,6 +245,9 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
                 
                     if infos[idx]["endEvent"] == "Success":
                         successfully_completed_games += 1
+                    print(f'is timeout detected correctly? my_on_policy_algorithm TODO')
+                    if infos[i]["endEvent"] == "OutOfTime":
+                        timeouts += 1
                     successfully_passed_goals += int(infos[idx]["passedGoals"])
                     number_of_goals += int(infos[idx]["numberOfGoals"])
                     total_reward += float(infos[idx]["cumreward"])
@@ -317,6 +321,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         
         if completed_games != 0:
             success_rate = successfully_completed_games / completed_games
+            timeout_rate = timeouts / completed_games
             mean_reward = total_reward / completed_games
             mean_episode_length = total_timesteps / completed_games
             mean_distance_reward = distance_reward / completed_games
@@ -335,6 +340,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         
         
         self.logger.record("rollout/success_rate", success_rate)
+        self.logger.record("rollout/timeout_rate", timeout_rate)
         self.logger.record("rollout/goal_completion_rate", goal_completion_rate)
         self.logger.record("rollout/mean_reward", mean_reward)
         self.logger.record("rollout/mean_episode_length", mean_episode_length)
@@ -412,6 +418,11 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
                     (time.time_ns() - self.start_time) / 1e9, sys.float_info.epsilon)
                 fps = int(
                     (self.num_timesteps - self._num_timesteps_at_start) / time_elapsed)
+                # what is fps?
+                # num_timestep is increased in collect_rollouts for n_env after each step
+                # The time/fps are thus distributed for the n_envs
+                fps_per_env = float(fps / self.n_envs)
+
                 self.logger.record("time/iterations",
                                    iteration, exclude="tensorboard")
                 '''if len(self.ep_info_buffer) > 0 and len(self.ep_info_buffer[0]) > 0:
@@ -420,6 +431,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
                     self.logger.record(
                         "rollout/ep_len_mean", safe_mean([ep_info["l"] for ep_info in self.ep_info_buffer]))'''
                 self.logger.record("time/fps", fps)
+                self.logger.record("time/fps_per_env", fps_per_env)
                 self.logger.record("time/time_elapsed",
                                    int(time_elapsed), exclude="tensorboard")
                 self.logger.record("time/total_timesteps",
@@ -482,7 +494,10 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         n_envs = env.num_envs
         episode_rewards = []
         episode_lengths = []
-        success_count, finished_episodes, passed_goals, number_of_goals, first_goals = 0, 0, 0, 0, 0
+        success_count, finished_episodes, passed_goals, number_of_goals = 0, 0, 0, 0
+        first_goals, second_goals, third_goals = 0, 0, 0
+        timeouts = 0
+
 
         episode_counts = np.zeros(n_envs, dtype="int")
         # Divides episodes among different sub environments in the vector as evenly as possible
@@ -536,12 +551,19 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
                         finished_episodes += 1
                         passed_goals += int(infos[i]["passedGoals"])
                         number_of_goals += int(infos[i]["numberOfGoals"])
+
                         first_goals += int(infos[i]["passedFirstGoal"])
+                        if int(infos[i]["passedGoals"]) >= 2:
+                            second_goals += 1
+                        if int(infos[i]["passedGoals"]) >= 3:
+                            third_goals += 1
 
                         #print(f'end event: {infos[i]["endEvent"]}')
 
                         if infos[i]["endEvent"] == "Success":
                             success_count += 1
+                        if infos[i]["endEvent"] == "OutOfTime":
+                            timeouts += 1
 
                         # due to auto reset we have to reset the env again with the right parameters:
                         env.env_method(
@@ -561,13 +583,25 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         success_rate = success_count / n_eval_episodes
         rate_of_passed_goals = passed_goals / number_of_goals
         rate_of_passed_first_goals = first_goals / n_eval_episodes
+        if first_goals > 0:
+            rate_of_second_goal_given_first = second_goals / first_goals
+        else:
+            rate_of_second_goal_given_first = 0
+        if second_goals > 0:
+            rate_of_third_goal_given_second = third_goals / second_goals
+        else:
+            rate_of_third_goal_given_second = 0
+
+        timeout_rate = timeouts/n_eval_episodes
 
         self.logger.record(f'eval_{difficulty}/mean_reward', mean_reward)
         self.logger.record(f'eval_{difficulty}/std_reward', std_reward)
         self.logger.record(f'eval_{difficulty}/success_rate', success_rate)
         self.logger.record(f'eval_{difficulty}/rate_passed_goals', rate_of_passed_goals)
         self.logger.record(f'eval_{difficulty}/rate_first_goal', rate_of_passed_first_goals)
-
+        self.logger.record(f'eval_{difficulty}/rate_second_goal_given_first', rate_of_second_goal_given_first)
+        self.logger.record(f'eval_{difficulty}/rate_third_goal_given_second', rate_of_third_goal_given_second)
+        self.logger.record(f'eval_{difficulty}/timeout_rate', timeout_rate)
 
         return success_rate
 

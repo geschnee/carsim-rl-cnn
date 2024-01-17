@@ -86,7 +86,7 @@ MonoBehaviour:
   frontRightWheeTransform: {fileID: 5328559696594334273}
   rearLeftWheelTransform: {fileID: 2651409481796157633}
   rearRightWheelTransform: {fileID: 1994899570087111783}
-  episodeRunning: 1
+  episodeRunning: 0
   carBody: {fileID: 144286601695018148}
 --- !u!114 &2926713500848659217
 MonoBehaviour:
@@ -102,7 +102,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   allowedTimeDefault: 20
   allowedTimePerGoal: 10
-  finishCheckpointReward: 100
+  distanceCoefficient: 0
+  velocityCoefficient: 0
+  orientationCoefficient: 0
+  eventCoefficient: 0
+  finishCheckpointReward: 1
   wallHitReward: -1
   obstacleHitReward: -1
   timeoutReward: -1
@@ -112,6 +116,7 @@ MonoBehaviour:
   allowedTime: 20
   passedGoals: 0
   numberOfGoals: 0
+  step: 0
   rewardSinceLastGetReward: 0
   centerIndicators: []
 --- !u!1 &685241405481594876

@@ -71,7 +71,7 @@ class MyRolloutBuffer(BaseBuffer):
             self.observations = np.zeros((self.buffer_size, self.n_envs, *self.obs_shape), dtype=np.uint8)
         else:
             self.observations = np.zeros((self.buffer_size, self.n_envs, *self.obs_shape), dtype=np.float32)
-        print(f'observations dtype: {self.observations.dtype}')
+        #print(f'observations dtype: {self.observations.dtype}')
         self.actions = np.zeros((self.buffer_size, self.n_envs, self.action_dim), dtype=np.float32)
         self.rewards = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
         self.returns = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)

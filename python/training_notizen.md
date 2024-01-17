@@ -44,42 +44,6 @@ vielleicht reicht n=3 nicht aus
 
 
 
-
-# train with fixed spawn position and event reward only possible?
-
-ja, funktioniert sehr gut
-
-comment: "train with fixed spawn position and event reward only possible?"
-
-n_envs: 100
-num_evals_per_difficulty: 100
-n_epochs: 5 # amount of training passes oer the replay buffer per timestep
-log_interval: 5
-batch_size: 64
-n_steps: 128 # amount of steps to collect per epoch
-
-coefficients:
-
-env_kwargs:
-  spawn_point_random: True
-  single_goal: False
-  frame_stacking: 3
-  image_preprocessing:
-    grayscale: True
-    equalize: True
-    contrast_increase: "TODO"
-    # vielleicht eine art Mode variable hier reinpacken contrast increase s equalize
-    normalize_images: False
-  coefficients:
-    distanceCoefficient: 0.0
-    orientationCoefficient: 0.0
-    velocityCoefficient: 0.0
-    eventCoefficient: 1.0
-  mapType: randomEvalEasy
-  width: 500 #336
-  height: 168
-
-
 # train with random spawn and only event reward possible?
 
 no, not possible
@@ -90,4 +54,14 @@ not clear, it showed some learning
 
 eval_easy/rate_first_goal erreicht 0.3
 
+
+# all maps train with fixed spawn and event + distance reward possible?
+
+Agent lernt immer geradeaus zu fahren
+(bei fixed spawn bedeutet diese Strategie perfekte Ergebnisse für den easy und medium parcour)
+(gar kein Erfolg für den hard parcour)
+
+vielleicht brauchen wir einen weniger random Spawn im training oder ein training mit purem distance reward
+
+{'comment': 'all maps train with fixed spawn and event + distance reward possible?', 'n_envs': 100, 'num_evals_per_difficulty': 100, 'n_epochs': 5, 'log_interval': 1, 'batch_size': 64, 'n_steps': 64, 'copy_model_from': 'models_and_dumps/best_model_episode_8', 'env_kwargs': {'spawn_point_random': False, 'single_goal': False, 'frame_stacking': 3, 'image_preprocessing': {'grayscale': True, 'equalize': True, 'contrast_increase': 'TODO', 'normalize_images': False}, 'coefficients': {'distanceCoefficient': 0.5, 'orientationCoefficient': 0.0, 'velocityCoefficient': 0.0, 'eventCoefficient': 1.0}, 'mapType': 'random', 'width': 500, 'height': 168}}
 

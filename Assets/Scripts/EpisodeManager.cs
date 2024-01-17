@@ -17,7 +17,8 @@ public enum EndEvent
     WallHit = 3,
     GoalMissed = 4,
     RedObstacle = 5,
-    BlueObstacle = 6
+    BlueObstacle = 6,
+    FinishMissed = 7,
 }
 
 // this script counts the obtained rewards and ends the episode if the time is up or another end event is triggered
@@ -36,7 +37,7 @@ public class EpisodeManager : MonoBehaviour
 
     public float eventCoefficient;// = 1f;
 
-    public float finishCheckpointReward = 100f;
+    public float finishCheckpointReward = 1f; // = 100f;
     public float wallHitReward = -1f;
     public float obstacleHitReward = -1f;
     public float timeoutReward = -1f;
@@ -51,7 +52,7 @@ public class EpisodeManager : MonoBehaviour
 
     private DataFrameManager df;
 
-    public int passedGoals;
+    public List<int> passedGoals;
     public int numberOfGoals;
 
     private bool episodeReady = false;
@@ -62,7 +63,7 @@ public class EpisodeManager : MonoBehaviour
 
     private GameObject carBody;
 
-    private int step;
+    public int step;
     private float cumReward;
     private float distanceReward;
     private float velocityReward;
@@ -134,7 +135,7 @@ public class EpisodeManager : MonoBehaviour
     public void StartEpisode()
     {
         this.duration = 0f;
-        this.passedGoals = 0;
+        this.passedGoals = new List<int>();
         this.cumReward = 0f;
         this.distanceReward = 0f;
         this.velocityReward = 0f;
@@ -149,6 +150,9 @@ public class EpisodeManager : MonoBehaviour
         this.PrepareAgent();
 
         this.lastDistance = GetDistanceToNextGoal();
+
+        aIEngine.ResetMotor();
+
 
         this.episodeRunning = false;
         this.episodeReady = true;
@@ -210,7 +214,11 @@ public class EpisodeManager : MonoBehaviour
         info.Add("endEvent", this.endEvent.ToString());
         info.Add("duration", this.duration.ToString());
         info.Add("cumreward", this.cumReward.ToString());
-        info.Add("passedGoals", this.passedGoals.ToString());
+        info.Add("passedGoals", this.passedGoals.Count.ToString());
+        info.Add("passedFirstGoal", this.passedGoals.Contains(0) ? "1" : "0");
+        info.Add("passedSecondGoal", this.passedGoals.Contains(1) ? "1" : "0");
+        info.Add("passedThirdGoal", this.passedGoals.Contains(2) ? "1" : "0");
+
         info.Add("numberOfGoals", this.numberOfGoals.ToString());
         info.Add("distanceReward", this.distanceReward.ToString());
         info.Add("orientationReward", this.orientationReward.ToString());
@@ -219,7 +227,6 @@ public class EpisodeManager : MonoBehaviour
         info.Add("step", this.step.ToString());
         info.Add("amount_of_steps", (this.step + 1).ToString());
         info.Add("amount_of_steps_based_on_rewardlist", this.step_rewards.Count.ToString());
-        info.Add("passedFirstGoal", this.passedGoals > 0 ? "1" : "0");
 
         return info;
     }
@@ -417,16 +424,17 @@ public class EpisodeManager : MonoBehaviour
         return this.duration;
     }
 
-    public void IncreasePassedGoals()
+    public void IncreasePassedGoals(GameObject goalMiddle)
     {
-        this.passedGoals++;
+        int goalnumber = goalMiddle.transform.name[goalMiddle.transform.name.Length - 1] - '0';
+        this.passedGoals.Add(goalnumber);
     }
 
 
-    public void finishCheckpoint()
+    public void finishCheckpoint(GameObject goal)
     {
         AddEventReward(finishCheckpointReward);
-        IncreasePassedGoals();
+        IncreasePassedGoals(goal);
 
         EndEpisode(EndEvent.Success);
     }
@@ -437,29 +445,68 @@ public class EpisodeManager : MonoBehaviour
 
 
 
-        EndEpisode(EndEvent.WallHit);
+        //EndEpisode(EndEvent.WallHit);
     }
 
-    public void goalMissed()
+    public void destroyCheckpoint(GameObject goal)
+    {
+        // Destroy all child objects of the goal that were used for checking the goal pass
+        // this is needed since we do not want to end the collision on missed goals anymore
+
+        Transform t = goal.transform;
+        for (int i = 0; i < t.childCount; i++)
+        {
+            string tag = t.GetChild(i).gameObject.tag;
+            if (tag == "GoalPassed" | tag == "GoalMissed" | tag == "Destroyed")
+            {
+                t.GetChild(i).gameObject.tag = "Destroyed";
+                Destroy(t.GetChild(i).gameObject);
+            }
+
+        }
+    }
+
+    public void goalMissed(GameObject redBorder)
     {
         AddEventReward(goalMissedReward);
 
-        // TODO also save the color of the missed goal?
-        EndEpisode(EndEvent.GoalMissed);
+        GameObject goal = redBorder.transform.parent.gameObject;
+
+        centerIndicators.RemoveAt(0); // remove an indicator
+
+        destroyCheckpoint(goal);
+
+        this.lastDistance = GetDistanceToNextGoal();
+
+        //EndEpisode(EndEvent.GoalMissed);
     }
 
-    public void goalPassed(GameObject goal)
+    public void finishMissed(GameObject redBorder)
+    {
+        AddEventReward(goalMissedReward);
+
+        GameObject goal = redBorder.transform.parent.gameObject;
+
+        centerIndicators.RemoveAt(0); // remove an indicator
+
+        destroyCheckpoint(goal);
+
+        this.lastDistance = GetDistanceToNextGoal();
+
+        EndEpisode(EndEvent.FinishMissed);
+    }
+
+    public void goalPassed(GameObject goalMiddle)
     {
 
         AddTime(allowedTimePerGoal);
 
         AddEventReward(goalPassedReward);
 
-        IncreasePassedGoals();
+        IncreasePassedGoals(goalMiddle);
         centerIndicators.RemoveAt(0); // remove an indicator
 
-        //Debug.Log($"will destroy goal {goal.name} {goal.transform.parent.gameObject.name}");
-        Destroy(goal);
+        destroyCheckpoint(goalMiddle.transform.parent.gameObject);
 
         // update the distance to the next goal
         this.lastDistance = GetDistanceToNextGoal();
@@ -473,13 +520,13 @@ public class EpisodeManager : MonoBehaviour
     public void redObstacleHit()
     {
         obstacleHit();
-        EndEpisode(EndEvent.RedObstacle);
+        //EndEpisode(EndEvent.RedObstacle);
     }
 
     public void blueObstacleHit()
     {
         obstacleHit();
-        EndEpisode(EndEvent.BlueObstacle);
+        //EndEpisode(EndEvent.BlueObstacle);
     }
 
     private void OnTriggerEnter(Collider coll)
@@ -503,13 +550,13 @@ public class EpisodeManager : MonoBehaviour
         }
         if (coll.tag == "GoalPassed")
         {
-            coll.tag = "DestroyedGoal";
+            coll.tag = "Destroyed";
             goalPassed(coll.gameObject);
             return;
         }
         if (coll.tag == "GoalMissed")
         {
-            goalMissed();
+            goalMissed(coll.gameObject);
             return;
         }
         if (coll.tag == "Wall")
@@ -517,12 +564,17 @@ public class EpisodeManager : MonoBehaviour
             hitWall();
             return;
         }
-        if (coll.tag == "FinishCheckpoint")
+        if (coll.tag == "FinishMissed")
         {
-            finishCheckpoint();
+            finishMissed(coll.gameObject);
             return;
         }
-        if (coll.tag == "DestroyedGoal")
+        if (coll.tag == "FinishCheckpoint")
+        {
+            finishCheckpoint(coll.gameObject);
+            return;
+        }
+        if (coll.tag == "Destroyed")
         {
             // duplicate detection, ignore
             return;

@@ -73,7 +73,7 @@ public class Arena : MonoBehaviour
         gameManager.DestroyObstaclesOnMap();
     }
 
-    public string reset(MapType mt, bool jetBotSpawnpointRandom, bool singleGoalTraining, float lightMultiplier)
+    public string reset(MapType mt, Spawn jetBotSpawn, bool singleGoalTraining, float lightMultiplier)
     {
         if (this.car != null)
         {
@@ -90,7 +90,7 @@ public class Arena : MonoBehaviour
         //Debug.Log($"startEpisode");
 
         // spawn new obstacles:
-        MapData md = gameManager.InitializeMapWithObstacles(mt, 0, jetBotSpawnpointRandom, singleGoalTraining);
+        MapData md = gameManager.InitializeMapWithObstacles(mt, 0, jetBotSpawn, singleGoalTraining);
 
 
         GameObject car = gameManager.spawnJetbot(md, this.instancenumber);
@@ -102,6 +102,8 @@ public class Arena : MonoBehaviour
 
 
         this.aIEngine = car.GetComponent<AIEngine>();
+        this.aIEngine.ResetMotor();
+
         this.carCam = car.GetComponentInChildren<Camera>();
 
 
@@ -128,6 +130,7 @@ public class Arena : MonoBehaviour
     public void forwardInputsToCar(float inputAccelerationLeft, float inputAccelerationRight)
     {
         //Debug.Log($"forward left {inputAccelerationLeft} right {inputAccelerationRight}");
+
         aIEngine.SetInput(inputAccelerationLeft, inputAccelerationRight);
 
     }
@@ -143,7 +146,6 @@ public class Arena : MonoBehaviour
 
         //Debug.LogWarning($"immediateStep {step} {inputAccelerationLeft} {inputAccelerationRight} for {this.car.name}");
         // when the error happens is the other input the same?
-
         aIEngine.SetInput(inputAccelerationLeft, inputAccelerationRight);
         episodeManager.IncreaseSteps(step);
 

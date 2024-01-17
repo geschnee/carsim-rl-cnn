@@ -68,5 +68,6 @@ venv/**
 
 python/tmp
 python/outputs
+python/models_and_dumps
 
 *.pyc

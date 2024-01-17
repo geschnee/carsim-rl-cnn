@@ -46,7 +46,7 @@ def run_ppo(cfg):
     n_envs = cfg.n_envs
 
     env_kwargs = cfg.env_kwargs
-    env_kwargs["mapType"] = MapType[cfg.env_kwargs.mapType]
+    env_kwargs["trainingMapType"] = MapType[cfg.env_kwargs.trainingMapType]
     # get proper enum type from string
 
 
@@ -66,7 +66,7 @@ def run_ppo(cfg):
     )
 
     n_epochs, batch_size = cfg.n_epochs, cfg.batch_size
-    n_steps = cfg.n_steps # amount of steps to collect per epoch
+    n_steps = cfg.n_steps # amount of steps to collect per collect_rollouts per environment
 
     algo = myPPO # or myPPO (handles the ansynchronicity of the envs)
 
@@ -91,15 +91,15 @@ def run_ppo(cfg):
     # increase contrast of images?
     # https://stackoverflow.com/questions/39308030/how-do-i-increase-the-contrast-of-an-image-in-python-opencv
 
-    modelname="ppo_test_trained_random"
-    continue_training = False
-    if continue_training:
-        print(f'loading model from file before learning')
-        model = algo.load(modelname, env=vec_env, tensorboard_log="./tmp",
+    
+    if cfg.copy_model_from:
+        string = f"{HydraConfig.get().runtime.cwd}/{cfg.copy_model_from}"
+        print(f'loading model from {string} before learning')
+        model = algo.load(string, env=vec_env, tensorboard_log="./tmp",
                         n_epochs=n_epochs, batch_size=batch_size)
 
     model.learn(total_timesteps=2500000, log_interval=cfg.log_interval, num_evals_per_difficulty = cfg.num_evals_per_difficulty)
-    model.save(modelname)
+    model.save("finished_ppo")
 
 
 @hydra.main(config_path=".", config_name="cfg/ppo.yaml")
