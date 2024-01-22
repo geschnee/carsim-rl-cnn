@@ -117,14 +117,14 @@ class EndEvent(Enum):
     RedObstacle = 5
     BlueObstacle = 6
 
-class BaseUnityCarEnv(gym.Env):
+class BaseCarsimEnv(gym.Env):
 
     unity_comms: UnityComms = None
     instancenumber = 0
 
     def __init__(self, width=336, height=168, port=9000, log=False, spawn_point=None, trainingMapType=MapType.randomEval, single_goal=False, image_preprocessing={}, frame_stacking=5, lighting=1, coefficients=None):
         # height and width was previous 168, that way we could downsample and reach the same dimensions as the nature paper of 84 x 84
-        self.instancenumber = BaseUnityCarEnv.instancenumber
+        self.instancenumber = BaseCarsimEnv.instancenumber
 
         self.equalize = image_preprocessing["equalize"]
         self.downsampling = 2
@@ -200,15 +200,15 @@ class BaseUnityCarEnv(gym.Env):
 
         
 
-        if BaseUnityCarEnv.unity_comms is None:
+        if BaseCarsimEnv.unity_comms is None:
             # all instances of this class share the same UnityComms instance
             # they use their self.instancenumber to differentiate between them
             # the PPCCR.cs has to be rewritten to use these instancenumbers
-            BaseUnityCarEnv.unity_comms = UnityComms(port=port)
+            BaseCarsimEnv.unity_comms = UnityComms(port=port)
             self.unityDeleteAllArenas()
 
         self.unityStartArena(width, height)
-        BaseUnityCarEnv.instancenumber += 1
+        BaseCarsimEnv.instancenumber += 1
 
         self.spawn_point = spawn_point
         self.single_goal = single_goal
@@ -252,7 +252,7 @@ class BaseUnityCarEnv(gym.Env):
             print(
                 f'stepObj reward {stepObj["reward"]} done {stepObj["done"]} info {stepObj["info"]}', flush=True)
 
-        new_obs = self.unityStringToObservation(stepObj["observation"])
+        new_obs = self.stringToObservation(stepObj["observation"])
 
         if self.frame_stacking > 1:
             new_obs = self.memory_rollover(new_obs)
@@ -261,26 +261,26 @@ class BaseUnityCarEnv(gym.Env):
 
     # move all calls to seperate functions for profiling
     def unityImmediateStep(self, left_acceleration, right_acceleration):
-        return BaseUnityCarEnv.unity_comms.immediateStep(id=self.instancenumber, step=self.step_nr, inputAccelerationLeft=float(
+        return BaseCarsimEnv.unity_comms.immediateStep(id=self.instancenumber, step=self.step_nr, inputAccelerationLeft=float(
             left_acceleration), inputAccelerationRight=float(right_acceleration))
 
     def unityReset(self, mp_name):
-        return BaseUnityCarEnv.unity_comms.reset(mapType=mp_name,
+        return BaseCarsimEnv.unity_comms.reset(mapType=mp_name,
             id=self.instancenumber, spawn=self.spawn_point, singleGoalTraining=self.single_goal, lightMultiplier = self.lighting) 
 
     def unityGetObservation(self):
-        return BaseUnityCarEnv.unity_comms.getObservation(id=self.instancenumber)
+        return BaseCarsimEnv.unity_comms.getObservation(id=self.instancenumber)
     
     def unityStartArena(self, width, height):
 
-        return BaseUnityCarEnv.unity_comms.startArena(
+        return BaseCarsimEnv.unity_comms.startArena(
             id=self.instancenumber, distanceCoefficient=self.distanceCoefficient, orientationCoefficient=self.orientationCoefficient, velocityCoefficient=self.velocityCoefficient, eventCoefficient=self.eventCoefficient, resWidth=width, resHeight=height )
         
     def unityDeleteAllArenas(self):
-        BaseUnityCarEnv.unity_comms.deleteAllArenas()
+        BaseCarsimEnv.unity_comms.deleteAllArenas()
 
     def unityGetArenaScreenshot(self):
-        return BaseUnityCarEnv.unity_comms.self.unityGetArenaScreenshot(id=self.instancenumber)
+        return BaseCarsimEnv.unity_comms.self.unityGetArenaScreenshot(id=self.instancenumber)
 
 
     def reset(self, seed=None, mapType = None):
@@ -304,7 +304,7 @@ class BaseUnityCarEnv(gym.Env):
 
         # do not take the observation from the reset, since the camera needs a frame to get sorted out
         # between the two jrpc calls this should happen
-        new_obs = self.unityStringToObservation(self.unityGetObservation())                                               
+        new_obs = self.stringToObservation(self.unityGetObservation())                                               
         # obsstring)
 
 
@@ -416,7 +416,7 @@ class BaseUnityCarEnv(gym.Env):
         # this should not be used for logging some image files
 
         obs_string = self.unityGetObservation()
-        obs = self.unityStringToObservation(obs_string, log)
+        obs = self.stringToObservation(obs_string, log)
 
         if self.frame_stacking > 1:
             obs = self.memory_rollover(obs, log)
@@ -426,7 +426,7 @@ class BaseUnityCarEnv(gym.Env):
         self.log = log
 
     def getObservation(self):
-        return self.unityStringToObservation(self.unityGetObservation())
+        return self.stringToObservation(self.unityGetObservation())
 
     def saveObservationNoPreprocessing(self, filename):
         obsstring = self.unityGetObservation()
@@ -440,7 +440,7 @@ class BaseUnityCarEnv(gym.Env):
         img = Image.fromarray(pixels_rgb, 'RGB')
         img.save(filename)
 
-    def unityStringToObservation(self, obsstring, log=None):
+    def stringToObservation(self, obsstring, log=None):
         if log is None:
             log = self.log
 
@@ -556,7 +556,7 @@ class BaseUnityCarEnv(gym.Env):
 
 if __name__ == '__main__':
 
-    env = BaseUnityCarEnv()
+    env = BaseCarsimEnv()
     env.reset()
     env.step((0, 0))
 

@@ -11,11 +11,11 @@ from stable_baselines3.common.env_util import make_vec_env
 
 from stable_baselines3.common.vec_env import DummyVecEnv
 
-import unityGymEnv
+import carsimGymEnv
 
 from myPPO.myPPO import myPPO
 
-from unityGymEnv import MapType
+from carsimGymEnv import MapType
 import torch
 from torch.utils.tensorboard import SummaryWriter
 
@@ -52,7 +52,7 @@ def run_ppo(cfg):
 
 
     # Parallel environments
-    vec_env = make_vec_env(unityGymEnv.BaseUnityCarEnv, n_envs=n_envs, env_kwargs=env_kwargs)
+    vec_env = make_vec_env(unityGymEnv.BaseCarsimEnv, n_envs=n_envs, env_kwargs=env_kwargs)
     # the n_envs can quickly be too much since the replay buffer will grow
     # the observations are quite big (float32)
 

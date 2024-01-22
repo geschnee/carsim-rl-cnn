@@ -1,6 +1,6 @@
-comment: "all maps train with fixed spawn and distance reward possible? distance reward only should encourage not only moving strait"
+comment: "find the reason for low fps"
 
-n_envs: 50
+n_envs: 10
 num_evals_per_difficulty: 50
 n_epochs: 5 # amount of training passes oer the replay buffer per timestep
 log_interval: 1

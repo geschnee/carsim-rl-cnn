@@ -170,6 +170,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         # event_reward is the reward that is not distance or velocity reward
         # such as collisions, passed goals and episode terminated
         timeouts = 0
+        second_goals_given_first, third_goals_given_second, successfully_passed_second_goals = 0, 0, 0
 
         reward_correction_dict = {}
         for i in range(env.num_envs):
@@ -258,7 +259,13 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
                     event_reward += float(infos[idx]["eventReward"])
                     orientation_reward += float(infos[idx]["orientationReward"])
                     successfully_passed_first_goals += int(infos[idx]["passedFirstGoal"])
+
+                    successfully_passed_second_goals += int(infos[idx]["passedSecondGoal"])
                     
+                    if int(infos[idx]["passedFirstGoal"]) == 1 and int(infos[idx]["passedSecondGoal"]) == 1:
+                        second_goals_given_first +=1
+                    if int(infos[idx]["passedSecondGoal"]) == 1 and int(infos[idx]["passedThirdGoal"]) == 1:
+                        third_goals_given_second +=1
 
             insertpos = rollout_buffer.add(
                 fresh_obs,  # type: ignore[arg-type]
@@ -338,6 +345,16 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
             print(f'passed a goal succesfully, rate is {goal_completion_rate}')
             assert goal_completion_rate > 0.0, "goal completion rate is 0 although a goal was passed"
         
+        if successfully_passed_first_goals > 0:
+            rate_second_goal_given_first = second_goals_given_first / successfully_passed_first_goals
+        else:
+            rate_second_goal_given_first = 0
+        if successfully_passed_second_goals > 0:
+            rate_third_goal_given_second = third_goals_given_second / successfully_passed_second_goals
+        else:
+            rate_third_goal_given_second = 0
+        self.logger.record("rollout/rate_second_given_first", rate_second_goal_given_first)
+        self.logger.record("rollout/rate_third_given_second", rate_third_goal_given_second)
         
         self.logger.record("rollout/success_rate", success_rate)
         self.logger.record("rollout/timeout_rate", timeout_rate)
@@ -389,6 +406,8 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         self.collected_games = 0
         max_total_success_rate = 0
 
+        total_collection_time = 0
+
         while self.num_timesteps < total_timesteps:
             # collect_rollouts
             cr_time = time.time() 
@@ -396,6 +415,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
             continue_training = self.collect_rollouts(
                 self.env, callback, self.rollout_buffer, n_rollout_steps=self.n_steps, log=should_log)
             cr_time = time.time() - cr_time
+            total_collection_time += cr_time
 
             total_cr_time += cr_time
 
@@ -423,6 +443,9 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
                 # The time/fps are thus distributed for the n_envs
                 fps_per_env = float(fps / self.n_envs)
 
+                # fps takes the time for the whole training, collect_rollout_fps_per_env only counts collection time
+                collect_rollout_fps_per_env = float((self.num_timesteps - self._num_timesteps_at_start) / total_collection_time)
+
                 self.logger.record("time/iterations",
                                    iteration, exclude="tensorboard")
                 '''if len(self.ep_info_buffer) > 0 and len(self.ep_info_buffer[0]) > 0:
@@ -432,6 +455,8 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
                         "rollout/ep_len_mean", safe_mean([ep_info["l"] for ep_info in self.ep_info_buffer]))'''
                 self.logger.record("time/fps", fps)
                 self.logger.record("time/fps_per_env", fps_per_env)
+                self.logger.record("time/collect_rollout_fps_per_env", collect_rollout_fps_per_env)
+
                 self.logger.record("time/time_elapsed",
                                    int(time_elapsed), exclude="tensorboard")
                 self.logger.record("time/total_timesteps",
@@ -496,6 +521,8 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         episode_lengths = []
         success_count, finished_episodes, passed_goals, number_of_goals = 0, 0, 0, 0
         first_goals, second_goals, third_goals = 0, 0, 0
+        second_goals_given_first, third_goals_given_second = 0, 0
+
         timeouts = 0
 
 
@@ -553,10 +580,15 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
                         number_of_goals += int(infos[i]["numberOfGoals"])
 
                         first_goals += int(infos[i]["passedFirstGoal"])
-                        if int(infos[i]["passedGoals"]) >= 2:
-                            second_goals += 1
-                        if int(infos[i]["passedGoals"]) >= 3:
-                            third_goals += 1
+                        #if int(infos[i]["passedGoals"]) >= 2:
+                        second_goals += int(infos[i]["passedSecondGoal"])
+                        #if int(infos[i]["passedGoals"]) >= 3:
+                        third_goals += int(infos[i]["passedThirdGoal"])
+
+                        if int(infos[i]["passedFirstGoal"]) == 1 and int(infos[i]["passedSecondGoal"]) == 1:
+                            second_goals_given_first +=1
+                        if int(infos[i]["passedSecondGoal"]) == 1 and int(infos[i]["passedThirdGoal"]) == 1:
+                            third_goals_given_second +=1
 
                         #print(f'end event: {infos[i]["endEvent"]}')
 
@@ -584,11 +616,11 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         rate_of_passed_goals = passed_goals / number_of_goals
         rate_of_passed_first_goals = first_goals / n_eval_episodes
         if first_goals > 0:
-            rate_of_second_goal_given_first = second_goals / first_goals
+            rate_of_second_goal_given_first = second_goals_given_first / first_goals
         else:
             rate_of_second_goal_given_first = 0
         if second_goals > 0:
-            rate_of_third_goal_given_second = third_goals / second_goals
+            rate_of_third_goal_given_second = third_goals_given_second / second_goals
         else:
             rate_of_third_goal_given_second = 0
 
