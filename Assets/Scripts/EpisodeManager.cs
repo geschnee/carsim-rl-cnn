@@ -426,7 +426,9 @@ public class EpisodeManager : MonoBehaviour
 
     public void IncreasePassedGoals(GameObject goalMiddle)
     {
-        int goalnumber = goalMiddle.transform.name[goalMiddle.transform.name.Length - 1] - '0';
+        GameObject goal = goalMiddle.transform.parent.gameObject;
+        int goalnumber = goal.transform.name[goal.transform.name.Length - 1] - '0';
+        Debug.Log($"goalnumber {goalnumber} from {goal.transform.name}");
         this.passedGoals.Add(goalnumber);
     }
 
@@ -498,7 +500,7 @@ public class EpisodeManager : MonoBehaviour
 
     public void goalPassed(GameObject goalMiddle)
     {
-
+        //Debug.Log($"goalPassed {goalMiddle.transform.parent.name}");
         AddTime(allowedTimePerGoal);
 
         AddEventReward(goalPassedReward);
