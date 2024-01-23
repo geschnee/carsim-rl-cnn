@@ -1,15 +1,15 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using Unity.MLAgents;
-using Unity.MLAgents.Actuators;
-using Unity.MLAgents.Sensors;
+//using Unity.MLAgents;
+//using Unity.MLAgents.Actuators;
+//using Unity.MLAgents.Sensors;
 using System;
 using System.IO;
 using System.Diagnostics;
 using System.Linq;
 
-public class CarAgent : Agent
+public class CarAgent : MonoBehaviour //was Agent
 {
     /*
     // this class is not needed anymore since we don't use ML agents for training anymore

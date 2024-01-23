@@ -50,7 +50,7 @@ def run(args: argparse.Namespace) -> None:
 
     car_spawned = False
 
-    env = BaseUnityCarEnv(frame_stacking=2, asynchronous=False, grayscale=True)
+    env = BaseCarsimEnv(frame_stacking=2, asynchronous=False, grayscale=True)
     new_obs, info_dict = env.reset()
 
     # creating a running loop

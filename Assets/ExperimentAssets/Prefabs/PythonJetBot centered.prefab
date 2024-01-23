@@ -78,6 +78,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: eb828afde3bb540709e3a2c81dba42a0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  inputAccelerationLeft: 0
+  inputAccelerationRight: 0
   frontLeftWheelCollider: {fileID: 2555060398321077506}
   frontRightWheelCollider: {fileID: 3298807448374130550}
   rearLeftWheelCollider: {fileID: 5598936257683454341}
@@ -114,7 +116,7 @@ MonoBehaviour:
   goalPassedReward: 1
   duration: 0
   allowedTime: 20
-  passedGoals: 0
+  passedGoals: 
   numberOfGoals: 0
   step: 0
   rewardSinceLastGetReward: 0
@@ -299,7 +301,7 @@ Camera:
     m_Bits: 55
   m_RenderingPath: -1
   m_TargetTexture: {fileID: 0}
-  m_TargetDisplay: 0
+  m_TargetDisplay: 1
   m_TargetEye: 3
   m_HDR: 1
   m_AllowMSAA: 1

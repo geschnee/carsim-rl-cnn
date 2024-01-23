@@ -1,9 +1,9 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using Unity.MLAgents;
-using Unity.MLAgents.Actuators;
-using Unity.MLAgents.Sensors;
+//using Unity.MLAgents;
+//using Unity.MLAgents.Actuators;
+//using Unity.MLAgents.Sensors;
 using System;
 using System.IO;
 using System.Linq;
@@ -233,7 +233,7 @@ public class EpisodeManager : MonoBehaviour
 
     public List<float> GetRewards()
     {
-        List<float> rewards = new List<float>();
+        /*List<float> rewards = new List<float>();
 
         int amount_of_steps = this.step + 1;
         for (int i = 0; i < amount_of_steps; i++)
@@ -241,7 +241,9 @@ public class EpisodeManager : MonoBehaviour
             float reward = this.step_rewards[i];
             rewards.Add(reward);
         }
-        return rewards;
+        return rewards;*/
+
+        return this.step_rewards;
     }
 
 

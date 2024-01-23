@@ -246,7 +246,6 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
                 
                     if infos[idx]["endEvent"] == "Success":
                         successfully_completed_games += 1
-                    print(f'is timeout detected correctly? my_on_policy_algorithm TODO')
                     if infos[i]["endEvent"] == "OutOfTime":
                         timeouts += 1
                     successfully_passed_goals += int(infos[idx]["passedGoals"])
@@ -322,9 +321,10 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         callback.on_rollout_end()
 
         
-        
-        goal_completion_rate = successfully_passed_goals / number_of_goals
-
+        if number_of_goals != 0:
+            goal_completion_rate = successfully_passed_goals / number_of_goals
+        else:
+            goal_completion_rate = 0
         
         if completed_games != 0:
             success_rate = successfully_completed_games / completed_games
@@ -338,6 +338,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
             first_goal_completion_rate = successfully_passed_first_goals / completed_games
         else:
             success_rate, mean_reward, mean_episode_length, mean_distance_reward, mean_velocity_reward, mean_event_reward, mean_orientation_reward, first_goal_completion_rate = 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+            timeout_rate = 0
 
         print(f'collect rollouts finished', flush=True)
 
@@ -638,7 +639,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         return success_rate
 
 def get_obs(env):
-    # env is a vectorized BaseUnityCarEnv
+    # env is a vectorized BaseCarsimEnv
     # it is wrapped in a vec_transpose env for the CNN
 
     

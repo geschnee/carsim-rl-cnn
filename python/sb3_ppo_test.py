@@ -52,7 +52,7 @@ def run_ppo(cfg):
 
 
     # Parallel environments
-    vec_env = make_vec_env(unityGymEnv.BaseCarsimEnv, n_envs=n_envs, env_kwargs=env_kwargs)
+    vec_env = make_vec_env(carsimGymEnv.BaseCarsimEnv, n_envs=n_envs, env_kwargs=env_kwargs)
     # the n_envs can quickly be too much since the replay buffer will grow
     # the observations are quite big (float32)
 

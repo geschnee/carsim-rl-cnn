@@ -10,7 +10,8 @@ public class AIEngine : MonoBehaviour
     public float inputAccelerationRight = 0;
     private float currentSteerAngle;
 
-    private float maxTorque = 100f;
+    private float maxTorque = 50f; // was 100f;
+    // TODO we are trying a smaller value to have less movement per step
     private float maxSteeringAngle = 75f;
     private float resistanceFactor = 1f;
 

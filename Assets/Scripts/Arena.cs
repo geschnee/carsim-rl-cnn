@@ -155,8 +155,8 @@ public class Arena : MonoBehaviour
         bool terminated = episodeManager.IsTerminated();
         string observation = this.getObservation();
 
-        Dictionary<string, string> info = episodeManager.GetInfo();
 
+        Dictionary<string, string> info = episodeManager.GetInfo();
         List<float> rewards = episodeManager.GetRewards();
 
         return new StepReturnObject(observation, reward, done, terminated, info, rewards);

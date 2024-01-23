@@ -424,6 +424,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 7223734860724017993, guid: bf4901594de6ca544af7f33938832df6, type: 3}
+      propertyPath: m_TargetDisplay
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 7884116508170698890, guid: bf4901594de6ca544af7f33938832df6, type: 3}
       propertyPath: m_Name
       value: PythonJetBot Time20 (1)
@@ -817,7 +821,7 @@ Camera:
     m_Bits: 4294967295
   m_RenderingPath: -1
   m_TargetTexture: {fileID: 0}
-  m_TargetDisplay: 3
+  m_TargetDisplay: 0
   m_TargetEye: 3
   m_HDR: 1
   m_AllowMSAA: 1
@@ -909,7 +913,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!135 &1807185748
 SphereCollider:
   m_ObjectHideFlags: 0
@@ -1004,6 +1008,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 420009083408027165, guid: edbcff21dfdf323458c46bc7170d7c24, type: 3}
+      propertyPath: m_TargetDisplay
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 582834541930252302, guid: edbcff21dfdf323458c46bc7170d7c24, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
@@ -1044,9 +1052,45 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 745011480294860030, guid: edbcff21dfdf323458c46bc7170d7c24, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 8
+      objectReference: {fileID: 0}
+    - target: {fileID: 745011480294860030, guid: edbcff21dfdf323458c46bc7170d7c24, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -0.0742
+      objectReference: {fileID: 0}
+    - target: {fileID: 3665332883280607939, guid: edbcff21dfdf323458c46bc7170d7c24, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 8
+      objectReference: {fileID: 0}
+    - target: {fileID: 3665332883280607939, guid: edbcff21dfdf323458c46bc7170d7c24, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -0.0747
+      objectReference: {fileID: 0}
+    - target: {fileID: 3747591386705235100, guid: edbcff21dfdf323458c46bc7170d7c24, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 1.4091
+      objectReference: {fileID: 0}
+    - target: {fileID: 3747591386705235100, guid: edbcff21dfdf323458c46bc7170d7c24, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0.0000000023842
+      objectReference: {fileID: 0}
+    - target: {fileID: 3747591386705235100, guid: edbcff21dfdf323458c46bc7170d7c24, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -0.0044345
+      objectReference: {fileID: 0}
     - target: {fileID: 7574534660565161624, guid: edbcff21dfdf323458c46bc7170d7c24, type: 3}
       propertyPath: m_Name
       value: ArenaPrefab
+      objectReference: {fileID: 0}
+    - target: {fileID: 7692150654371290727, guid: edbcff21dfdf323458c46bc7170d7c24, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 8
+      objectReference: {fileID: 0}
+    - target: {fileID: 7692150654371290727, guid: edbcff21dfdf323458c46bc7170d7c24, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -0.0581
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

@@ -72,3 +72,6 @@ python/outputs
 python/models_and_dumps
 
 *.pyc
+
+server_build
+windows_build
