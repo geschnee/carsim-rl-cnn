@@ -250,13 +250,13 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
                         timeouts += 1
                     successfully_passed_goals += int(infos[idx]["passedGoals"])
                     number_of_goals += int(infos[idx]["numberOfGoals"])
-                    total_reward += float(infos[idx]["cumreward"])
+                    total_reward += float(infos[idx]["cumreward"].replace(",","."))
                     total_timesteps += int(infos[idx]["amount_of_steps"])
 
-                    distance_reward += float(infos[idx]["distanceReward"])
-                    velocity_reward += float(infos[idx]["velocityReward"])
-                    event_reward += float(infos[idx]["eventReward"])
-                    orientation_reward += float(infos[idx]["orientationReward"])
+                    distance_reward += float(infos[idx]["distanceReward"].replace(",","."))
+                    velocity_reward += float(infos[idx]["velocityReward"].replace(",","."))
+                    event_reward += float(infos[idx]["eventReward"].replace(",","."))
+                    orientation_reward += float(infos[idx]["orientationReward"].replace(",","."))
                     successfully_passed_first_goals += int(infos[idx]["passedFirstGoal"])
 
                     successfully_passed_second_goals += int(infos[idx]["passedSecondGoal"])
@@ -571,7 +571,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
 
                     if dones[i]:
                         
-                        episode_rewards.append(float(infos[i]["cumreward"]))
+                        episode_rewards.append(float(infos[i]["cumreward"].replace(",",".")))
                         episode_lengths.append(current_lengths[i])
                         episode_counts[i] += 1
                         current_rewards[i] = 0
