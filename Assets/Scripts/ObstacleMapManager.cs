@@ -36,7 +36,8 @@ public enum Spawn
 {
     Fixed = 0,
     OrientationRandom = 1,
-    FullyRandom = 2,
+    OrientationVeryRandom = 2,
+    FullyRandom = 3,
 }
 
 
@@ -304,15 +305,20 @@ public class ObstacleMapManager : MonoBehaviour
 
     // TODO was this method used in Maximilian code before?
     // yes, in CarAgent random spawn
-    public Quaternion JetBotRandomRotation()
+    public Quaternion JetBotRandomRotation(Boolean veryRandom)
     {
         Quaternion originalQuaternion = new Quaternion(0, 1, 0, 1);
 
         // Convert to Euler angles
         Vector3 currentRotation = originalQuaternion.eulerAngles;
 
-        // Generate a random angle between -45 and 45 degrees
-        float randomAngle = UnityEngine.Random.Range(-45f, 45f);
+        float randomAngle;
+        if (veryRandom) {
+            // Generate a random angle between -45 and 45 degrees
+            randomAngle = UnityEngine.Random.Range(-45f, 45f);
+        } else {
+            randomAngle = UnityEngine.Random.Range(-15f, 15f);
+        }
 
         // Add the random angle to the current rotation
         Vector3 modifiedRotation = currentRotation + new Vector3(0, randomAngle, 0);
@@ -458,7 +464,7 @@ public class ObstacleMapManager : MonoBehaviour
 
 
         Vector3 jetBotSpawnPosition;
-        if (jetBotSpawn == Spawn.Fixed || jetBotSpawn == Spawn.OrientationRandom)
+        if (jetBotSpawn == Spawn.Fixed || jetBotSpawn == Spawn.OrientationRandom || jetBotSpawn == Spawn.OrientationVeryRandom)
         {
             jetBotSpawnPosition = this.GetJetBotSpawnCoords();
 
@@ -476,9 +482,12 @@ public class ObstacleMapManager : MonoBehaviour
         }
 
         Quaternion jetBotSpawnRotation;
-        if (jetBotSpawn == Spawn.OrientationRandom | jetBotSpawn == Spawn.FullyRandom)
+        if (jetBotSpawn == Spawn.OrientationVeryRandom | jetBotSpawn == Spawn.FullyRandom)
         {
-            jetBotSpawnRotation = this.JetBotRandomRotation();
+            jetBotSpawnRotation = this.JetBotRandomRotation(true);
+        } else if (jetBotSpawn == Spawn.OrientationRandom)
+        {
+            jetBotSpawnRotation = this.JetBotRandomRotation(false);
         }
         else
         {

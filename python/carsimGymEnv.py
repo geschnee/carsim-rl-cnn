@@ -41,7 +41,8 @@ from enum import Enum
 class Spawn(Enum):
     Fixed = 0
     OrientationRandom = 1
-    FullyRandom = 2
+    OrientationVeryRandom = 2
+    FullyRandom = 3
 
 
 class MapType(Enum):
@@ -64,6 +65,7 @@ class MapType(Enum):
     randomEvalMedium = 12
     randomEvalHard = 13
     randomEval=14
+    randomEvalEasyOrMedium = 15
 
     @classmethod
     def resolvePseudoEnum(myEnum, pseudoEnum):
@@ -77,6 +79,8 @@ class MapType(Enum):
             return myEnum.getRandomHard()
         elif pseudoEnum.value == 14:
             return myEnum.getRandomEval()
+        elif pseudoEnum.value == 15:
+            return myEnum.getRandomEasyOrMedium()
         else:
             # pseudoEnum is not a pseudo enum (real enum)
             return pseudoEnum
@@ -107,6 +111,11 @@ class MapType(Enum):
     @classmethod
     def getRandomEval(myEnum):
         return MapType(np.random.choice([1,2,3,4,5,6,7,8,9,10]))
+
+    @classmethod
+    def getRandomEasyOrMedium(myEnum):
+        return MapType(np.random.choice([1,2,3,4,5,6]))
+    
 
 class EndEvent(Enum):
     NotEnded = 0

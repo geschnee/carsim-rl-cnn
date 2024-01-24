@@ -15,7 +15,8 @@ from myPPO.my_on_policy_algorithm import MyOnPolicyAlgorithm
 
 SelfPPO = TypeVar("SelfPPO", bound="myPPO")
 
-
+# what this code is based on:
+# https://stable-baselines3.readthedocs.io/en/master/_modules/stable_baselines3/ppo/ppo.html
 class myPPO(MyOnPolicyAlgorithm):
     """
     Proximal Policy Optimization algorithm (PPO) (clip version)

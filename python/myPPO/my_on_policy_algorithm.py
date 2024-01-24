@@ -19,7 +19,8 @@ from myPPO.my_buffers import MyRolloutBuffer
 SelfOnPolicyAlgorithm = TypeVar(
     "SelfOnPolicyAlgorithm", bound="MyOnPolicyAlgorithm")
 
-
+# what this code is based on:
+# https://stable-baselines3.readthedocs.io/en/master/_modules/stable_baselines3/common/on_policy_algorithm.html
 class MyOnPolicyAlgorithm(BaseAlgorithm):
     """
     The base for On-Policy algorithms (ex: A2C/PPO).
@@ -514,8 +515,10 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         self: SelfOnPolicyAlgorithm,
         n_eval_episodes: int = 10,
         difficulty: str = "easy",
-        # TODO also the lighting level and random spawn position should be varied
+        # TODO also the lighting level should be varied
     ):
+        # spawn position and orientation is defined by the env via cfg.env_kwargs.spawn_point
+
         env = self.env
         n_envs = env.num_envs
         episode_rewards = []
@@ -544,8 +547,8 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         )
 
         
+        # switch to eval mode
         self.policy.set_training_mode(False)
-        # TODO check if that is all we need to do to switch to eval mode (greedy/deterministic action selection)
 
         while (episode_counts < episode_count_targets).any():
     
@@ -609,7 +612,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         assert finished_episodes == n_eval_episodes, f"not all episodes were finished, {finished_episodes} != {n_eval_episodes}"
         
 
-        print(f'episode_rewards: {episode_rewards}')
+        #print(f'episode_rewards: {episode_rewards}')
         mean_reward = np.mean(episode_rewards)
         std_reward = np.std(episode_rewards)
         

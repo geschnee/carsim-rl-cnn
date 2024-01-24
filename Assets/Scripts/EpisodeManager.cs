@@ -27,8 +27,8 @@ public class EpisodeManager : MonoBehaviour
 {
 
     // for debugging its public, then you can lift the TimeLimit in unity
-    public float allowedTimeDefault = 20f; // TODO was 10f
-    public float allowedTimePerGoal = 10f; // TODO was 10f
+    private float allowedTimeDefault = 30f; // TODO was 10f
+    private float allowedTimePerGoal = 30f; // TODO was 10f
 
     // multiply by some constant, the reward is very small
     public float distanceCoefficient;// = 10f;
