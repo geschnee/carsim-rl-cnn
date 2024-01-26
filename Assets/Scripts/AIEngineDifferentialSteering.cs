@@ -3,25 +3,20 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class AIEngine : AIEngineBase
+public class AIEngineDifferentialsteering : AIEngineBase
 {
 
-
-    private float currentSteerAngle;
-
     private float maxTorque = 100f;
-    private float maxSteeringAngle = 75f;
     private float resistanceFactor = 1f;
 
     public WheelCollider frontLeftWheelCollider;
     public WheelCollider frontRightWheelCollider;
-    public WheelCollider rearLeftWheelCollider;
-    public WheelCollider rearRightWheelCollider;
+
 
     public Transform frontLeftWheelTransform;
     public Transform frontRightWheeTransform;
-    public Transform rearLeftWheelTransform;
-    public Transform rearRightWheelTransform;
+
+
 
     public void Start()
     {
@@ -54,57 +49,16 @@ public class AIEngine : AIEngineBase
 
     public void HandleMotor()
     {
-        //resistance slows down car when not accelarating
-        // grows with velocity + (signed in direction of vel) constant
-        // custome resistance if wanted actually set to 0
+        float leftTorque = (inputAccelerationLeft * this.maxTorque);
+
+        frontLeftWheelCollider.motorTorque = leftTorque;
 
 
+        // Apply torque to the right wheel
+        float rightTorque = (inputAccelerationRight * this.maxTorque);
+        frontRightWheelCollider.motorTorque = rightTorque;
 
-        // this resistance is not used anywhere
-        float resistance = (float)(0f * (Math.Pow(this.getCarVelocity(), 8) * Math.Sign(this.getCarVelocity()) * this.resistanceFactor) + Math.Sign(this.getCarVelocity()) * 5f);
-
-
-        //frontLeftWheelCollider.motorTorque = (inputAccelerationLeft * motorForce) - resistance;
-        //frontRightWheelCollider.motorTorque = (inputAccelerationRight * motorForce) - resistance;
-
-
-        // Calculate steering angle for each wheel based on difference in acceleration
-        float accelerationDiff = Math.Abs(this.inputAccelerationRight) - Math.Abs(this.inputAccelerationLeft);
-        float steeringAngle = maxSteeringAngle * accelerationDiff;
-
-        // Apply differential torque to the wheels based on steering angle
-        //leftTorque *= 1 - differentialFactor * Mathf.Abs(steeringAngle);
-        //rightTorque *= 1 + differentialFactor * Mathf.Abs(steeringAngle);
-
-        // Apply torque and steering angle to the left wheel
-        // float leftTorque = (inputAccelerationLeft * this.maxTorque);
-        // Maximilan's code applied different torques to the two wheels
-
-        float torque = (inputAccelerationLeft + inputAccelerationRight) / 2;
-        torque = (torque * this.maxTorque);
-
-        frontLeftWheelCollider.motorTorque = torque; // leftTorque;
-        frontLeftWheelCollider.steerAngle = steeringAngle;
-
-        //Debug.Log($"steering angle {steeringAngle} left {frontLeftWheelCollider.steerAngle} right {frontRightWheelCollider.steerAngle}");
-        //Debug.Log($"Motor torque left {frontLeftWheelCollider.motorTorque} right {frontRightWheelCollider.motorTorque}");
-
-        // Apply torque and steering angle to the right wheel
-        // float rightTorque = (inputAccelerationRight * this.maxTorque);
-        frontRightWheelCollider.motorTorque = torque; //rightTorque;
-        frontRightWheelCollider.steerAngle = steeringAngle;
-
-        // TODO why do right and left wheels have different torque?
-        // see unity tutorial: https://docs.unity3d.com/2017.4/Documentation/Manual/WheelColliderTutorial.html
-        // simply because there were two input values?
-        // we could use min, max or mean to get the same torque for both wheels
-
-
-        //if (inputAccelerationLeft == 0)
-        //{
-        //    Debug.Log($"leftTorque {leftTorque} inputAccelerationLeft {inputAccelerationLeft} rightTorque {rightTorque} inputAccelerationRight {inputAccelerationRight}");
-        //}
-
+        // Differential steering does not change the steering angle of wheels        
     }
 
     public void ResetMotor()
@@ -132,9 +86,6 @@ public class AIEngine : AIEngineBase
     {
         UpdateSingleWheel(frontLeftWheelCollider, frontLeftWheelTransform);
         UpdateSingleWheel(frontRightWheelCollider, frontRightWheeTransform);
-        UpdateSingleWheel(rearRightWheelCollider, rearRightWheelTransform);
-        UpdateSingleWheel(rearLeftWheelCollider, rearLeftWheelTransform);
-
     }
 
     public void UpdateSingleWheel(WheelCollider wheelCollider, Transform wheelTransform)
@@ -156,7 +107,7 @@ public class AIEngine : AIEngineBase
 
     public float getSteeringAngle()
     {
-        //TODO check if correct angle gives back 90° should have 0
+        Debug.LogError("getSteeringAngle was called for differential steering");
         return this.carBody.eulerAngles.y;
     }
 
