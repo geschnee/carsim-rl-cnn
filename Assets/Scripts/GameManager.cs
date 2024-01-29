@@ -22,6 +22,8 @@ public class GameManager : MonoBehaviour
 
 	public GameObject JetBot;
 
+	public List<GameObject> availibleJetbots;
+
 	// need to load the prefabs of the obstacles in unity here
 	public GameObject obstacleBlue;
 	public GameObject obstacleRed;
@@ -80,7 +82,6 @@ public class GameManager : MonoBehaviour
 
 	public Boolean isEvaluation;
 	public int numberOfRunsPerMap = 10;
-	private int currentMapIndex = 0;
 
 	// Start is called before the first frame update
 	void Start()
@@ -156,5 +157,24 @@ public class GameManager : MonoBehaviour
 	public String GetMapTypeName(MapType mt)
 	{
 		return mt.ToString();
+	}
+
+	public void setJetbot(string jetbotName){
+		bool found = false;
+
+		for (int i = 0; i < this.availibleJetbots.Count; i++)
+		{
+			if (this.availibleJetbots[i].name == jetbotName)
+			{
+				this.JetBot = this.availibleJetbots[i];
+				found = true;
+				break;
+			}
+		}
+		if (!found)
+		{
+			Debug.LogError($"Jetbot {jetbotName} not found, will use default Jetbot");
+		}
+		this.JetBot = this.availibleJetbots[0];
 	}
 }

@@ -20,9 +20,7 @@ public class Arena : MonoBehaviour
     GameObject car;
     Camera carCam;
 
-    AIEngine aIEngine;
-
-    private float rewardAsync = 0f;
+    AIEngineBase aIEngine;
 
     private int instancenumber;
 
@@ -75,6 +73,7 @@ public class Arena : MonoBehaviour
 
     public string reset(MapType mt, Spawn jetBotSpawn, bool singleGoalTraining, float lightMultiplier)
     {
+        //Debug.Log($"Arena reset() called, id: {instancenumber}");
         if (this.car != null)
         {
             //Debug.Log($"will destroy existing car");
@@ -92,7 +91,6 @@ public class Arena : MonoBehaviour
         // spawn new obstacles:
         MapData md = gameManager.InitializeMapWithObstacles(mt, 0, jetBotSpawn, singleGoalTraining);
 
-
         GameObject car = gameManager.spawnJetbot(md, this.instancenumber);
 
         SetLightIntensity(lightMultiplier);
@@ -101,7 +99,7 @@ public class Arena : MonoBehaviour
         this.car = car;
 
 
-        this.aIEngine = car.GetComponent<AIEngine>();
+        this.aIEngine = car.GetComponent<AIEngineBase>();
         this.aIEngine.ResetMotor();
 
         this.carCam = car.GetComponentInChildren<Camera>();
@@ -162,36 +160,14 @@ public class Arena : MonoBehaviour
         return new StepReturnObject(observation, reward, done, terminated, info, rewards);
     }
 
-    /*
-    public void asyncStepPart1(int step, float inputAccelerationLeft, float inputAccelerationRight)
+    public void setJetbot(string jetbotName)
     {
-        aIEngine.SetInput(inputAccelerationLeft, inputAccelerationRight);
-        episodeManager.IncreaseSteps(step);
-
-        rewardAsync = episodeManager.rewardSinceLastGetReward;
-        // part1 sets the actions, python does the waiting, then part2 returns the observation
+        //Debug.Log($"setJetbot {jetbotName}");
+        gameManager.setJetbot(jetbotName);
     }
 
-    public StepReturnObject asyncStepPart2()
-    {
-        float new_reward = episodeManager.GetReward();
-
-        float reward_during_waiting = new_reward - rewardAsync;
-
-        //Debug.Log($"reward during waiting: {reward_during_waiting}");
-
-        bool done = episodeManager.IsTerminated();
-        bool terminated = episodeManager.IsTerminated();
-        string observation = GetCameraInput(this.carCam, this.resWidth, this.resHeight, "observation.png");
-
-
-        Dictionary<string, string> info = episodeManager.GetInfo();
-
-
-        List<float> rewards = episodeManager.GetRewards();
-
-        return new StepReturnObject(observation, reward_during_waiting, done, terminated, info, rewards);
-    }*/
+  
+  
 
 
     //Get the AI vehicles camera input encode as byte array

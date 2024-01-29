@@ -71,7 +71,7 @@ public class PeacefulPieCarCommandReceiver : MonoBehaviour
         [JsonRpcMethod]
         string reset(int id, string mapType, string spawn, bool singleGoalTraining, float lightMultiplier)
         {
-            //Debug.Log($"mapType: {mapType}");
+            //Debug.Log($"reset() called, id: {id}");
             MapType mt = (MapType)Enum.Parse(typeof(MapType), mapType);
             Spawn sp = (Spawn)Enum.Parse(typeof(Spawn), spawn);
             //Debug.Log($"mt: {mt}");
@@ -100,8 +100,9 @@ public class PeacefulPieCarCommandReceiver : MonoBehaviour
 
 
         [JsonRpcMethod]
-        void startArena(int id, float distanceCoefficient, float orientationCoefficient, float velocityCoefficient, float eventCoefficient, int resWidth, int resHeight)
+        void startArena(int id, string jetbotName, float distanceCoefficient, float orientationCoefficient, float velocityCoefficient, float eventCoefficient, int resWidth, int resHeight)
         {
+            //Debug.Log($"startArena() called, id: {id}");
             // spawn a new arena including gameManager and everything
 
             if (id > arenas.Count)
@@ -118,6 +119,7 @@ public class PeacefulPieCarCommandReceiver : MonoBehaviour
 
             Arena arena = arenaGameObject.GetComponent<Arena>();
             arena.setInstanceNumber(id);
+            arena.setJetbot(jetbotName);
 
             arenas.Add(arena);
 

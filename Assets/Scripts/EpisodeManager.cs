@@ -27,8 +27,8 @@ public class EpisodeManager : MonoBehaviour
 {
 
     // for debugging its public, then you can lift the TimeLimit in unity
-    private float allowedTimeDefault = 30f; // TODO was 10f
-    private float allowedTimePerGoal = 30f; // TODO was 10f
+    private float allowedTimeDefault = 30f; // was 10f
+    private float allowedTimePerGoal = 30f; // was 10f
 
     // multiply by some constant, the reward is very small
     public float distanceCoefficient;// = 10f;
@@ -46,7 +46,7 @@ public class EpisodeManager : MonoBehaviour
     public float duration;
     public float allowedTime;
 
-    private AIEngine aIEngine;
+    private AIEngineBase aIEngine;
     private GameObject finishLine;
 
 
@@ -69,7 +69,6 @@ public class EpisodeManager : MonoBehaviour
     private float velocityReward;
     private float orientationReward;
     private float eventReward;
-    public float rewardSinceLastGetReward;
 
 
     private float lastDistance;
@@ -83,7 +82,7 @@ public class EpisodeManager : MonoBehaviour
 
     public void PrepareAgent()
     {
-        this.aIEngine = this.GetComponent<AIEngine>();
+        this.aIEngine = this.GetComponent<AIEngineBase>();
 
         gameManager = this.transform.parent.Find("GameManager").GetComponent<GameManager>();
         carBody = this.transform.Find("carBody").gameObject;
@@ -107,7 +106,6 @@ public class EpisodeManager : MonoBehaviour
         if (this.step != step)
         {
             Debug.LogWarning($"unity step {this.step} != python step {step} for {this.transform.parent.name}");
-            // TODO make this a warning
             // There was a timeout in python resulting in a second call to the step function with the same arguments
             return;
         }
@@ -140,7 +138,6 @@ public class EpisodeManager : MonoBehaviour
         this.distanceReward = 0f;
         this.velocityReward = 0f;
         this.eventReward = 0f;
-        this.rewardSinceLastGetReward = 0f;
         this.lastPosition = this.transform.position;
         this.step = -1;
         this.allowedTime = this.allowedTimeDefault;
@@ -183,12 +180,8 @@ public class EpisodeManager : MonoBehaviour
 
     public float GetReward()
     {
-        float r = this.rewardSinceLastGetReward;
+        float r = this.step_rewards[this.step];
 
-        this.rewardSinceLastGetReward = 0f;
-
-        // TODO delete this
-        //Debug.LogError($"GetReward called unexpectadly, I think this method can be deleted");
         return r;
     }
 
@@ -256,7 +249,6 @@ public class EpisodeManager : MonoBehaviour
         }
 
         this.cumReward += reward;
-        this.rewardSinceLastGetReward += reward;
 
         int index;
 
@@ -447,8 +439,6 @@ public class EpisodeManager : MonoBehaviour
     {
         AddEventReward(wallHitReward);
 
-
-
         //EndEpisode(EndEvent.WallHit);
     }
 
@@ -472,13 +462,11 @@ public class EpisodeManager : MonoBehaviour
 
     public void goalMissed(GameObject redBorder)
     {
+        destroyCheckpoint(redBorder.transform.parent.gameObject);
         AddEventReward(goalMissedReward);
 
-        GameObject goal = redBorder.transform.parent.gameObject;
-
         centerIndicators.RemoveAt(0); // remove an indicator
-
-        destroyCheckpoint(goal);
+        
 
         this.lastDistance = GetDistanceToNextGoal();
 
@@ -487,13 +475,11 @@ public class EpisodeManager : MonoBehaviour
 
     public void finishMissed(GameObject redBorder)
     {
+        destroyCheckpoint(redBorder.transform.parent.gameObject);
         AddEventReward(goalMissedReward);
-
-        GameObject goal = redBorder.transform.parent.gameObject;
 
         centerIndicators.RemoveAt(0); // remove an indicator
 
-        destroyCheckpoint(goal);
 
         this.lastDistance = GetDistanceToNextGoal();
 
@@ -502,15 +488,15 @@ public class EpisodeManager : MonoBehaviour
 
     public void goalPassed(GameObject goalMiddle)
     {
-        //Debug.Log($"goalPassed {goalMiddle.transform.parent.name}");
+        destroyCheckpoint(goalMiddle.transform.parent.gameObject);
+        AddEventReward(goalPassedReward);
+
         AddTime(allowedTimePerGoal);
 
-        AddEventReward(goalPassedReward);
 
         IncreasePassedGoals(goalMiddle);
         centerIndicators.RemoveAt(0); // remove an indicator
 
-        destroyCheckpoint(goalMiddle.transform.parent.gameObject);
 
         // update the distance to the next goal
         this.lastDistance = GetDistanceToNextGoal();
@@ -566,6 +552,7 @@ public class EpisodeManager : MonoBehaviour
         if (coll.tag == "Wall")
         {
             hitWall();
+            
             return;
         }
         if (coll.tag == "FinishMissed")

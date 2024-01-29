@@ -12,7 +12,6 @@ public class WheelDebugger : MonoBehaviour
 
     private float maxTorque = 100f;
     private float maxSteeringAngle = 75f;
-    private float resistanceFactor = 1f;
 
     public WheelCollider frontLeftWheelCollider;
     public WheelCollider frontRightWheelCollider;

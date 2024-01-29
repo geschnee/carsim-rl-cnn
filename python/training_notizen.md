@@ -116,4 +116,43 @@ env_kwargs:
 
 
 
+# differentialJetBot SpawnPoint Very Random funktioniert sehr gut, Easy und MEdium wird mit fast 100% gelöst
+
+Run 26.01.2024 15-16-49 auf Desktop PC
+
+comment: "now trying again with fixed spawn pos but fully 45 Degree random spawn orientation, can it still reach success rate of 1 for easy parcour?"
+
+n_envs: 10
+num_evals_per_difficulty: 20
+n_epochs: 5
+log_interval: 5
+batch_size: 64
+
+n_steps: 64 
+
+copy_model_from: False 
+
+env_kwargs:
+  jetbot: DifferentialJetBot
+  spawn_point: OrientationVeryRandom
+  single_goal: False
+  frame_stacking: 3
+  image_preprocessing:
+    grayscale: True
+    equalize: True
+    contrast_increase: "TODO"
+    normalize_images: False
+  coefficients:
+    distanceCoefficient: 0.5
+    orientationCoefficient: 0.0
+    velocityCoefficient: 0.0
+    eventCoefficient: 1.0
+  trainingMapType: randomEval
+  width: 500 #336
+  height: 168
+
+# es sieht aus als bräuchte der differential JetBot den orientation reward oder so
+
+der Differential Jetbot dreht sich oft falschrum
+
 

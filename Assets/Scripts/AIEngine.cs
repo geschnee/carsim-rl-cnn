@@ -11,7 +11,6 @@ public class AIEngine : AIEngineBase
 
     private float maxTorque = 100f;
     private float maxSteeringAngle = 75f;
-    private float resistanceFactor = 1f;
 
     public WheelCollider frontLeftWheelCollider;
     public WheelCollider frontRightWheelCollider;
@@ -23,49 +22,9 @@ public class AIEngine : AIEngineBase
     public Transform rearLeftWheelTransform;
     public Transform rearRightWheelTransform;
 
-    public void Start()
+
+    public override void HandleMotor()
     {
-        //Debug.Log($"AIEngine started");
-        //Debug.Log($"left front wheeel rotation {frontLeftWheelCollider.transform.rotation.eulerAngles}");
-        //Debug.Log($"Motor torque start left {frontLeftWheelCollider.motorTorque} right {frontRightWheelCollider.motorTorque}");
-
-    }
-
-    public void FixedUpdate()
-    {
-        if (!episodeRunning)
-        {
-            return;
-        }
-        this.HandleMotor();
-        this.UpdateWheels();
-    }
-    public void SetInput(float inputAccelerationLeft, float inputAccelerationRight)
-    {
-        // + - 10 %
-        //this.inputAccelerationLeft = (float)(input[1]);
-        //this.inputAccelerationRight = (float) (input[0]);
-
-        // normal input
-        this.inputAccelerationLeft = inputAccelerationLeft;
-        this.inputAccelerationRight = inputAccelerationRight;
-        episodeRunning = true;
-    }
-
-    public void HandleMotor()
-    {
-        //resistance slows down car when not accelarating
-        // grows with velocity + (signed in direction of vel) constant
-        // custome resistance if wanted actually set to 0
-
-
-
-        // this resistance is not used anywhere
-        float resistance = (float)(0f * (Math.Pow(this.getCarVelocity(), 8) * Math.Sign(this.getCarVelocity()) * this.resistanceFactor) + Math.Sign(this.getCarVelocity()) * 5f);
-
-
-        //frontLeftWheelCollider.motorTorque = (inputAccelerationLeft * motorForce) - resistance;
-        //frontRightWheelCollider.motorTorque = (inputAccelerationRight * motorForce) - resistance;
 
 
         // Calculate steering angle for each wheel based on difference in acceleration
@@ -94,20 +53,9 @@ public class AIEngine : AIEngineBase
         frontRightWheelCollider.motorTorque = torque; //rightTorque;
         frontRightWheelCollider.steerAngle = steeringAngle;
 
-        // TODO why do right and left wheels have different torque?
-        // see unity tutorial: https://docs.unity3d.com/2017.4/Documentation/Manual/WheelColliderTutorial.html
-        // simply because there were two input values?
-        // we could use min, max or mean to get the same torque for both wheels
-
-
-        //if (inputAccelerationLeft == 0)
-        //{
-        //    Debug.Log($"leftTorque {leftTorque} inputAccelerationLeft {inputAccelerationLeft} rightTorque {rightTorque} inputAccelerationRight {inputAccelerationRight}");
-        //}
-
     }
 
-    public void ResetMotor()
+    public override void ResetMotor()
     {
 
         this.inputAccelerationLeft = 0;
@@ -128,7 +76,7 @@ public class AIEngine : AIEngineBase
         UpdateWheels();
     }
 
-    public void UpdateWheels()
+    public override void UpdateWheels()
     {
         UpdateSingleWheel(frontLeftWheelCollider, frontLeftWheelTransform);
         UpdateSingleWheel(frontRightWheelCollider, frontRightWheeTransform);
@@ -154,22 +102,28 @@ public class AIEngine : AIEngineBase
 
     }
 
-    public float getSteeringAngle()
-    {
-        //TODO check if correct angle gives back 90° should have 0
-        return this.carBody.eulerAngles.y;
-    }
 
-    public float getCarVelocity()
-    {
+    public override float getCarVelocity()
+    {     
+        /* 
         // transform objects that velocity on z axis always indicates the direction -> getting the Sign givs the direction
         float direction = Math.Sign(this.carBody.InverseTransformDirection(this.frontLeftWheelCollider.attachedRigidbody.velocity).z);
+
 
         // signed speed (foreward and backward speed)
         float velocity = direction * frontLeftWheelCollider.attachedRigidbody.velocity.magnitude;
 
+        if (this.gameObject.transform.name == $"JetBot 0")
+        {
+            Vector3 plainVelocity = this.carBody.InverseTransformDirection(this.frontLeftWheelCollider.attachedRigidbody.velocity);
+            Debug.Log($"getCarVelocity: left {inputAccelerationLeft} right {inputAccelerationRight} direction {direction} velocity {velocity} plainVelocity {plainVelocity} for JetBot 0");
+        }*/
+
+        Vector3 plainVelocity = this.carBody.InverseTransformDirection(this.frontLeftWheelCollider.attachedRigidbody.velocity);
+
+        // we only want the velocity along the forward axis:
+        float velocity = plainVelocity.z;
+
         return velocity;
-
     }
-
 }

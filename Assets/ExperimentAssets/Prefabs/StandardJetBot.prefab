@@ -13,7 +13,7 @@ GameObject:
   - component: {fileID: 5808399798246360065}
   - component: {fileID: 2926713500848659217}
   m_Layer: 6
-  m_Name: PythonJetBot centered
+  m_Name: StandardJetBot
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

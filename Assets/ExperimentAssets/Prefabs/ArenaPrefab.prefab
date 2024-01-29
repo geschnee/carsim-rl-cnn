@@ -513,7 +513,7 @@ Camera:
     m_Bits: 119
   m_RenderingPath: -1
   m_TargetTexture: {fileID: 0}
-  m_TargetDisplay: 0
+  m_TargetDisplay: 1
   m_TargetEye: 3
   m_HDR: 1
   m_AllowMSAA: 1
@@ -1135,6 +1135,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   idOfCurrentRun: 0
   JetBot: {fileID: 157310755166477506, guid: 9c9846b7f5309e841bbe71a5e1ee8098, type: 3}
+  availibleJetbots:
+  - {fileID: 157310755166477506, guid: 1b0b30f45a8d03c4bb53bb6ca9d9e96e, type: 3}
+  - {fileID: 157310755166477506, guid: 9c9846b7f5309e841bbe71a5e1ee8098, type: 3}
   obstacleBlue: {fileID: 2786694837747256956, guid: 681200f7d15524e8589d7a28c0376f42, type: 3}
   obstacleRed: {fileID: 2786694837747256956, guid: bb1e06762c3f749b2869d0767ccf3249, type: 3}
   goalPassedWallCheckpoint: {fileID: 1821709658331299659, guid: 4ce475aa445dc47488e73e1e4f548ca1, type: 3}

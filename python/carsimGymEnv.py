@@ -26,6 +26,8 @@ from stable_baselines3.common import torch_layers
 
 from histogram_equilization import hist_eq
 
+from myEnums import MapType, EndEvent, Spawn
+
 @dataclass
 class StepReturnObject:
     obs: str
@@ -35,105 +37,16 @@ class StepReturnObject:
     info: dict
     rewards: list[float]
 
-
-
-from enum import Enum
-class Spawn(Enum):
-    Fixed = 0
-    OrientationRandom = 1
-    OrientationVeryRandom = 2
-    FullyRandom = 3
-
-
-class MapType(Enum):
-    random = 0
-    easyGoalLaneMiddleBlueFirst = 1
-    easyGoalLaneMiddleRedFirst = 2
-
-    twoGoalLanesBlueFirstLeftMedium = 3
-    twoGoalLanesBlueFirstRightMedium = 4
-    twoGoalLanesRedFirstLeftMedium = 5
-    twoGoalLanesRedFirstRightMedium = 6
-
-    twoGoalLanesBlueFirstLeftHard = 7
-    twoGoalLanesBlueFirstRightHard = 8
-    twoGoalLanesRedFirstLeftHard = 9
-    twoGoalLanesRedFirstRightHard = 10
-
-    # pseudo enums types
-    randomEvalEasy = 11 
-    randomEvalMedium = 12
-    randomEvalHard = 13
-    randomEval=14
-    randomEvalEasyOrMedium = 15
-
-    @classmethod
-    def resolvePseudoEnum(myEnum, pseudoEnum):
-        if pseudoEnum.value == 0:
-            return myEnum.getRandomEval()
-        elif pseudoEnum.value == 11:
-            return myEnum.getRandomEasy()
-        elif pseudoEnum.value == 12:
-            return myEnum.getRandomMedium()
-        elif pseudoEnum.value == 13:
-            return myEnum.getRandomHard()
-        elif pseudoEnum.value == 14:
-            return myEnum.getRandomEval()
-        elif pseudoEnum.value == 15:
-            return myEnum.getRandomEasyOrMedium()
-        else:
-            # pseudoEnum is not a pseudo enum (real enum)
-            return pseudoEnum
-
-    @classmethod
-    def getRandomEasy(myEnum):
-        return MapType(np.random.choice([1,2]))
-    
-    @classmethod
-    def getRandomMedium(myEnum):
-        return MapType(np.random.choice([3,4,5,6]))
-    
-    @classmethod
-    def getRandomHard(myEnum):
-        return MapType(np.random.choice([7,8,9,10]))
-    
-    @classmethod
-    def getMapTypeFromDifficulty(myEnum, difficulty):
-        if difficulty == "easy":
-            return myEnum.getRandomEasy()
-        elif difficulty == "medium":
-            return myEnum.getRandomMedium()
-        elif difficulty == "hard":
-            return myEnum.getRandomHard()
-        else:
-            assert False, f'unknown difficulty {difficulty}'
-
-    @classmethod
-    def getRandomEval(myEnum):
-        return MapType(np.random.choice([1,2,3,4,5,6,7,8,9,10]))
-
-    @classmethod
-    def getRandomEasyOrMedium(myEnum):
-        return MapType(np.random.choice([1,2,3,4,5,6]))
-    
-
-class EndEvent(Enum):
-    NotEnded = 0
-    Success = 1
-    OutOfTime = 2
-    WallHit = 3
-    GoalMissed = 4
-    RedObstacle = 5
-    BlueObstacle = 6
-
 class BaseCarsimEnv(gym.Env):
 
     unity_comms: UnityComms = None
     instancenumber = 0
 
-    def __init__(self, width=336, height=168, port=9000, log=False, spawn_point=None, trainingMapType=MapType.randomEval, single_goal=False, image_preprocessing={}, frame_stacking=5, lighting=1, coefficients=None):
+    def __init__(self, width=336, height=168, port=9000, log=False, jetbot=None, spawn_point=None, trainingMapType=MapType.randomEval, single_goal=False, image_preprocessing={}, frame_stacking=5, lighting=1, coefficients=None):
         # height and width was previous 168, that way we could downsample and reach the same dimensions as the nature paper of 84 x 84
         self.instancenumber = BaseCarsimEnv.instancenumber
+        assert jetbot is not None
+        self.jetbot = jetbot
 
         self.equalize = image_preprocessing["equalize"]
         self.downsampling = 2
@@ -216,7 +129,7 @@ class BaseCarsimEnv(gym.Env):
             BaseCarsimEnv.unity_comms = UnityComms(port=port)
             self.unityDeleteAllArenas()
 
-        self.unityStartArena(width, height)
+        self.unityStartArena(width, height, jetbot)
         BaseCarsimEnv.instancenumber += 1
 
         self.spawn_point = spawn_point
@@ -280,10 +193,10 @@ class BaseCarsimEnv(gym.Env):
     def unityGetObservation(self):
         return BaseCarsimEnv.unity_comms.getObservation(id=self.instancenumber)
     
-    def unityStartArena(self, width, height):
+    def unityStartArena(self, width, height, jetbot):
 
         return BaseCarsimEnv.unity_comms.startArena(
-            id=self.instancenumber, distanceCoefficient=self.distanceCoefficient, orientationCoefficient=self.orientationCoefficient, velocityCoefficient=self.velocityCoefficient, eventCoefficient=self.eventCoefficient, resWidth=width, resHeight=height )
+            id=self.instancenumber, jetbotName=jetbot, distanceCoefficient=self.distanceCoefficient, orientationCoefficient=self.orientationCoefficient, velocityCoefficient=self.velocityCoefficient, eventCoefficient=self.eventCoefficient, resWidth=width, resHeight=height )
         
     def unityDeleteAllArenas(self):
         BaseCarsimEnv.unity_comms.deleteAllArenas()

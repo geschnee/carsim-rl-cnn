@@ -27,7 +27,7 @@ static class Constants
     public const int MINXDISTANCEGOALS = 4;
     public const int MAXXDISTANCEGOALS = 6;
 
-    public const float JETBOT_SPAWN_Y = -0.2f;
+    public const float JETBOT_SPAWN_Y = 0f;
 }
 
 
@@ -332,8 +332,7 @@ public class ObstacleMapManager : MonoBehaviour
     public void IntantiateObstacles(MapData goalList)
     {
 
-        allGoals = new GameObject(name: "AllGoals");
-        this.allGoals = allGoals;
+        this.allGoals = new GameObject(name: "AllGoals");
         allGoals.transform.SetParent(this.gameManagerTransform.parent); // set goals to be child of TrainArena
 
 

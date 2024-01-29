@@ -5,49 +5,15 @@ using UnityEngine;
 
 public class AIEngineDifferentialsteering : AIEngineBase
 {
-
-    private float maxTorque = 100f;
-    private float resistanceFactor = 1f;
+    private float maxTorque = 200f; // 100f;
 
     public WheelCollider frontLeftWheelCollider;
     public WheelCollider frontRightWheelCollider;
 
-
     public Transform frontLeftWheelTransform;
     public Transform frontRightWheeTransform;
 
-
-
-    public void Start()
-    {
-        //Debug.Log($"AIEngine started");
-        //Debug.Log($"left front wheeel rotation {frontLeftWheelCollider.transform.rotation.eulerAngles}");
-        //Debug.Log($"Motor torque start left {frontLeftWheelCollider.motorTorque} right {frontRightWheelCollider.motorTorque}");
-
-    }
-
-    public void FixedUpdate()
-    {
-        if (!episodeRunning)
-        {
-            return;
-        }
-        this.HandleMotor();
-        this.UpdateWheels();
-    }
-    public void SetInput(float inputAccelerationLeft, float inputAccelerationRight)
-    {
-        // + - 10 %
-        //this.inputAccelerationLeft = (float)(input[1]);
-        //this.inputAccelerationRight = (float) (input[0]);
-
-        // normal input
-        this.inputAccelerationLeft = inputAccelerationLeft;
-        this.inputAccelerationRight = inputAccelerationRight;
-        episodeRunning = true;
-    }
-
-    public void HandleMotor()
+    public override void HandleMotor()
     {
         float leftTorque = (inputAccelerationLeft * this.maxTorque);
 
@@ -61,7 +27,7 @@ public class AIEngineDifferentialsteering : AIEngineBase
         // Differential steering does not change the steering angle of wheels        
     }
 
-    public void ResetMotor()
+    public override void ResetMotor()
     {
 
         this.inputAccelerationLeft = 0;
@@ -82,7 +48,7 @@ public class AIEngineDifferentialsteering : AIEngineBase
         UpdateWheels();
     }
 
-    public void UpdateWheels()
+    public override void UpdateWheels()
     {
         UpdateSingleWheel(frontLeftWheelCollider, frontLeftWheelTransform);
         UpdateSingleWheel(frontRightWheelCollider, frontRightWheeTransform);
@@ -105,22 +71,36 @@ public class AIEngineDifferentialsteering : AIEngineBase
 
     }
 
-    public float getSteeringAngle()
+
+    /*public override float getSteeringAngle()
     {
         Debug.LogError("getSteeringAngle was called for differential steering");
         return this.carBody.eulerAngles.y;
-    }
+    }*/
 
-    public float getCarVelocity()
+    public override float getCarVelocity()
     {
+        
+        /* 
         // transform objects that velocity on z axis always indicates the direction -> getting the Sign givs the direction
         float direction = Math.Sign(this.carBody.InverseTransformDirection(this.frontLeftWheelCollider.attachedRigidbody.velocity).z);
+
 
         // signed speed (foreward and backward speed)
         float velocity = direction * frontLeftWheelCollider.attachedRigidbody.velocity.magnitude;
 
+        if (this.gameObject.transform.name == $"JetBot 0")
+        {
+            Vector3 plainVelocity = this.carBody.InverseTransformDirection(this.frontLeftWheelCollider.attachedRigidbody.velocity);
+            Debug.Log($"getCarVelocity: left {inputAccelerationLeft} right {inputAccelerationRight} direction {direction} velocity {velocity} plainVelocity {plainVelocity} for JetBot 0");
+        }*/
+
+        Vector3 plainVelocity = this.carBody.InverseTransformDirection(this.frontLeftWheelCollider.attachedRigidbody.velocity);
+
+        // we only want the velocity along the forward axis:
+        float velocity = plainVelocity.z;
+        // if we take the magnitude as before we also get the velocity caused by turning on the spot
+
         return velocity;
-
     }
-
 }
