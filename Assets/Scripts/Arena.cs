@@ -44,6 +44,9 @@ public class Arena : MonoBehaviour
     public float distanceCoefficient;
     public float eventCoefficient;
 
+    public bool fixedTimesteps;
+    public float fixedTimestepsLength;
+
     void Awake()
     {
         // initialize new arena at the correct position
@@ -71,7 +74,7 @@ public class Arena : MonoBehaviour
         gameManager.DestroyObstaclesOnMap();
     }
 
-    public string reset(MapType mt, Spawn jetBotSpawn, bool singleGoalTraining, float lightMultiplier)
+    public string reset(MapType mt, Spawn jetBotSpawn, float lightMultiplier)
     {
         //Debug.Log($"Arena reset() called, id: {instancenumber}");
         if (this.car != null)
@@ -89,7 +92,7 @@ public class Arena : MonoBehaviour
         //Debug.Log($"startEpisode");
 
         // spawn new obstacles:
-        MapData md = gameManager.InitializeMapWithObstacles(mt, 0, jetBotSpawn, singleGoalTraining);
+        MapData md = gameManager.InitializeMapWithObstacles(mt, 0, jetBotSpawn);
 
         GameObject car = gameManager.spawnJetbot(md, this.instancenumber);
 
@@ -111,6 +114,9 @@ public class Arena : MonoBehaviour
         episodeManager.orientationCoefficient = this.orientationCoefficient;
         episodeManager.distanceCoefficient = this.distanceCoefficient;
         episodeManager.eventCoefficient = this.eventCoefficient;
+
+        episodeManager.fixedTimesteps = fixedTimesteps;
+        episodeManager.fixedTimestepsLength = fixedTimestepsLength;
 
         episodeManager.StartEpisode();
 
@@ -142,13 +148,19 @@ public class Arena : MonoBehaviour
     {
         // TODO maybe move this code to the episodeManager
 
-        //Debug.LogWarning($"immediateStep {step} {inputAccelerationLeft} {inputAccelerationRight} for {this.car.name}");
+        if (episodeManager.fixedTimesteps){
+            if (episodeManager.stepFinished == false){
+                return new StepReturnObject(previousStepNotFinished: true);
+            }
+        }
+
+
+        // Debug.LogWarning($"immediateStep {step} {inputAccelerationLeft} {inputAccelerationRight} for {this.car.name}");
         // when the error happens is the other input the same?
         aIEngine.SetInput(inputAccelerationLeft, inputAccelerationRight);
         episodeManager.IncreaseSteps(step);
 
 
-        float reward = episodeManager.GetReward();
         bool done = episodeManager.IsTerminated();
         bool terminated = episodeManager.IsTerminated();
         string observation = this.getObservation();
@@ -157,7 +169,7 @@ public class Arena : MonoBehaviour
         Dictionary<string, string> info = episodeManager.GetInfo();
         List<float> rewards = episodeManager.GetRewards();
 
-        return new StepReturnObject(observation, reward, done, terminated, info, rewards);
+        return new StepReturnObject(observation, done, terminated, info, rewards);
     }
 
     public void setJetbot(string jetbotName)

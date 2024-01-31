@@ -10,18 +10,18 @@ class Spawn(Enum):
 
 class MapType(Enum):
     random = 0
-    easyGoalLaneMiddleBlueFirst = 1
-    easyGoalLaneMiddleRedFirst = 2
+    easyBlueFirst = 1
+    easyRedFirst = 2
 
-    twoGoalLanesBlueFirstLeftMedium = 3
-    twoGoalLanesBlueFirstRightMedium = 4
-    twoGoalLanesRedFirstLeftMedium = 5
-    twoGoalLanesRedFirstRightMedium = 6
+    mediumBlueFirstLeft = 3
+    mediumBlueFirstRight = 4
+    mediumRedFirstLeft = 5
+    mediumRedFirstRight = 6
 
-    twoGoalLanesBlueFirstLeftHard = 7
-    twoGoalLanesBlueFirstRightHard = 8
-    twoGoalLanesRedFirstLeftHard = 9
-    twoGoalLanesRedFirstRightHard = 10
+    hardBlueFirstLeft = 7
+    hardBlueFirstRight = 8
+    hardRedFirstLeft = 9
+    hardRedFirstRight = 10
 
     # pseudo enums types
     randomEvalEasy = 11 

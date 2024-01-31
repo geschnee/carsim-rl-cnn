@@ -12,8 +12,9 @@ using System.Linq;
 
 public class StepReturnObject
 {
+    public bool previousStepNotFinished;
+
     public string observation;
-    public float reward;
     public bool done;
     public bool terminated;
 
@@ -21,14 +22,19 @@ public class StepReturnObject
 
     public List<float> rewards;
 
-    public StepReturnObject(string observation, float reward, bool done, bool terminated, Dictionary<string, string> info, List<float> rewards)
+    public StepReturnObject(string observation, bool done, bool terminated, Dictionary<string, string> info, List<float> rewards)
     {
         this.observation = observation;
-        this.reward = reward;
         this.done = done;
         this.terminated = terminated;
         this.info = info;
         this.rewards = rewards;
+        this.previousStepNotFinished = false;
+    }
+
+    public StepReturnObject(bool previousStepNotFinished)
+    {
+        this.previousStepNotFinished = previousStepNotFinished;
     }
 }
 
@@ -69,13 +75,13 @@ public class PeacefulPieCarCommandReceiver : MonoBehaviour
 
 
         [JsonRpcMethod]
-        string reset(int id, string mapType, string spawn, bool singleGoalTraining, float lightMultiplier)
+        string reset(int id, string mapType, string spawn, float lightMultiplier)
         {
             //Debug.Log($"reset() called, id: {id}");
             MapType mt = (MapType)Enum.Parse(typeof(MapType), mapType);
             Spawn sp = (Spawn)Enum.Parse(typeof(Spawn), spawn);
             //Debug.Log($"mt: {mt}");
-            return arenas[id].reset(mt, sp, singleGoalTraining, lightMultiplier);
+            return arenas[id].reset(mt, sp, lightMultiplier);
         }
 
 
@@ -97,12 +103,10 @@ public class PeacefulPieCarCommandReceiver : MonoBehaviour
             return arenas[id].immediateStep(step, inputAccelerationLeft, inputAccelerationRight);
         }
 
-
-
         [JsonRpcMethod]
-        void startArena(int id, string jetbotName, float distanceCoefficient, float orientationCoefficient, float velocityCoefficient, float eventCoefficient, int resWidth, int resHeight)
+        void startArena(int id, string jetbotName, float distanceCoefficient, float orientationCoefficient, float velocityCoefficient, float eventCoefficient, int resWidth, int resHeight, bool fixedTimesteps, float fixedTimestepsLength)
         {
-            //Debug.Log($"startArena() called, id: {id}");
+            // Debug.Log($"startArena() called, id: {id}");
             // spawn a new arena including gameManager and everything
 
             if (id > arenas.Count)
@@ -120,6 +124,8 @@ public class PeacefulPieCarCommandReceiver : MonoBehaviour
             Arena arena = arenaGameObject.GetComponent<Arena>();
             arena.setInstanceNumber(id);
             arena.setJetbot(jetbotName);
+            arena.fixedTimesteps = fixedTimesteps;
+            arena.fixedTimestepsLength = fixedTimestepsLength;
 
             arenas.Add(arena);
 
@@ -155,6 +161,8 @@ public class PeacefulPieCarCommandReceiver : MonoBehaviour
     {
         rpc = new Rpc(arenaPrefab, arenaOffset);
         print("rpc started");
+        print($"{SystemInfo.processorCount} processors available");
+        print($"{Environment.ProcessorCount} processors available");
     }
 
     // Start is called before the first frame update

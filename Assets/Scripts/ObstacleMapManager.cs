@@ -30,34 +30,6 @@ static class Constants
     public const float JETBOT_SPAWN_Y = 0f;
 }
 
-
-
-public enum Spawn
-{
-    Fixed = 0,
-    OrientationRandom = 1,
-    OrientationVeryRandom = 2,
-    FullyRandom = 3,
-}
-
-
-public enum MapType
-{
-    random = 0,
-    easyGoalLaneMiddleBlueFirst = 1,
-    easyGoalLaneMiddleRedFirst = 2,
-
-    twoGoalLanesBlueFirstLeftMedium = 3,
-    twoGoalLanesBlueFirstRightMedium = 4,
-    twoGoalLanesRedFirstLeftMedium = 5,
-    twoGoalLanesRedFirstRightMedium = 6,
-
-
-    twoGoalLanesBlueFirstLeftHard = 7,
-    twoGoalLanesBlueFirstRightHard = 8,
-    twoGoalLanesRedFirstLeftHard = 9,
-    twoGoalLanesRedFirstRightHard = 10,
-}
 public class Goal
 {
     public GameObject ObstacleGO;
@@ -335,8 +307,6 @@ public class ObstacleMapManager : MonoBehaviour
         this.allGoals = new GameObject(name: "AllGoals");
         allGoals.transform.SetParent(this.gameManagerTransform.parent); // set goals to be child of TrainArena
 
-
-
         // TODO the finish line is always placed directly on the last goal
         // maybe the finish line should be a bit behind it.
 
@@ -346,12 +316,7 @@ public class ObstacleMapManager : MonoBehaviour
 
             Goal goal = goalList.goals[i];
             GameObject goalInstantiatedGameObject;
-            /*if (this.singleGoalTraining && i == 0)
-            {
-                // in single goal training make the first goal with finish line
-                // this means the training is successfully aborted by passing the first goal
-                goalInstantiatedGameObject = goal.InstantiateGoal(this.finishlineCheckpoint, this.goalMissedGameObject, this.goalMiddleIndicator, this.gameManagerPosition);
-            } else { */
+            
 
             goalInstantiatedGameObject = goal.InstantiateGoal(this.goalPassedGameOjbect, this.goalMissedGameObject, this.goalMiddleIndicator, this.gameManagerPosition);
             goalInstantiatedGameObject.transform.SetParent(allGoals.transform);
@@ -458,7 +423,7 @@ public class ObstacleMapManager : MonoBehaviour
 
 
     // generate maps with different placement of obstacles
-    public MapData GenerateObstacleMap(MapType mapType, int id, Spawn jetBotSpawn, bool singleGoalTraining)
+    public MapData GenerateObstacleMap(MapType mapType, int id, Spawn jetBotSpawn)
     {
 
 
@@ -498,48 +463,48 @@ public class ObstacleMapManager : MonoBehaviour
         switch (mapType)
         {
             case MapType.random:
-                obstacles = this.GenerateRandomObstacleMap(jetBotSpawn, jetBotSpawnPosition, singleGoalTraining);
+                obstacles = this.GenerateRandomObstacleMap(jetBotSpawn, jetBotSpawnPosition);
                 //Debug.Log("Random Map generated");
                 break;
-            case MapType.easyGoalLaneMiddleBlueFirst:
+            case MapType.easyBlueFirst:
                 obstacles = this.GenerateEasyGoalLaneMiddleMap(true);
                 //Debug.Log("Easy middle lane with blue obstacles first map generated");
                 break;
-            case MapType.easyGoalLaneMiddleRedFirst:
+            case MapType.easyRedFirst:
                 obstacles = this.GenerateEasyGoalLaneMiddleMap(false);
                 //Debug.Log("Easy middle lane with red obstacles first map generated");
                 break;
-            case MapType.twoGoalLanesBlueFirstLeftMedium:
+            case MapType.mediumBlueFirstLeft:
                 obstacles = this.GenerateTwoGoalLanesMapMedium(true, true);
                 //Debug.Log("Two lanes map with blue obstacles first generated");
                 break;
-            case MapType.twoGoalLanesBlueFirstRightMedium:
+            case MapType.mediumBlueFirstRight:
                 obstacles = this.GenerateTwoGoalLanesMapMedium(true, false);
                 //Debug.Log("Two lanes map with blue obstacles first generated");
                 break;
-            case MapType.twoGoalLanesRedFirstLeftMedium:
+            case MapType.mediumRedFirstLeft:
                 obstacles = this.GenerateTwoGoalLanesMapMedium(false, true);
                 //Debug.Log("Two lanes map with red obstacles first generated");
                 break;
-            case MapType.twoGoalLanesRedFirstRightMedium:
+            case MapType.mediumRedFirstRight:
                 obstacles = this.GenerateTwoGoalLanesMapMedium(false, false);
                 //Debug.Log("Two lanes map with red obstacles first generated");
                 break;
 
 
-            case MapType.twoGoalLanesBlueFirstLeftHard:
+            case MapType.hardBlueFirstLeft:
                 obstacles = this.GenerateTwoGoalLanesMapHard(true, true);
                 //Debug.Log("Two lanes map with blue obstacles first generated");
                 break;
-            case MapType.twoGoalLanesBlueFirstRightHard:
+            case MapType.hardBlueFirstRight:
                 obstacles = this.GenerateTwoGoalLanesMapHard(true, false);
                 //Debug.Log("Two lanes map with blue obstacles first generated");
                 break;
-            case MapType.twoGoalLanesRedFirstLeftHard:
+            case MapType.hardRedFirstLeft:
                 obstacles = this.GenerateTwoGoalLanesMapHard(false, true);
                 //Debug.Log("Two lanes map with red obstacles first generated");
                 break;
-            case MapType.twoGoalLanesRedFirstRightHard:
+            case MapType.hardRedFirstRight:
                 obstacles = this.GenerateTwoGoalLanesMapHard(false, false);
                 //Debug.Log("Two lanes map with red obstacles first generated");
                 break;
@@ -551,7 +516,7 @@ public class ObstacleMapManager : MonoBehaviour
 
     }
 
-    private Goal[] GenerateRandomObstacleMap(Spawn jetBotSpawn, Vector3 jetBotSpawnPosition, bool singleGoalTraining)
+    private Goal[] GenerateRandomObstacleMap(Spawn jetBotSpawn, Vector3 jetBotSpawnPosition)
     {
 
         List<Goal> obstacles = new List<Goal>();
@@ -598,11 +563,6 @@ public class ObstacleMapManager : MonoBehaviour
 
             actualColorObject = actualColorObject == obstacleBlue ? obstacleRed : obstacleBlue;
 
-            if (singleGoalTraining)
-            {
-                // only one goal in single goal training
-                break;
-            }
         }
 
         return obstacles.ToArray();

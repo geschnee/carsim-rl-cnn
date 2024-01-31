@@ -26,13 +26,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 218894877516204343}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.17364816, y: 0, z: 0, w: 0.9848078}
-  m_LocalPosition: {x: -2.25, y: 0.71, z: 2.38}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: -1, z: 3}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 6738228191172828297}
-  m_LocalEulerAnglesHint: {x: 20, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!20 &2577367504850082665
 Camera:
   m_ObjectHideFlags: 0
@@ -96,6 +96,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e39a13b12af486f4eab94bd9b169dd54, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  cameraPositionRelativeToCar: {x: 0, y: 0, z: 0}
 --- !u!1 &1636983711893905327
 GameObject:
   m_ObjectHideFlags: 0
@@ -621,6 +622,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: eb828afde3bb540709e3a2c81dba42a0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  inputAccelerationLeft: 0
+  inputAccelerationRight: 0
+  episodeRunning: 1
+  carBody: {fileID: 3657296616444772297}
   frontLeftWheelCollider: {fileID: 7975257649462302598}
   frontRightWheelCollider: {fileID: 5867705109353150017}
   rearLeftWheelCollider: {fileID: 4111839902409627057}
@@ -629,8 +634,6 @@ MonoBehaviour:
   frontRightWheeTransform: {fileID: 7974636004774022430}
   rearLeftWheelTransform: {fileID: 215284877088836665}
   rearRightWheelTransform: {fileID: 2580730179887327392}
-  episodeRunning: 1
-  carBody: {fileID: 3657296616444772297}
 --- !u!114 &8035814416940183981
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -643,8 +646,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e861ba74c6d9b9a4984f9d7dc260bcfc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  allowedTimeDefault: 20
-  allowedTimePerGoal: 10
+  distanceCoefficient: 0
+  velocityCoefficient: 0
+  orientationCoefficient: 0
+  eventCoefficient: 0
   finishCheckpointReward: 100
   wallHitReward: -1
   obstacleHitReward: -1
@@ -653,9 +658,9 @@ MonoBehaviour:
   goalPassedReward: 1
   duration: 0
   allowedTime: 10
-  passedGoals: 0
+  passedGoals: 
   numberOfGoals: 0
-  rewardSinceLastGetReward: 0
+  step: 0
   centerIndicators: []
 --- !u!1 &3729762528461829137
 GameObject:
@@ -1048,7 +1053,7 @@ Transform:
   m_GameObject: {fileID: 6874402610959045687}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 4.35, y: 0, z: -5.5899997}
+  m_LocalPosition: {x: 0, y: -1, z: 3}
   m_LocalScale: {x: 1, y: 4, z: 4}
   m_ConstrainProportionsScale: 0
   m_Children: []

@@ -8,6 +8,11 @@ import pygame
 import sys
 
 
+
+import hydra
+from hydra.core.hydra_config import HydraConfig
+from omegaconf import OmegaConf
+
 import PIL.Image as Image
 import io
 import base64
@@ -33,12 +38,17 @@ def gray(im):
     ret[:, :, 2] = ret[:, :, 1] = ret[:, :, 0] = im
     return ret
 
-def run(args: argparse.Namespace) -> None:
-    print(f'will try port {args.port}', flush=True)
-    unity_comms = UnityComms(port=args.port)
-    print(f'Unity comms created', flush=True)
+def run(cfg) -> None:
+    port = 9000
+    print(f'will try port {port}', flush=True)
 
+    
+  
     pygame.init()
+
+    pygame.font.init() # you have to call this at the start, 
+                   # if you want to use this module.
+    my_font = pygame.font.SysFont('Comic Sans MS', 30)
 
     # creating display
     gameDisplay = pygame.display.set_mode((1024, 512))
@@ -47,8 +57,6 @@ def run(args: argparse.Namespace) -> None:
 
     starttime = time.time()
     frames = 0
-
-    car_spawned = False
 
     env = BaseCarsimEnv(frame_stacking=2, asynchronous=False, grayscale=True)
     new_obs, info_dict = env.reset()
@@ -114,7 +122,8 @@ def run(args: argparse.Namespace) -> None:
             #print(f'new_obs {new_obs.shape}', flush=True)
             #print(f'max and min of new_obs {np.max(new_obs)} {np.min(new_obs)}', flush=True)
 
-            
+            text_surface = my_font.render(f'Input Left: {left_acceleration}\nInput right: {right_acceleration}', False, (0, 0, 0))
+            gameDisplay.blit(text_surface, (600,0))
 
             print(f'new_obs {new_obs.shape}', flush=True)
             if env.grayscale:
@@ -156,8 +165,13 @@ def run(args: argparse.Namespace) -> None:
             # png, (240,240), RGB
 
 
+@hydra.main(config_path=".", config_name="cfg/ppo.yaml")
+def main(cfg):
+
+    run(cfg.cfg)
+    #run_ppo(cfg.cfg)
+
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--port", type=int, default=9000)
-    args = parser.parse_args()
-    run(args)
+    main()
+
+

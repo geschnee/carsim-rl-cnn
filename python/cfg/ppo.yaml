@@ -1,4 +1,5 @@
-comment: "differentialJetBot is much better, trying the training with all Maps + OrientationVeryRandom now, does it need orientation reward?"
+comment: "differentialJetBot is much better, training with all maps + OrientationVeryRandom is a bit too difficult"
+# we should also try it with the fixed spawn to be closer to the evaluation scenario, maybe the differential can do it 
 
 n_envs: 10
 num_evals_per_difficulty: 20
@@ -18,10 +19,9 @@ copy_model_from: False #models_and_dumps/best_model_episode_70
 
 env_kwargs:
   jetbot: DifferentialJetBot
-  spawn_point: OrientationVeryRandom
+  spawn_point: OrientationRandom
   # spawn_point can be Fixed, OrientationRandom, OrientationVeryRandom and FullyRandom
-  single_goal: False
-  frame_stacking: 3
+  frame_stacking: 10
   image_preprocessing:
     grayscale: True
     equalize: True
@@ -30,10 +30,12 @@ env_kwargs:
     normalize_images: False
   coefficients:
     distanceCoefficient: 0.5
-    orientationCoefficient: 0.001
+    orientationCoefficient: 0.0
     velocityCoefficient: 0.0
-    eventCoefficient: 10.0
+    eventCoefficient: 1.0
   trainingMapType: randomEval
+  fixedTimestepsLength: False
+  # fixedTimestepsLength can either be False or a number (seconds that each timestep contains)
   width: 500 #336
   height: 168
 

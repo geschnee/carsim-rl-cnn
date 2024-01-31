@@ -30,8 +30,8 @@ from myEnums import MapType, EndEvent, Spawn
 
 @dataclass
 class StepReturnObject:
+    previousStepNotFinished: bool
     obs: str
-    reward: float
     done: bool
     terminated: bool
     info: dict
@@ -42,11 +42,13 @@ class BaseCarsimEnv(gym.Env):
     unity_comms: UnityComms = None
     instancenumber = 0
 
-    def __init__(self, width=336, height=168, port=9000, log=False, jetbot=None, spawn_point=None, trainingMapType=MapType.randomEval, single_goal=False, image_preprocessing={}, frame_stacking=5, lighting=1, coefficients=None):
+    def __init__(self, width=336, height=168, port=9000, log=False, jetbot=None, spawn_point=None, fixedTimestepsLength=None, trainingMapType=MapType.randomEval, image_preprocessing={}, frame_stacking=5, lighting=1, coefficients=None):
         # height and width was previous 168, that way we could downsample and reach the same dimensions as the nature paper of 84 x 84
         self.instancenumber = BaseCarsimEnv.instancenumber
         assert jetbot is not None
         self.jetbot = jetbot
+
+        self.fixedTimestepsLength = fixedTimestepsLength
 
         self.equalize = image_preprocessing["equalize"]
         self.downsampling = 2
@@ -129,22 +131,21 @@ class BaseCarsimEnv(gym.Env):
             BaseCarsimEnv.unity_comms = UnityComms(port=port)
             self.unityDeleteAllArenas()
 
-        self.unityStartArena(width, height, jetbot)
+        if fixedTimestepsLength:
+            fixedTimesteps = True
+        else:
+            fixedTimesteps = False
+            fixedTimestepsLength = 0
+        
+
+        self.unityStartArena(width, height, jetbot, fixedTimesteps, fixedTimestepsLength)
         BaseCarsimEnv.instancenumber += 1
 
         self.spawn_point = spawn_point
-        self.single_goal = single_goal
 
         self.mapType = trainingMapType
 
-        if self.instancenumber == 0:
-            print(f'spawn_point {self.spawn_point} single_goal {self.single_goal}', flush=True)
-
     def step(self, action: Any) -> tuple[Any, SupportsFloat, bool, bool, dict[str, Any]]:
-        
-        return self.stepSynchronous(action)
-
-    def stepSynchronous(self, action):
         """Perform step, return observation, reward, terminated, false, info."""
 
         left_acceleration, right_acceleration = action
@@ -154,15 +155,25 @@ class BaseCarsimEnv(gym.Env):
         assert right_acceleration >= - \
             1 and right_acceleration <= 1, f'right_acceleration {right_acceleration} is not in range [-1, 1]'
 
-        #print(f'{self.instancenumber} step {self.step_nr} left {left_acceleration} right {right_acceleration}')
+        
         stepObj = self.unityImmediateStep(left_acceleration, right_acceleration)
+        waitTimeStart=time.time()
+        waitTime=False
+        while stepObj["previousStepNotFinished"]:
+            print(f'waiting for previous step to finish', flush=True)
+            waitTime = time.time() - waitTimeStart
+            stepObj = self.unityImmediateStep(left_acceleration, right_acceleration)
 
-        reward = stepObj["reward"]
+        if waitTime:
+            self.episodeWaitTime += waitTime
+
+        reward = 0 # this reward is corrected in the policy later on
         terminated = stepObj["done"]
         truncated = stepObj["done"]
 
         info_dict = stepObj["info"]
         info_dict["rewards"] = stepObj["rewards"]
+        info_dict["episodeWaitTime"] = self.episodeWaitTime
 
         self.step_nr += 1
         assert self.step_nr == int(info_dict["step"]), f'self.step {self.step_nr} info_dict["step"] {info_dict["step"]} for {self.instancenumber}'
@@ -188,21 +199,21 @@ class BaseCarsimEnv(gym.Env):
 
     def unityReset(self, mp_name):
         return BaseCarsimEnv.unity_comms.reset(mapType=mp_name,
-            id=self.instancenumber, spawn=self.spawn_point, singleGoalTraining=self.single_goal, lightMultiplier = self.lighting) 
+            id=self.instancenumber, spawn=self.spawn_point, lightMultiplier = self.lighting) 
 
     def unityGetObservation(self):
         return BaseCarsimEnv.unity_comms.getObservation(id=self.instancenumber)
     
-    def unityStartArena(self, width, height, jetbot):
+    def unityStartArena(self, width, height, jetbot, fixedTimesteps, fixedTimestepsLength):
 
         return BaseCarsimEnv.unity_comms.startArena(
-            id=self.instancenumber, jetbotName=jetbot, distanceCoefficient=self.distanceCoefficient, orientationCoefficient=self.orientationCoefficient, velocityCoefficient=self.velocityCoefficient, eventCoefficient=self.eventCoefficient, resWidth=width, resHeight=height )
+            id=self.instancenumber, jetbotName=jetbot, distanceCoefficient=self.distanceCoefficient, orientationCoefficient=self.orientationCoefficient, velocityCoefficient=self.velocityCoefficient, eventCoefficient=self.eventCoefficient, resWidth=width, resHeight=height, fixedTimesteps=fixedTimesteps, fixedTimestepsLength=fixedTimestepsLength )
         
     def unityDeleteAllArenas(self):
         BaseCarsimEnv.unity_comms.deleteAllArenas()
 
     def unityGetArenaScreenshot(self):
-        return BaseCarsimEnv.unity_comms.self.unityGetArenaScreenshot(id=self.instancenumber)
+        return BaseCarsimEnv.unity_comms.getArenaScreenshot(id=self.instancenumber)
 
 
     def reset(self, seed=None, mapType = None):
@@ -211,7 +222,7 @@ class BaseCarsimEnv(gym.Env):
         self.step_nr = -1
         self.step_mistakes = 0
         self.step_mistake_step = -1
-
+        self.episodeWaitTime = 0
         
         if self.frame_stacking > 1:
             self.memory = np.zeros((self.height, self.width, self.channels_total), dtype=self.obs_dtype)
@@ -361,6 +372,86 @@ class BaseCarsimEnv(gym.Env):
         
         img = Image.fromarray(pixels_rgb, 'RGB')
         img.save(filename)
+
+    def saveObservation(self, filename_prefix):
+        obsstring = self.unityGetObservation()
+        
+        base64_bytes = obsstring.encode('ascii')
+        message_bytes = base64.b64decode(base64_bytes)
+
+        im = Image.open(io.BytesIO(message_bytes))
+
+        #print(f'Image size {im.size}', flush=True)
+        #print(f'image type {type(im)}', flush=True)
+        # PIL.PngImagePlugin.PngImageFile
+
+        pixels_rgb = np.array(im, dtype=np.uint8)
+        #print(f'pixels shape {pixels.shape}', flush=True)
+        # it looks like this switches the height and width
+        
+        #print(f'unit img max {np.max(pixels_rgb)} min {np.min(pixels_rgb)}', flush=True)
+
+        
+
+        img = Image.fromarray(pixels_rgb, 'RGB')
+        img.save(f"{filename_prefix}_image_from_unity.png")
+
+        pixels_float = np.array(im, dtype=np.float32)
+        #print(f'unit img float max {np.max(pixels_float)} min {np.min(pixels_float)}', flush=True)
+
+        #print(f'pixels float shape {pixels_float.shape}', flush=True)
+
+        
+        pixels_float_uint8 = pixels_float.astype(np.uint8)
+        img = Image.fromarray(pixels_float_uint8, 'RGB')
+
+
+        pixels_downsampled = block_reduce(pixels_float, block_size=(2, 2, 1), func=np.mean)
+        # this halves the size along each dim
+
+
+        
+        pixels_downsampled_uint8 = pixels_downsampled.astype(np.uint8)
+        im = Image.fromarray(pixels_downsampled_uint8, 'RGB')
+        im.save(f"{filename_prefix}_image_from_unity_downsampled.png")
+
+        pixels_gray = color.rgb2gray(pixels_downsampled)
+
+        #print(f'pixels gray shape {pixels_gray.shape}', flush=True)
+
+        pixels_gray_uint8 = pixels_gray.astype(np.uint8)
+        im = Image.fromarray(pixels_gray_uint8, 'L') # https://pillow.readthedocs.io/en/stable/handbook/concepts.html#concept-modes
+        im.save(f"{filename_prefix}_image_from_unity_grey.png")
+
+        if self.equalize:
+            assert self.grayscale, f'equalize only works with grayscale images'
+            pixels_equalized, histOrig, histEq = hist_eq(pixels_gray)
+
+            
+            pixels_equalized_uint8 = pixels_equalized.astype(np.uint8)
+            im = Image.fromarray(pixels_equalized_uint8, 'L')
+            im.save(f"{filename_prefix}_image_from_unity_equalized.png")
+
+        if self.grayscale:
+            pixels_result = pixels_gray
+        else:
+            pixels_result = pixels_downsampled
+        
+        #print(f'self normalize_images {self.normalize_images} pixels_result max {np.max(pixels_result)} min {np.min(pixels_result)}', flush=True)
+        if self.normalize_images:
+            
+            pixels_result = pixels_result / 255.0
+            #print(f'min and max after normalize_images {np.min(pixels_result)} {np.max(pixels_result)}', flush=True)
+        
+        
+        pixels_result = pixels_result.astype(self.obs_dtype)
+        #print(f'min max after dtype change {np.min(pixels_result)} {np.max(pixels_result)}', flush=True)
+        
+        assert pixels_result.dtype == self.obs_dtype, f'pixels_result.dtype {pixels_result.dtype} self.obs_dtype {self.obs_dtype}'
+
+        return pixels_result
+
+
 
     def stringToObservation(self, obsstring, log=None):
         if log is None:

@@ -37,7 +37,6 @@ public class GameManager : MonoBehaviour
 
 	//spawn jetbot random on map if trainnig
 	public Boolean isTrainingSpawnRandom;
-	public bool singleGoalTraining;
 
 	// has the last goal the finish line?
 	public Boolean isFinishLineLastGoal = true;
@@ -48,20 +47,6 @@ public class GameManager : MonoBehaviour
 	// current map
 	private MapData mapData;
 
-	public MapType[] evaluationMaps = new MapType[] {
-		//MapType.easyGoalLaneMiddleBlueFirst,
-		//MapType.easyGoalLaneMiddleRedFirst,
-
-		MapType.twoGoalLanesBlueFirstLeftMedium,
-		MapType.twoGoalLanesBlueFirstRightMedium,
-		MapType.twoGoalLanesRedFirstLeftMedium,
-		MapType.twoGoalLanesRedFirstRightMedium,
-
-		//MapType.twoGoalLanesBlueFirstLeftHard,
-		//MapType.twoGoalLanesBlueFirstRightHard,
-		//MapType.twoGoalLanesRedFirstLeftHard,
-		//MapType.twoGoalLanesRedFirstRightHard
-	};
 
 	// load obstacle Map
 	public bool loadObstacles = false;
@@ -117,7 +102,7 @@ public class GameManager : MonoBehaviour
 
 	}
 
-	public MapData InitializeMapWithObstacles(MapType currentMapIndex, int idOfCurrentRun, Spawn jetBotSpawn, bool singleGoalTraining)
+	public MapData InitializeMapWithObstacles(MapType currentMapIndex, int idOfCurrentRun, Spawn jetBotSpawn)
 	{
 		// TODO rewrite to use the passed parameters
 		// I do not want magic in this function/class here
@@ -127,7 +112,7 @@ public class GameManager : MonoBehaviour
 		MapType mapType = currentMapIndex;
 
 		// generate a new map with new obstacle, decide which type of map should be generated
-		mapData = this.obstacleMapManager.GenerateObstacleMap(mapType, this.idOfCurrentRun, jetBotSpawn, singleGoalTraining);
+		mapData = this.obstacleMapManager.GenerateObstacleMap(mapType, this.idOfCurrentRun, jetBotSpawn);
 		this.obstacleMapManager.IntantiateObstacles(mapData);
 
 
@@ -144,11 +129,13 @@ public class GameManager : MonoBehaviour
 	{
 		this.obstacleMapManager.DestroyMap();
 	}
-	public Boolean GetIsTrainingSpawnRandom()
+	
+	/*public Boolean GetIsTrainingSpawnRandom()
 	{
+		// TODO i think we can remove isTrainingSpawnRandom
 		return this.isTrainingSpawnRandom;
+	}*/
 
-	}
 	public int GetIdOfCurrentRun()
 	{
 		return this.idOfCurrentRun;

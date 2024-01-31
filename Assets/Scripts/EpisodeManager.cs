@@ -9,22 +9,15 @@ using System.IO;
 using System.Linq;
 
 
-public enum EndEvent
-{
-    NotEnded = 0,
-    Success = 1,
-    OutOfTime = 2,
-    WallHit = 3,
-    GoalMissed = 4,
-    RedObstacle = 5,
-    BlueObstacle = 6,
-    FinishMissed = 7,
-}
-
 // this script counts the obtained rewards and ends the episode if the time is up or another end event is triggered
 // this responsibility was previously a part of the CheckpointManager and other scripts
 public class EpisodeManager : MonoBehaviour
 {
+    // needed for fixed timesteps
+    private float timeOfLastStepBegin = 0;
+    public bool fixedTimesteps;
+    public float fixedTimestepsLength;
+    public bool stepFinished;
 
     // for debugging its public, then you can lift the TimeLimit in unity
     private float allowedTimeDefault = 30f; // was 10f
@@ -49,13 +42,9 @@ public class EpisodeManager : MonoBehaviour
     private AIEngineBase aIEngine;
     private GameObject finishLine;
 
-
-    private DataFrameManager df;
-
     public List<int> passedGoals;
     public int numberOfGoals;
 
-    private bool episodeReady = false;
     private bool episodeRunning = false;
     private EndEvent endEvent;
 
@@ -92,15 +81,14 @@ public class EpisodeManager : MonoBehaviour
     {
         //Debug.LogWarning($"IncreaseSteps unity {this.step} python {step} {this.transform.parent.name}");
 
-        if (this.episodeReady == true)
+
+
+        if (this.endEvent == EndEvent.NotEnded)
         {
-            this.episodeReady = false;
             this.episodeRunning = true;
-            if (this.step != -1)
-            {
-                Debug.LogError($"step should be -1 but is {this.step} for {this.transform.parent.name}");
-            }
+            this.timeOfLastStepBegin = Time.time;
         }
+
 
         // int step from python is not yet incremented
         if (this.step != step)
@@ -151,8 +139,8 @@ public class EpisodeManager : MonoBehaviour
         aIEngine.ResetMotor();
 
 
-        this.episodeRunning = false;
-        this.episodeReady = true;
+        this.stepFinished = false;
+        this.episodeRunning = false; // has to wait for the first step command
     }
 
     private void initializeStepRewards()
@@ -173,6 +161,7 @@ public class EpisodeManager : MonoBehaviour
 
         this.episodeRunning = false;
         this.endEvent = endEvent;
+        this.stepFinished = true;
 
         aIEngine.ResetMotor();
         aIEngine.episodeRunning = false;
@@ -291,7 +280,7 @@ public class EpisodeManager : MonoBehaviour
 
         if (this.centerIndicators.Count < 1)
         {
-            Debug.LogWarning($"there are no more centerIndicators {this.centerIndicators.Count} {this.endEvent} {this.step} {this.gameObject.name}");
+            Debug.LogWarning($"{this.gameObject.name} there are no more centerIndicators {this.centerIndicators.Count} endEvent {this.endEvent} passedGoals {this.passedGoals}");
 
             return 0f;
         }
@@ -379,8 +368,10 @@ public class EpisodeManager : MonoBehaviour
         {
             return;
         }
-
-        this.duration += Time.deltaTime;
+        if (this.episodeRunning){
+            // count time only when it is running
+            this.duration += Time.deltaTime;
+        }
 
 
         float velo = this.aIEngine.getCarVelocity();
@@ -401,10 +392,21 @@ public class EpisodeManager : MonoBehaviour
 
         this.lastDistance = GetDistanceToNextGoal();
 
+
         if (this.duration >= this.allowedTime)
         {
             AddEventReward(timeoutReward);
             EndEpisode(EndEvent.OutOfTime);
+        }
+        if (this.fixedTimesteps)
+        {
+            if (Time.time - this.timeOfLastStepBegin  > this.fixedTimestepsLength)
+            {
+                this.episodeRunning = false;
+                // fixed timesteps and the time of the current step is up
+                
+                this.stepFinished = true;
+            }
         }
     }
 
@@ -422,7 +424,6 @@ public class EpisodeManager : MonoBehaviour
     {
         GameObject goal = goalMiddle.transform.parent.gameObject;
         int goalnumber = goal.transform.name[goal.transform.name.Length - 1] - '0';
-        Debug.Log($"goalnumber {goalnumber} from {goal.transform.name}");
         this.passedGoals.Add(goalnumber);
     }
 
@@ -480,8 +481,6 @@ public class EpisodeManager : MonoBehaviour
 
         centerIndicators.RemoveAt(0); // remove an indicator
 
-
-        this.lastDistance = GetDistanceToNextGoal();
 
         EndEpisode(EndEvent.FinishMissed);
     }
@@ -552,7 +551,7 @@ public class EpisodeManager : MonoBehaviour
         if (coll.tag == "Wall")
         {
             hitWall();
-            
+
             return;
         }
         if (coll.tag == "FinishMissed")
