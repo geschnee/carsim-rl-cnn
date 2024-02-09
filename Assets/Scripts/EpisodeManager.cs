@@ -38,6 +38,7 @@ public class EpisodeManager : MonoBehaviour
     public float goalPassedReward = 1f;
     public float duration;
     public float allowedTime;
+    public bool obstacleOrWallHit;
 
     private AIEngineBase aIEngine;
     private GameObject finishLine;
@@ -130,6 +131,8 @@ public class EpisodeManager : MonoBehaviour
         this.step = -1;
         this.allowedTime = this.allowedTimeDefault;
         this.endEvent = EndEvent.NotEnded;
+        this.obstacleOrWallHit = false;
+
         initializeStepRewards();
 
         this.PrepareAgent();
@@ -209,6 +212,8 @@ public class EpisodeManager : MonoBehaviour
         info.Add("step", this.step.ToString());
         info.Add("amount_of_steps", (this.step + 1).ToString());
         info.Add("amount_of_steps_based_on_rewardlist", this.step_rewards.Count.ToString());
+
+        info.Add("collision", this.obstacleOrWallHit ? "1" : "0");
 
         return info;
     }
@@ -439,8 +444,7 @@ public class EpisodeManager : MonoBehaviour
     public void hitWall()
     {
         AddEventReward(wallHitReward);
-
-        //EndEpisode(EndEvent.WallHit);
+        collision();
     }
 
     public void destroyCheckpoint(GameObject goal)
@@ -504,6 +508,11 @@ public class EpisodeManager : MonoBehaviour
     public void obstacleHit()
     {
         AddEventReward(obstacleHitReward);
+        collision();
+    }
+
+    public void collision() {
+        this.obstacleOrWallHit = true;
     }
 
     public void redObstacleHit()

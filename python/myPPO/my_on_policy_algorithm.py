@@ -168,6 +168,8 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         callback.on_rollout_start()
 
         completed_games, successfully_completed_games, number_of_goals, successfully_passed_goals, total_reward, total_timesteps, distance_reward, velocity_reward, event_reward, orientation_reward, successfully_passed_first_goals = 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+        timesteps_of_completed_games, collision_games = 0, 0
+
         # event_reward is the reward that is not distance or velocity reward
         # such as collisions, passed goals and episode terminated
         timeouts = 0
@@ -215,6 +217,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         
 
             self.num_timesteps += env.num_envs
+            total_timesteps += env.num_envs
 
             # Give access to local variables
             callback.update_locals(locals())
@@ -250,10 +253,13 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
                         successfully_completed_games += 1
                     if infos[i]["endEvent"] == "OutOfTime":
                         timeouts += 1
+
                     successfully_passed_goals += int(infos[idx]["passedGoals"])
                     number_of_goals += int(infos[idx]["numberOfGoals"])
                     total_reward += float(infos[idx]["cumreward"].replace(",","."))
-                    total_timesteps += int(infos[idx]["amount_of_steps"])
+                    timesteps_of_completed_games += int(infos[idx]["amount_of_steps"])
+                    collision_games += int(infos[idx]["collision"])
+                    
 
                     distance_reward += float(infos[idx]["distanceReward"].replace(",","."))
                     velocity_reward += float(infos[idx]["velocityReward"].replace(",","."))
@@ -334,13 +340,13 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
             success_rate = successfully_completed_games / completed_games
             timeout_rate = timeouts / completed_games
             mean_reward = total_reward / completed_games
-            mean_episode_length = total_timesteps / completed_games
+            mean_episode_length = timesteps_of_completed_games / completed_games
             mean_distance_reward = distance_reward / completed_games
             mean_velocity_reward = velocity_reward / completed_games
             mean_event_reward = event_reward / completed_games
             mean_orientation_reward = orientation_reward / completed_games
             first_goal_completion_rate = successfully_passed_first_goals / completed_games
-
+            rate_games_with_collisions = collision_games / completed_games
         else:
             success_rate, mean_reward, mean_episode_length, mean_distance_reward, mean_velocity_reward, mean_event_reward, mean_orientation_reward, first_goal_completion_rate = 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
             timeout_rate = 0
@@ -377,6 +383,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         self.logger.record("rollout/first_goal_completion_rate", first_goal_completion_rate)
         self.logger.record("rollout/completed_games", completed_games)
         self.logger.record("rollout/step_average_wait_time", step_average_wait_time)
+        self.logger.record("rollout/rate_games_with_collisions", rate_games_with_collisions)
         
         return True
     
@@ -534,6 +541,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         success_count, finished_episodes, passed_goals, number_of_goals = 0, 0, 0, 0
         first_goals, second_goals, third_goals = 0, 0, 0
         second_goals_given_first, third_goals_given_second = 0, 0
+        collision_games = 0
 
         timeouts = 0
         wait_time = 0
@@ -592,6 +600,8 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
                         passed_goals += int(infos[i]["passedGoals"])
                         number_of_goals += int(infos[i]["numberOfGoals"])
 
+                        collision_games += int(infos[i]["collision"])
+
                         first_goals += int(infos[i]["passedFirstGoal"])
                         #if int(infos[i]["passedGoals"]) >= 2:
                         second_goals += int(infos[i]["passedSecondGoal"])
@@ -642,7 +652,9 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         timeout_rate = timeouts/n_eval_episodes
 
 
+
         self.logger.record(f'eval_{difficulty}/mean_reward', mean_reward)
+        
         self.logger.record(f'eval_{difficulty}/std_reward', std_reward)
         self.logger.record(f'eval_{difficulty}/success_rate', success_rate)
         self.logger.record(f'eval_{difficulty}/rate_passed_goals', rate_of_passed_goals)
@@ -650,6 +662,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         self.logger.record(f'eval_{difficulty}/rate_second_goal_given_first', rate_of_second_goal_given_first)
         self.logger.record(f'eval_{difficulty}/rate_third_goal_given_second', rate_of_third_goal_given_second)
         self.logger.record(f'eval_{difficulty}/timeout_rate', timeout_rate)
+        self.logger.record(f'eval_{difficulty}/rate_game_with_collision', collision_games / n_eval_episodes)
 
         step_average_wait_time = wait_time / np.sum(episode_lengths)
         self.logger.record("rollout/step_average_wait_time", step_average_wait_time)

@@ -147,21 +147,16 @@ public class GameManager : MonoBehaviour
 	}
 
 	public void setJetbot(string jetbotName){
-		bool found = false;
 
 		for (int i = 0; i < this.availibleJetbots.Count; i++)
 		{
 			if (this.availibleJetbots[i].name == jetbotName)
 			{
 				this.JetBot = this.availibleJetbots[i];
-				found = true;
-				break;
+				return;
 			}
 		}
-		if (!found)
-		{
-			Debug.LogError($"Jetbot {jetbotName} not found, will use default Jetbot");
-		}
+		Debug.LogError($"Jetbot {jetbotName} not found, will use default Jetbot {this.availibleJetbots[0].name}");
 		this.JetBot = this.availibleJetbots[0];
 	}
 }
