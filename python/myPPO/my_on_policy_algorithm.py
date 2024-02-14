@@ -182,12 +182,6 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         # outer dictionary maps env index to inner dictionary
         # inner dictionary maps step number to the corresponding position in rollout_buffer
 
-
-        env.env_method(
-            method_name="setRandomEval",
-            indices=range(env.num_envs),
-            randomEval=True,
-        )
         
         env.reset()
         # we need to reset the env to get the correct rewards
@@ -421,7 +415,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
 
         total_cr_time, total_train_time, total_eval_time = 0, 0, 0
         self.collected_games = 0
-        max_total_success_rate = 0
+        self.max_total_success_rate = 0
 
         total_collection_time = 0
 
@@ -496,21 +490,16 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
             if log_interval is not None and iteration % log_interval == 0:
                 print(f'Will eval now as after every {log_interval} collect and trains')
                 eval_time = time.time()
+                success_rate = self.eval(iteration=iteration, num_evals_per_difficulty=num_evals_per_difficulty)
+
                 
-                easy_success_rate = self.eval_model_track(num_evals_per_difficulty, "easy")
-                medium_success_rate = self.eval_model_track(num_evals_per_difficulty, "medium")
-                hard_success_rate = self.eval_model_track(num_evals_per_difficulty, "hard")
-
-                total_success_rate = (easy_success_rate + medium_success_rate + hard_success_rate) / 3
-                if total_success_rate > max_total_success_rate:
-                    max_total_success_rate = total_success_rate
-                    self.save(f"best_model_episode_{iteration}")
-
                 eval_time = time.time() - eval_time
                 self.logger.record("time/eval_time_seconds", eval_time)
+                self.logger.record("eval/success_rate", success_rate)
                 print(f'eval finished minutes: {eval_time / 60}')
                 total_eval_time += eval_time
 
+                self.logger.dump(step=self.num_timesteps)
 
                 print(f'total_cr_time: {total_cr_time}')
                 print(f'total_train_time: {total_train_time}')
@@ -525,6 +514,19 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         state_dicts = ["policy", "policy.optimizer"]
 
         return state_dicts, []
+    
+    def eval(self: SelfOnPolicyAlgorithm, iteration: int = 0, num_evals_per_difficulty: int = 20):
+        easy_success_rate = self.eval_model_track(num_evals_per_difficulty, "easy")
+        medium_success_rate = self.eval_model_track(num_evals_per_difficulty, "medium")
+        hard_success_rate = self.eval_model_track(num_evals_per_difficulty, "hard")
+
+        total_success_rate = (easy_success_rate + medium_success_rate + hard_success_rate) / 3
+        if total_success_rate > self.max_total_success_rate:
+            self.max_total_success_rate = total_success_rate
+            self.save(f"best_model_episode_{iteration}")
+
+        return total_success_rate
+
     
     def eval_model_track(
         self: SelfOnPolicyAlgorithm,

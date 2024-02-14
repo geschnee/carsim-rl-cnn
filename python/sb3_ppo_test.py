@@ -98,7 +98,7 @@ def run_ppo(cfg):
         model = algo.load(string, env=vec_env, tensorboard_log="./tmp",
                         n_epochs=n_epochs, batch_size=batch_size)
 
-    model.learn(total_timesteps=2500000, log_interval=cfg.log_interval, num_evals_per_difficulty = cfg.num_evals_per_difficulty)
+    model.learn(total_timesteps=cfg.total_timesteps, log_interval=cfg.log_interval, num_evals_per_difficulty = cfg.num_evals_per_difficulty)
     model.save("finished_ppo")
 
 

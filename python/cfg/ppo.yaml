@@ -17,6 +17,8 @@ n_steps: 256 # 64 # amount of steps to collect per collect_rollouts per environm
 copy_model_from: False #models_and_dumps/best_model_episode_70
 # copy_model_from can be False or a string (filename without .zip suffix)
 
+total_timesteps: 2500000
+
 env_kwargs:
   jetbot: StandardJetBot
   spawn_point: OrientationRandom

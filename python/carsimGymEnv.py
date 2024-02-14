@@ -255,6 +255,7 @@ class BaseCarsimEnv(gym.Env):
         mapTypeName = MapType.resolvePseudoEnum(mp).name
         return mapTypeName
     
+    # TODO remove this bullshit
     def setRandomEval(self, randomEval):
         self.randomEval = randomEval
     
