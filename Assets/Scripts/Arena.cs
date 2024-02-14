@@ -47,6 +47,8 @@ public class Arena : MonoBehaviour
     public bool fixedTimesteps;
     public float fixedTimestepsLength;
 
+    public VideoRecorder videoRecorder;
+
     void Awake()
     {
         // initialize new arena at the correct position
@@ -74,7 +76,7 @@ public class Arena : MonoBehaviour
         gameManager.DestroyObstaclesOnMap();
     }
 
-    public string reset(MapType mt, Spawn jetBotSpawn, float lightMultiplier)
+    public string reset(MapType mt, Spawn jetBotSpawn, float lightMultiplier, string video_filename)
     {
         //Debug.Log($"Arena reset() called, id: {instancenumber}");
         if (this.car != null)
@@ -119,6 +121,15 @@ public class Arena : MonoBehaviour
         episodeManager.fixedTimestepsLength = fixedTimestepsLength;
 
         episodeManager.StartEpisode();
+        episodeManager.videoRecorder = videoRecorder;
+
+        if (video_filename != "")
+        {
+            //Debug.Log($"start video recording");
+            videoRecorder.episodeManager = episodeManager;
+            videoRecorder.StartVideo(video_filename);
+        }
+
 
         return this.getObservation();
     }

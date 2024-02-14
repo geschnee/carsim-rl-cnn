@@ -46,7 +46,7 @@ public class EpisodeManager : MonoBehaviour
     public List<int> passedGoals;
     public int numberOfGoals;
 
-    private bool episodeRunning = false;
+    public bool episodeRunning = false;
     private EndEvent endEvent;
 
     private Vector3 lastPosition;
@@ -66,6 +66,7 @@ public class EpisodeManager : MonoBehaviour
     public List<GameObject> centerIndicators = new List<GameObject>();
 
     private GameManager gameManager;
+    public VideoRecorder videoRecorder;
 
     List<float> step_rewards;
     // the index indicates the step in which the reward was found
@@ -168,6 +169,8 @@ public class EpisodeManager : MonoBehaviour
 
         aIEngine.ResetMotor();
         aIEngine.episodeRunning = false;
+
+        videoRecorder.StopVideo();
     }
 
     public float GetReward()
