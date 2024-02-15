@@ -28,6 +28,7 @@ from histogram_equilization import hist_eq
 
 from myEnums import MapType, EndEvent, Spawn
 
+
 @dataclass
 class StepReturnObject:
     previousStepNotFinished: bool
@@ -52,6 +53,8 @@ class BaseCarsimEnv(gym.Env):
 
         self.equalize = image_preprocessing["equalize"]
         self.downsampling = 2
+
+        self.video_filename = ""
 
         self.lighting = lighting
 
@@ -197,9 +200,9 @@ class BaseCarsimEnv(gym.Env):
         return BaseCarsimEnv.unity_comms.immediateStep(id=self.instancenumber, step=self.step_nr, inputAccelerationLeft=float(
             left_acceleration), inputAccelerationRight=float(right_acceleration))
 
-    def unityReset(self, mp_name):
+    def unityReset(self, mp_name, video_filename):
         return BaseCarsimEnv.unity_comms.reset(mapType=mp_name,
-            id=self.instancenumber, spawn=self.spawn_point, lightMultiplier = self.lighting) 
+            id=self.instancenumber, spawn=self.spawn_point, lightMultiplier = self.lighting, video_filename=video_filename) 
 
     def unityGetObservation(self):
         return BaseCarsimEnv.unity_comms.getObservation(id=self.instancenumber)
@@ -215,6 +218,9 @@ class BaseCarsimEnv(gym.Env):
     def unityGetArenaScreenshot(self):
         return BaseCarsimEnv.unity_comms.getArenaScreenshot(id=self.instancenumber)
 
+    def setVideoFilename(self, video_filename):
+        self.video_filename = video_filename
+        BaseCarsimEnv.unity_comms.resetVideoCounter(id=self.instancenumber)
 
     def reset(self, seed=None, mapType = None):
         super().reset(seed=seed)  # gynasium migration guide https://gymnasium.farama.org/content/migration-guide/
@@ -229,7 +235,8 @@ class BaseCarsimEnv(gym.Env):
 
         mp_name = self.getMapTypeName(mapType=mapType)
 
-        obsstring = self.unityReset(mp_name) 
+
+        obsstring = self.unityReset(mp_name, video_filename=self.video_filename)
         # TODO lighting lighting=self.lighting)
 
         

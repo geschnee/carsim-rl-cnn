@@ -134,6 +134,11 @@ public class Arena : MonoBehaviour
         return this.getObservation();
     }
 
+    public void resetVideoCounter()
+    {
+        videoRecorder.resetVideoCounter();
+    }
+
     public void SetLightIntensity(float lightMultiplier)
     {
         foreach (Light light in lights)

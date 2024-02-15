@@ -39,6 +39,9 @@ def run_ppo(cfg):
     # we use own replay buffer that saves the observation space as uint8 instead of float32
     # int8 is 8bit, float32 is 32bit
 
+    print(f"Working directory : {os.getcwd()}")
+    print(f"Output directory  : {hydra.core.hydra_config.HydraConfig.get().runtime.output_dir}")
+
    
     # TODO do we need some approaches from RL path/trajectory planning to complete the parcour?
 

@@ -8,6 +8,8 @@ using System.Drawing;
 // unity does not support the System.drawing library: https://docs.unity3d.com/Manual/overview-of-dot-net-in-unity.html#:~:text=Unity%20uses%20the%20open%2Dsource,variety%20of%20different%20hardware%20configurations.
 
 
+using System.Threading;
+
 using ImageMagick;
 // steps to making ImageMagick work in Unity:
 // use NuGet to install Magick.NET-Q16-AnyCPU
@@ -15,15 +17,31 @@ using ImageMagick;
 // download Magick.Native-Q16-x64.dll from internet and place it in the unity packages directory
 // example download link: https://www.dllme.com/dll/files/magick_native-q16-x64/e924369b24e1de791993f37f0aad1e3c
 
+public class VideoData
+{
+    public string video_filename;
+    public float fps;
+    public List<float> delays;
+    public List<byte[]> frames;
+    public float gameDuration;
+    public VideoData(string video_filename, List<float> delays, List<byte[]> frames, float gameDuration)
+    {
+        this.video_filename = video_filename;
+        this.delays = delays;
+        this.frames = frames;
+        this.gameDuration = gameDuration;
+    }
+}
+
 public class VideoRecorder : MonoBehaviour
 {
     
-    float fps = 6;
+    float target_fps = 20;
     public EpisodeManager episodeManager;
 
-    public List<byte[]> frames; 
+    public VideoData videoData;
 
-    public Camera camera; // arena Camera
+    public Camera arenaCamera;
     
     public string video_filename;
 
@@ -33,114 +51,118 @@ public class VideoRecorder : MonoBehaviour
 
     public bool isRecording;
 
+
     public void StartVideo(string video_filename)
     {
-        this.video_filename = video_filename;
-        this.frames = new List<byte[]>();
-
-        this.fileCounter=0;
-
-        lastRecordTime = 0; // this will result in an immediate Capture in Update
-
-        // https://forum.unity.com/threads/how-to-save-manually-save-a-png-of-a-camera-view.506269/
+        lastRecordTime = -1; // this will result in an immediate Capture in Update
 
         this.isRecording = true;
+
+        videoData = new VideoData(video_filename + this.fileCounter, new List<float>(), new List<byte[]>(), 0);
+        this.fileCounter++;
+
     }
 
     public void Capture()
     {
-        
-        //Debug.Log("Captured frame " + fileCounter + " at " + Time.time + " seconds by " + this.transform.name);
+        if (lastRecordTime != -1)
+        {
+            this.videoData.delays.Add(this.episodeManager.duration - lastRecordTime);
+        }
+        lastRecordTime = this.episodeManager.duration;
+
+
+        // https://forum.unity.com/threads/how-to-save-manually-save-a-png-of-a-camera-view.506269/
         RenderTexture activeRenderTexture = RenderTexture.active;
-        RenderTexture.active = camera.targetTexture;
+        RenderTexture.active = arenaCamera.targetTexture;
  
-        camera.Render();
+        arenaCamera.Render();
  
-        Texture2D image = new Texture2D(camera.targetTexture.width, camera.targetTexture.height);
-        image.ReadPixels(new Rect(0, 0, camera.targetTexture.width, camera.targetTexture.height), 0, 0);
+        Texture2D image = new Texture2D(arenaCamera.targetTexture.width, arenaCamera.targetTexture.height);
+        image.ReadPixels(new Rect(0, 0, arenaCamera.targetTexture.width, arenaCamera.targetTexture.height), 0, 0);
         image.Apply();
         RenderTexture.active = activeRenderTexture;
  
-        //byte[] bytes = image.EncodeToPNG();
-        frames.Add(image.EncodeToPNG());
- 
-        //File.WriteAllBytes(Application.dataPath + "/../Images/" + video_filename + "_" + fileCounter + ".png", bytes);
-        //fileCounter++;
-
-
-
-        lastRecordTime = Time.time;
+        this.videoData.frames.Add(image.EncodeToPNG());
+        
         
         Destroy(image);
     }
 
-    public void StopVideo()
+    public void StopVideo(float gameDuration)
     {
         if (!this.isRecording)
         {
-            Debug.LogError("Video already stopped");
+            // Video already stopped or was never started (EpisodeManager calls this method regardless of Video started or not)
             return;
         }
 
+        this.videoData.gameDuration = gameDuration;
 
         this.isRecording = false;
-        Debug.Log("Video stopped");
-        // TODO implement video saving
 
-        // use gif instead, much easier
+        
+        // use thread to prevent blocking (optimize gif step takes a long time)
+        Thread t = new Thread( ()=>saveGif(this.videoData));
+        t.Start();
+    }
+
+    void saveGif(VideoData videoData){
+        // use gif instead of mp4, much easier/inexpensive
         // https://stackoverflow.com/questions/1196322/how-to-create-an-animated-gif-in-net
 
-        saveGif();
-        //destroyImages();
-    }
 
-    private void destroyImages()
-    {
-        // we need to destoy the images ourselves: https://forum.unity.com/threads/texture2d-destroy-how-to-do-it-right.385249/
-        //foreach (Texture2D frame in frames)
-        //{
-        //    Destroy(frame);
-        //}
-    }
+        float f_delay_in_milliseconds = 1 / videoData.fps * 1000;
+        int delay = (int) f_delay_in_milliseconds;
 
-    private void saveGif(){
+        float writeTime=0;
+        float addTime=0;
+        float optimizeTime=0;
 
-        //MagickImage image = new MagickImage("Snakeware.png");
-        float f_delay = 1 / fps * 1000;
-        int delay = (int) f_delay; // in milliseconds
+        float gif_duration_in_seconds = 0;
+
+        if (videoData.frames.Count != videoData.delays.Count + 1)
+        {
+            Debug.LogError($"Frames and delays do not match in length. Frames: {videoData.frames.Count}, Delays: {videoData.delays.Count}");
+        }
 
         using (MagickImageCollection collection = new MagickImageCollection())
         {
-            // Add first image and set the animation delay to 100ms
 
-            for (int i = 0; i < frames.Count; i++)
+            for (int i = 0; i < videoData.frames.Count; i++)
             {
-                MagickImage img = new MagickImage(frames[i]);
+                MagickImage img = new MagickImage(videoData.frames[i]);
                 collection.Add(img);
-                collection[i].AnimationDelay = delay;
+
+                if (i < videoData.frames.Count - 1)
+                {
+                    // add the recorded delay to the gif only if it is not the last frame (since we do not have a recorded delay there)
+                    collection[i].AnimationDelay = (int) videoData.delays[i] * 1000;
+                    gif_duration_in_seconds += videoData.delays[i];
+                } else {
+                    // add a "default delay"
+                    collection[i].AnimationDelay = delay;
+                }
             }
-            //MagickImage img = new MagickImage(frames[0].EncodeToPNG());
-            //collection.Add(img);
-            //collection[0].AnimationDelay = delay;
-
-            // Add second image, set the animation delay to 100ms and flip the image
-            //MagickImage img2 = new MagickImage(frames[0].EncodeToPNG());
-            //collection.Add(img2);
-            //collection[1].AnimationDelay = delay;
-            //collection[1].Flip();
-
+        
             // Optionally reduce colors
             QuantizeSettings settings = new QuantizeSettings();
             settings.Colors = 256;
+
             collection.Quantize(settings);
 
-            // Optionally optimize the images (images should have the same size).
             collection.Optimize();
-
-            // Save gif
-            collection.Write($"{video_filename}.gif");
+           
+            collection.Write($"{videoData.video_filename}.gif");
         }
+       
+        
+        Debug.Log($"Gif length: {videoData.frames.Count} frames {gif_duration_in_seconds} seconds. Game length {videoData.gameDuration} seconds. Saved to {videoData.video_filename}.gif");
+    }
 
+    public void resetVideoCounter()
+    {
+        this.fileCounter = 0;
     }
 
     public void FixedUpdate()
@@ -154,7 +176,7 @@ public class VideoRecorder : MonoBehaviour
         {
             return;
         }
-        if (Time.time - lastRecordTime > 1.0f / fps)
+        if (this.episodeManager.duration - this.lastRecordTime > 1.0f / target_fps)
         {
             Capture();
         }

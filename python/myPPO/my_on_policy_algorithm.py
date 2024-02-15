@@ -16,6 +16,9 @@ from stable_baselines3.common.vec_env import VecEnv
 
 from myPPO.my_buffers import MyRolloutBuffer
 
+
+import os
+
 SelfOnPolicyAlgorithm = TypeVar(
     "SelfOnPolicyAlgorithm", bound="MyOnPolicyAlgorithm")
 
@@ -516,9 +519,10 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         return state_dicts, []
     
     def eval(self: SelfOnPolicyAlgorithm, iteration: int = 0, num_evals_per_difficulty: int = 20):
-        easy_success_rate = self.eval_model_track(num_evals_per_difficulty, "easy")
-        medium_success_rate = self.eval_model_track(num_evals_per_difficulty, "medium")
-        hard_success_rate = self.eval_model_track(num_evals_per_difficulty, "hard")
+        print(f'eval started', flush=True)
+        easy_success_rate = self.eval_model_track(num_evals_per_difficulty, "easy", iteration)
+        medium_success_rate = self.eval_model_track(num_evals_per_difficulty, "medium", iteration)
+        hard_success_rate = self.eval_model_track(num_evals_per_difficulty, "hard", iteration)
 
         total_success_rate = (easy_success_rate + medium_success_rate + hard_success_rate) / 3
         if total_success_rate > self.max_total_success_rate:
@@ -527,11 +531,11 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
 
         return total_success_rate
 
-    
     def eval_model_track(
         self: SelfOnPolicyAlgorithm,
         n_eval_episodes: int = 10,
         difficulty: str = "easy",
+        iteration: int = 0,
         # TODO also the lighting level should be varied
     ):
         # spawn position and orientation is defined by the env via cfg.env_kwargs.spawn_point
@@ -563,6 +567,12 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
             method_name="reset_with_difficulty",
             indices=range(n_envs),
             difficulty=difficulty,
+        )
+        # reset environment 0 to record the videos
+        env.env_method(
+            method_name="setVideoFilename",
+            indices=[0],
+            video_filename = f'{os.getcwd()}\\env0_iteration_{iteration}_{difficulty}'
         )
 
         
@@ -668,6 +678,13 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
 
         step_average_wait_time = wait_time / np.sum(episode_lengths)
         self.logger.record("rollout/step_average_wait_time", step_average_wait_time)
+
+        # set to no video afterwards
+        env.env_method(
+            method_name="setVideoFilename",
+            indices=[0],
+            video_filename = ""
+        )
 
         return success_rate
 

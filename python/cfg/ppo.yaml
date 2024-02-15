@@ -20,7 +20,7 @@ copy_model_from: False #models_and_dumps/best_model_episode_70
 total_timesteps: 2500000
 
 env_kwargs:
-  jetbot: StandardJetBot
+  jetbot: DifferentialJetBot
   spawn_point: OrientationRandom
   # spawn_point can be Fixed, OrientationRandom, OrientationVeryRandom and FullyRandom
   frame_stacking: 10

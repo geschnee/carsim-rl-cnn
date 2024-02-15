@@ -158,10 +158,8 @@ public class EpisodeManager : MonoBehaviour
         {
             Debug.LogWarning($"EndEpisode called again {endEvent} before {this.endEvent}");
         }
-        else
-        {
-            //Debug.Log($"EndEpisode called {endEvent}");
-        }
+        
+        videoRecorder.StopVideo(this.duration);
 
         this.episodeRunning = false;
         this.endEvent = endEvent;
@@ -170,7 +168,6 @@ public class EpisodeManager : MonoBehaviour
         aIEngine.ResetMotor();
         aIEngine.episodeRunning = false;
 
-        videoRecorder.StopVideo();
     }
 
     public float GetReward()
@@ -376,10 +373,10 @@ public class EpisodeManager : MonoBehaviour
         {
             return;
         }
-        if (this.episodeRunning){
-            // count time only when it is running
-            this.duration += Time.deltaTime;
-        }
+        
+        // count time only when it is running
+        this.duration += Time.deltaTime;
+        
 
 
         float velo = this.aIEngine.getCarVelocity();
