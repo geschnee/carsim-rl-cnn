@@ -43,7 +43,7 @@ public class VideoRecorder : MonoBehaviour
 
     public Camera arenaCamera;
     
-    public string video_filename;
+    public string video_filename="";
 
     public int fileCounter = 0;
 
@@ -52,13 +52,20 @@ public class VideoRecorder : MonoBehaviour
     public bool isRecording;
 
 
-    public void StartVideo(string video_filename)
+    public void StartVideo(string video_filename_in)
     {
+
+        if (video_filename_in != this.video_filename) {
+            this.fileCounter = 0;
+            this.video_filename = video_filename_in;
+            // filename changed --> reset fileCounter
+        }
+
         lastRecordTime = -1; // this will result in an immediate Capture in Update
 
         this.isRecording = true;
 
-        videoData = new VideoData(video_filename + this.fileCounter, new List<float>(), new List<byte[]>(), 0);
+        videoData = new VideoData(video_filename_in + this.fileCounter, new List<float>(), new List<byte[]>(), 0);
         this.fileCounter++;
 
     }
@@ -123,7 +130,15 @@ public class VideoRecorder : MonoBehaviour
 
         if (videoData.frames.Count != videoData.delays.Count + 1)
         {
-            Debug.LogError($"Frames and delays do not match in length. Frames: {videoData.frames.Count}, Delays: {videoData.delays.Count}");
+            if (videoData.frames.Count == 0 && videoData.delays.Count == 0)
+            {
+                return;
+            }
+            else
+            {
+                Debug.LogError($"Frames and delays do not match in length. Frames: {videoData.frames.Count}, Delays: {videoData.delays.Count}");
+            }
+            
         }
 
         using (MagickImageCollection collection = new MagickImageCollection())
@@ -158,11 +173,6 @@ public class VideoRecorder : MonoBehaviour
        
         
         Debug.Log($"Gif length: {videoData.frames.Count} frames {gif_duration_in_seconds} seconds. Game length {videoData.gameDuration} seconds. Saved to {videoData.video_filename}.gif");
-    }
-
-    public void resetVideoCounter()
-    {
-        this.fileCounter = 0;
     }
 
     public void FixedUpdate()

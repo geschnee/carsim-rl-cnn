@@ -85,12 +85,6 @@ public class PeacefulPieCarCommandReceiver : MonoBehaviour
         }
 
         [JsonRpcMethod]
-        void resetVideoCounter(int id)
-        {
-            arenas[id].resetVideoCounter();
-        }
-
-        [JsonRpcMethod]
         void say(string message)
         {
             Debug.Log($"you sent {message}");

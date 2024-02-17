@@ -34,16 +34,15 @@ public class Goal
 {
     public GameObject ObstacleGO;
     public Vector3[] Coords;
+    public Vector3 goalBallOffset = new Vector3(0, 1.5f, 0);
 
-    public Goal(GameObject obstacle, Vector3[] coords, GameObject goalPassedGameObject, GameObject goalMissedCheckpointWall)
+    public Goal(GameObject obstacle, Vector3[] coords)
     {
         ObstacleGO = obstacle;
         Coords = coords;
-
-
     }
 
-    public GameObject InstantiateGoal(GameObject passedCheckpointWall, GameObject missedCheckpointWall, GameObject middleIndicator, Vector3 gameManagerPosition)
+    public GameObject InstantiateGoal(GameObject passedCheckpointWall, GameObject missedCheckpointWall, GameObject middleIndicator, Vector3 gameManagerPosition, GameObject goalBall)
     {
         Vector3 coords0 = this.Coords[0];
         Vector3 coords1 = this.Coords[1];
@@ -60,6 +59,10 @@ public class Goal
         //goalposts
         GameObject.Instantiate(this.ObstacleGO, this.Coords[0], goalRotationQuaternion, goalParentGameObject.transform);
         GameObject.Instantiate(this.ObstacleGO, this.Coords[1], goalRotationQuaternion, goalParentGameObject.transform);
+
+        //goalBalls
+        GameObject.Instantiate(goalBall, this.Coords[0] + goalBallOffset, goalRotationQuaternion, goalParentGameObject.transform);
+        GameObject.Instantiate(goalBall, this.Coords[1] + goalBallOffset, goalRotationQuaternion, goalParentGameObject.transform);
 
 
         // middleIndicator
@@ -168,6 +171,7 @@ public class ObstacleMapManager : MonoBehaviour
     public GameObject goalPassedGameOjbect;
     public GameObject goalMissedGameObject;
     public GameObject finishlineCheckpoint;
+    public GameObject goalBall;
 
     private GameObject finishMissedGameObject;
 
@@ -179,12 +183,12 @@ public class ObstacleMapManager : MonoBehaviour
 
     private List<GameObject> centerIndicators;
 
-    public ObstacleMapManager(Transform gameManagerTransform, GameObject obstacleBlue, GameObject obstacleRed, GameObject goalPassedGameObject, GameObject goalMissedGameObject, GameObject finishlineCheckpoint, Boolean isFinishLine, GameObject JetBot)
+    public ObstacleMapManager(Transform gameManagerTransform, GameObject obstacleBlue, GameObject obstacleRed, GameObject goalPassedGameObject, GameObject goalMissedGameObject, GameObject finishlineCheckpoint, GameObject goalBall, Boolean isFinishLine, GameObject JetBot)
     {
         Debug.LogWarning("ObstacleMapManager constructor called, this is unexpected");
     }
 
-    public void SetLikeInitialize(Transform gameManagerTransform, GameObject obstacleBlue, GameObject obstacleRed, GameObject goalPassedGameObject, GameObject goalMissedGameObject, GameObject finishlineCheckpoint, GameObject FinishLineMissedCheckpoint, GameObject goalMiddleIndicator, Boolean isFinishLine, GameObject JetBot)
+    public void SetLikeInitialize(Transform gameManagerTransform, GameObject obstacleBlue, GameObject obstacleRed, GameObject goalPassedGameObject, GameObject goalMissedGameObject, GameObject finishlineCheckpoint, GameObject FinishLineMissedCheckpoint, GameObject goalMiddleIndicator, GameObject goalBall, Boolean isFinishLine, GameObject JetBot)
     {
         this.gameManagerTransform = gameManagerTransform;
         this.gameManagerPosition = gameManagerTransform.position;
@@ -195,7 +199,7 @@ public class ObstacleMapManager : MonoBehaviour
         this.finishlineCheckpoint = finishlineCheckpoint;
         this.finishMissedGameObject = FinishLineMissedCheckpoint;
         this.goalMiddleIndicator = goalMiddleIndicator;
-
+        this.goalBall = goalBall;
 
         this.isFinishLineLastGoal = isFinishLine;
         this.JetBot = JetBot;
@@ -318,7 +322,7 @@ public class ObstacleMapManager : MonoBehaviour
             GameObject goalInstantiatedGameObject;
             
 
-            goalInstantiatedGameObject = goal.InstantiateGoal(this.goalPassedGameOjbect, this.goalMissedGameObject, this.goalMiddleIndicator, this.gameManagerPosition);
+            goalInstantiatedGameObject = goal.InstantiateGoal(this.goalPassedGameOjbect, this.goalMissedGameObject, this.goalMiddleIndicator, this.gameManagerPosition, this.goalBall);
             goalInstantiatedGameObject.transform.SetParent(allGoals.transform);
 
             goalInstantiatedGameObject.name = "Goal" + i.ToString();
@@ -328,7 +332,7 @@ public class ObstacleMapManager : MonoBehaviour
         // initialize last goal with finish line checkpoint
         int lastGoalIndex = goalList.goals.Length - 1;
         Goal goalLast = goalList.goals[lastGoalIndex];
-        GameObject goalInstantiatedGameObjectLast = goalLast.InstantiateGoal(this.finishlineCheckpoint, this.finishMissedGameObject, this.goalMiddleIndicator, this.gameManagerPosition);
+        GameObject goalInstantiatedGameObjectLast = goalLast.InstantiateGoal(this.finishlineCheckpoint, this.finishMissedGameObject, this.goalMiddleIndicator, this.gameManagerPosition, this.goalBall);
         goalInstantiatedGameObjectLast.transform.SetParent(allGoals.transform);
         goalInstantiatedGameObjectLast.name = "Goal" + lastGoalIndex.ToString();
 
@@ -558,7 +562,7 @@ public class ObstacleMapManager : MonoBehaviour
             coordsGoal[1] = coordRight;
 
 
-            Goal goal = new Goal(actualColorObject, coordsGoal, this.goalPassedGameOjbect, this.goalMissedGameObject);
+            Goal goal = new Goal(actualColorObject, coordsGoal);
             obstacles.Add(goal);
 
             actualColorObject = actualColorObject == obstacleBlue ? obstacleRed : obstacleBlue;
@@ -591,7 +595,7 @@ public class ObstacleMapManager : MonoBehaviour
             Vector3 coordRight = new Vector3(x, Constants.SPAWNHEIGHT_Y, zLeftRow + Constants.MAXWIDTH_GOAL);
             Vector3[] coordsGoal = { coordLeft, coordRight };
 
-            Goal goal = new Goal(actualColorObject, coordsGoal, this.goalPassedGameOjbect, this.goalMissedGameObject);
+            Goal goal = new Goal(actualColorObject, coordsGoal);
             obstacles.Add(goal);
 
             actualColorObject = actualColorObject == obstacleBlue ? obstacleRed : obstacleBlue;
@@ -640,7 +644,7 @@ public class ObstacleMapManager : MonoBehaviour
                 coordsGoal[1] = coordRight;
             }
 
-            Goal goal = new Goal(actualColorObject, coordsGoal, this.goalPassedGameOjbect, this.goalMissedGameObject);
+            Goal goal = new Goal(actualColorObject, coordsGoal);
             obstacles.Add(goal);
 
             left = left == true ? false : true;
@@ -691,7 +695,7 @@ public class ObstacleMapManager : MonoBehaviour
 
             }
 
-            Goal goal = new Goal(actualColorObject, coordsGoal, this.goalPassedGameOjbect, this.goalMissedGameObject);
+            Goal goal = new Goal(actualColorObject, coordsGoal);
             obstacles.Add(goal);
 
             left = left == true ? false : true;

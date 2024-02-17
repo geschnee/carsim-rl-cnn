@@ -520,6 +520,9 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
     
     def eval(self: SelfOnPolicyAlgorithm, iteration: int = 0, num_evals_per_difficulty: int = 20):
         print(f'eval started', flush=True)
+
+        os.mkdir(f'{os.getcwd()}\\videos_iter_{iteration}')
+
         easy_success_rate = self.eval_model_track(num_evals_per_difficulty, "easy", iteration)
         medium_success_rate = self.eval_model_track(num_evals_per_difficulty, "medium", iteration)
         hard_success_rate = self.eval_model_track(num_evals_per_difficulty, "hard", iteration)
@@ -562,19 +565,21 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         current_rewards = np.zeros(n_envs)
         current_lengths = np.zeros(n_envs, dtype="int")
 
+
+        # reset environment 0 to record the videos
+        log_indices = [0]
+        for i in log_indices:
+            env.env_method(
+                method_name="setVideoFilename",
+                indices=[i],
+                video_filename = f'{os.getcwd()}\\videos_iter_{iteration}\\{difficulty}_env_{i}_video_'
+            )
         
         env.env_method(
             method_name="reset_with_difficulty",
             indices=range(n_envs),
             difficulty=difficulty,
         )
-        # reset environment 0 to record the videos
-        env.env_method(
-            method_name="setVideoFilename",
-            indices=[0],
-            video_filename = f'{os.getcwd()}\\env0_iteration_{iteration}_{difficulty}'
-        )
-
         
         # switch to eval mode
         self.policy.set_training_mode(False)
@@ -633,6 +638,16 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
                             success_count += 1
                         if infos[i]["endEvent"] == "OutOfTime":
                             timeouts += 1
+
+                        if i in log_indices:
+                            if episode_counts[i] == episode_count_targets[i]-1:
+                                # no more logging needed for this env
+                                env.env_method(
+                                    method_name="setVideoFilename",
+                                    indices=[i],
+                                    video_filename = ""
+                                )
+
 
                         # due to auto reset we have to reset the env again with the right parameters:
                         env.env_method(

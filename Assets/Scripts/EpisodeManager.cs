@@ -438,6 +438,9 @@ public class EpisodeManager : MonoBehaviour
         AddEventReward(finishCheckpointReward);
         IncreasePassedGoals(goal);
 
+        GameObject goal2 = goal.transform.parent.gameObject;
+        colorGreen(goal2);
+
         EndEpisode(EndEvent.Success);
     }
 
@@ -467,7 +470,8 @@ public class EpisodeManager : MonoBehaviour
 
     public void goalMissed(GameObject redBorder)
     {
-        destroyCheckpoint(redBorder.transform.parent.gameObject);
+        GameObject goal = redBorder.transform.parent.gameObject;
+        destroyCheckpoint(goal);
         AddEventReward(goalMissedReward);
 
         centerIndicators.RemoveAt(0); // remove an indicator
@@ -475,23 +479,55 @@ public class EpisodeManager : MonoBehaviour
 
         this.lastDistance = GetDistanceToNextGoal();
 
+
+        colorRed(goal);
+
         //EndEpisode(EndEvent.GoalMissed);
     }
 
-    public void finishMissed(GameObject redBorder)
+    public void colorGreen(GameObject goal) {
+
+        Transform t = goal.transform;
+        for (int i = 0; i < t.childCount; i++)
+        {
+            string tag = t.GetChild(i).gameObject.tag;
+            if (tag == "GoalBall")
+            {
+                t.GetChild(i).GetComponent<BallColor>().SetGreen();
+            }
+        }
+    }
+
+    public void colorRed(GameObject goal) {
+
+        Transform t = goal.transform;
+        for (int i = 0; i < t.childCount; i++)
+        {
+            string name = t.GetChild(i).gameObject.name;
+            if (name == "GoalBall")
+            {
+                t.GetComponent<BallColor>().SetRed();
+            }
+        }
+    }
+
+    public void finishMissed(GameObject border)
     {
-        destroyCheckpoint(redBorder.transform.parent.gameObject);
+        GameObject goal = border.transform.parent.gameObject;
+        destroyCheckpoint(goal);
         AddEventReward(goalMissedReward);
 
         centerIndicators.RemoveAt(0); // remove an indicator
 
+        colorRed(goal);
 
         EndEpisode(EndEvent.FinishMissed);
     }
 
     public void goalPassed(GameObject goalMiddle)
     {
-        destroyCheckpoint(goalMiddle.transform.parent.gameObject);
+        GameObject goal = goalMiddle.transform.parent.gameObject;
+        destroyCheckpoint(goal);
         AddEventReward(goalPassedReward);
 
         AddTime(allowedTimePerGoal);
@@ -503,6 +539,8 @@ public class EpisodeManager : MonoBehaviour
 
         // update the distance to the next goal
         this.lastDistance = GetDistanceToNextGoal();
+
+        colorGreen(goal);
     }
 
     public void obstacleHit()

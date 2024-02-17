@@ -30,6 +30,7 @@ public class GameManager : MonoBehaviour
 	public GameObject goalPassedWallCheckpoint;
 	public GameObject goalMissedWallCheckpoint;
 	public GameObject FinishLineCheckpoint;
+	public GameObject goalBall;
 
 	public GameObject FinishLineMissedCheckpoint;
 
@@ -81,7 +82,7 @@ public class GameManager : MonoBehaviour
 
 		this.obstacleMapManager = this.gameObject.GetComponent<ObstacleMapManager>();
 		//this.obstacleMapManager.gameManagerTransform = this.transform;
-		this.obstacleMapManager.SetLikeInitialize(this.transform, obstacleBlue, obstacleRed, goalPassedWallCheckpoint, goalMissedWallCheckpoint, this.FinishLineCheckpoint, this.FinishLineMissedCheckpoint, goalMiddleIndicator, this.isFinishLineLastGoal, this.JetBot);
+		this.obstacleMapManager.SetLikeInitialize(this.transform, obstacleBlue, obstacleRed, goalPassedWallCheckpoint, goalMissedWallCheckpoint, this.FinishLineCheckpoint, this.FinishLineMissedCheckpoint, goalMiddleIndicator, this.goalBall, this.isFinishLineLastGoal, this.JetBot);
 
 	}
 

@@ -220,7 +220,7 @@ class BaseCarsimEnv(gym.Env):
 
     def setVideoFilename(self, video_filename):
         self.video_filename = video_filename
-        BaseCarsimEnv.unity_comms.resetVideoCounter(id=self.instancenumber)
+        print(f'{self.instancenumber} video filename {self.video_filename}', flush=True)
 
     def reset(self, seed=None, mapType = None):
         super().reset(seed=seed)  # gynasium migration guide https://gymnasium.farama.org/content/migration-guide/
