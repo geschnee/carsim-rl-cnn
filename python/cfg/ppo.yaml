@@ -1,4 +1,4 @@
-comment: "Trying with more n_steps, does the performance still drop off after a while? does it drop off later?"
+comment: "Trying with fixed step length"
 # we should also try it with the fixed spawn to be closer to the evaluation scenario, maybe the differential can do it 
 
 n_envs: 10
@@ -8,9 +8,13 @@ log_interval: 5
 batch_size: 64
 
 
-n_steps: 256 # 64 # amount of steps to collect per collect_rollouts per environment
+
+n_steps: 512 # 64 # amount of steps to collect per collect_rollouts per environment
 # Tensorboard shows the mean_episode_length is below 3
 # we can reduce the n_steps to make the collection time shorter while still collecting a lot of games
+# n_steps * fixedTimestepsLength = the amount of seconds required for the collection
+
+
 
 # maybe the fps is too low, the agent does not have many steps to do and cannot react quick enough to learn a better policy than full on ahead
 
@@ -36,8 +40,12 @@ env_kwargs:
     velocityCoefficient: 0.0
     eventCoefficient: 1.0
   trainingMapType: randomEval
-  fixedTimestepsLength: False
+  fixedTimestepsLength: 0.3
   # fixedTimestepsLength can either be False or a number (seconds that each timestep contains)
   width: 500 #336
   height: 168
+  lighting_setting:
+    # was fixed at 5 before
+    low: 2.5
+    high: 7.5
 

@@ -12,7 +12,7 @@ from stable_baselines3.common.env_util import make_vec_env
 
 from stable_baselines3.common.vec_env import DummyVecEnv
 
-import unityGymEnv
+import carsimGymEnv
 
 from myPPO.myPPO import myPPO
 
@@ -33,10 +33,10 @@ env_kwargs = {"asynchronous":asynch,
               "frame_stacking": 3, "equalize": True, "normalize_images": normalize_images}
 
 
-env = unityGymEnv.BaseUnityCarEnv(**env_kwargs)
+env = carsimGymEnv.BaseUnityCarEnv(**env_kwargs)
 
 # agent preprocessing steps:
-env.mapType = unityGymEnv.MapType.twoGoalLanesBlueFirstLeftHard
+env.mapType = carsimGymEnv.MapType.twoGoalLanesBlueFirstLeftHard
 env.log = True
 env.reset()
 env.getObservation()
@@ -45,20 +45,20 @@ env.log = False
 
 # arena screenshots:
 # easy eval parcour
-env.mapType = unityGymEnv.MapType.easyGoalLaneMiddleBlueFirst
+env.mapType = carsimGymEnv.MapType.easyGoalLaneMiddleBlueFirst
 env.reset()
 time.sleep(1) # wait for the car to spawn
 env.get_arena_screenshot("expose_images/evaluation_easy.png")
 
 
 # medium eval parcour
-env.mapType = unityGymEnv.MapType.twoGoalLanesBlueFirstLeftMedium
+env.mapType = carsimGymEnv.MapType.twoGoalLanesBlueFirstLeftMedium
 env.reset()
 time.sleep(1) # wait for the car to spawn
 env.get_arena_screenshot("expose_images/evaluation_medium.png")
 
 # hard eval parcour
-env.mapType = unityGymEnv.MapType.twoGoalLanesBlueFirstLeftHard
+env.mapType = carsimGymEnv.MapType.twoGoalLanesBlueFirstLeftHard
 env.reset()
 time.sleep(1) # wait for the car to spawn
 env.get_arena_screenshot("expose_images/evaluation_hard.png")
@@ -78,7 +78,7 @@ def obs_to_file(obs, filename):
 # Maximilian used the ambient light setting for the training and also in one of the evaluations
 # instead i only use the directional lights with different intensities
 
-env.mapType = unityGymEnv.MapType.twoGoalLanesBlueFirstLeftHard
+env.mapType = carsimGymEnv.MapType.twoGoalLanesBlueFirstLeftHard
 
 # TODO images with and without histogram equalization
 
@@ -91,8 +91,8 @@ env.get_arena_screenshot("expose_images/light_setting_arena_standard.png")
 
 
 # agent vision with reduced lighting
-env.lighting = 0.5
-env.reset()
+lighting = 2.5
+env.reset(lightingMultiplier=lighting)
 time.sleep(1) # wait for the car to spawn
 obs_to_file(env.getObservation(), "expose_images/light_setting_pov_reduced_lighting.png")
 env.saveObservationNoPreprocessing("expose_images/light_setting_pov_reduced_lighting_no_preprocessing.png")
@@ -101,8 +101,8 @@ env.get_arena_screenshot("expose_images/light_setting_arena_reduced_lighting.png
 
 
 # agent vision with increased lighting
-env.lighting = 1.5
-env.reset()
+lighting = 7.5
+env.reset(lightingMultiplier=lighting)
 time.sleep(1) # wait for the car to spawn
 obs_to_file(env.getObservation(), "expose_images/light_setting_pov_increased_lighting.png")
 env.saveObservationNoPreprocessing("expose_images/light_setting_pov_increased_lighting_no_preprocessing.png")
@@ -112,7 +112,7 @@ env.lighting = 1 # default lighting
 # agent data augmented POV screenshots:
 # agent with salt and pepper noise
 
-env.mapType = unityGymEnv.MapType.random
+env.mapType = carsimGymEnv.MapType.random
 env.reset()
 time.sleep(1) # wait for the car to spawn
 obs = env.getObservation()
@@ -129,7 +129,7 @@ obs_to_file(obs_gaussian, f'expose_images/data_entry_augmented_gaussian_sigma_{s
 
 # training regimes:
 
-env.mapType = unityGymEnv.MapType.random
+env.mapType = carsimGymEnv.MapType.random
 env.single_goal = True
 env.reset()
 time.sleep(1) # wait for the car to spawn
@@ -140,7 +140,7 @@ env.reset()
 time.sleep(1) # wait for the car to spawn
 env.get_arena_screenshot("expose_images/training_regime_fmt.png")
 
-env.mapType = unityGymEnv.MapType.twoGoalLanesBlueFirstLeftHard
+env.mapType = carsimGymEnv.MapType.twoGoalLanesBlueFirstLeftHard
 env.reset()
 time.sleep(1) # wait for the car to spawn
 env.get_arena_screenshot("expose_images/training_regime_fixed_hard.png")

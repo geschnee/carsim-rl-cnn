@@ -28,6 +28,7 @@ from histogram_equilization import hist_eq
 
 from myEnums import MapType, EndEvent, Spawn
 
+import random
 
 @dataclass
 class StepReturnObject:
@@ -43,7 +44,7 @@ class BaseCarsimEnv(gym.Env):
     unity_comms: UnityComms = None
     instancenumber = 0
 
-    def __init__(self, width=336, height=168, port=9000, log=False, jetbot=None, spawn_point=None, fixedTimestepsLength=None, trainingMapType=MapType.randomEval, image_preprocessing={}, frame_stacking=5, lighting=1, coefficients=None):
+    def __init__(self, width=336, height=168, port=9000, log=False, jetbot=None, spawn_point=None, fixedTimestepsLength=None, trainingMapType=MapType.randomEval, image_preprocessing={}, frame_stacking=5, lighting_setting=None, coefficients=None):
         # height and width was previous 168, that way we could downsample and reach the same dimensions as the nature paper of 84 x 84
         self.instancenumber = BaseCarsimEnv.instancenumber
         assert jetbot is not None
@@ -56,7 +57,9 @@ class BaseCarsimEnv(gym.Env):
 
         self.video_filename = ""
 
-        self.lighting = lighting
+        if lighting_setting is None:
+            lighting_setting = {"low": 5, "high": 5}
+        self.lighting_setting = lighting_setting
 
         self.log = log
 
@@ -122,7 +125,6 @@ class BaseCarsimEnv(gym.Env):
 
         self.action_space = spaces.Box(
             low=-1.0, high=1.0, shape=(2, 1), dtype=np.float32)
-        # TODO maybe use 0 for low instead of -1.0 (what did maximilian use?)
         # this box is essentially an array
 
         
@@ -200,9 +202,9 @@ class BaseCarsimEnv(gym.Env):
         return BaseCarsimEnv.unity_comms.immediateStep(id=self.instancenumber, step=self.step_nr, inputAccelerationLeft=float(
             left_acceleration), inputAccelerationRight=float(right_acceleration))
 
-    def unityReset(self, mp_name, video_filename):
+    def unityReset(self, mp_name, video_filename, lightMultiplier):
         return BaseCarsimEnv.unity_comms.reset(mapType=mp_name,
-            id=self.instancenumber, spawn=self.spawn_point, lightMultiplier = self.lighting, video_filename=video_filename) 
+            id=self.instancenumber, spawn=self.spawn_point, lightMultiplier=lightMultiplier, video_filename=video_filename) 
 
     def unityGetObservation(self):
         return BaseCarsimEnv.unity_comms.getObservation(id=self.instancenumber)
@@ -210,7 +212,7 @@ class BaseCarsimEnv(gym.Env):
     def unityStartArena(self, width, height, jetbot, fixedTimesteps, fixedTimestepsLength):
 
         return BaseCarsimEnv.unity_comms.startArena(
-            id=self.instancenumber, jetbotName=jetbot, distanceCoefficient=self.distanceCoefficient, orientationCoefficient=self.orientationCoefficient, velocityCoefficient=self.velocityCoefficient, eventCoefficient=self.eventCoefficient, resWidth=width, resHeight=height, fixedTimesteps=fixedTimesteps, fixedTimestepsLength=fixedTimestepsLength )
+            id=self.instancenumber, jetbotName=jetbot, distanceCoefficient=self.distanceCoefficient, orientationCoefficient=self.orientationCoefficient, velocityCoefficient=self.velocityCoefficient, eventCoefficient=self.eventCoefficient, resWidth=width, resHeight=height, fixedTimesteps=fixedTimesteps, fixedTimestepsLength=fixedTimestepsLength)
         
     def unityDeleteAllArenas(self):
         BaseCarsimEnv.unity_comms.deleteAllArenas()
@@ -220,9 +222,9 @@ class BaseCarsimEnv(gym.Env):
 
     def setVideoFilename(self, video_filename):
         self.video_filename = video_filename
-        print(f'{self.instancenumber} video filename {self.video_filename}', flush=True)
+        #print(f'{self.instancenumber} video filename {self.video_filename}', flush=True)
 
-    def reset(self, seed=None, mapType = None):
+    def reset(self, seed=None, mapType = None, lightMultiplier = None):
         super().reset(seed=seed)  # gynasium migration guide https://gymnasium.farama.org/content/migration-guide/
 
         self.step_nr = -1
@@ -235,9 +237,11 @@ class BaseCarsimEnv(gym.Env):
 
         mp_name = self.getMapTypeName(mapType=mapType)
 
+        if lightMultiplier is None:
+            lightMultiplier = random.random() * (self.lighting_setting["high"] - self.lighting_setting["low"]) + self.lighting_setting["low"]
 
-        obsstring = self.unityReset(mp_name, video_filename=self.video_filename)
-        # TODO lighting lighting=self.lighting)
+
+        obsstring = self.unityReset(mp_name, video_filename=self.video_filename, lightMultiplier=lightMultiplier)
 
         
         info = {"mapType": mp_name}
@@ -261,10 +265,6 @@ class BaseCarsimEnv(gym.Env):
             mp = self.mapType
         mapTypeName = MapType.resolvePseudoEnum(mp).name
         return mapTypeName
-    
-    # TODO remove this bullshit
-    def setRandomEval(self, randomEval):
-        self.randomEval = randomEval
     
     def reset_with_difficulty(self, difficulty):
         mapType = MapType.getMapTypeFromDifficulty(difficulty)

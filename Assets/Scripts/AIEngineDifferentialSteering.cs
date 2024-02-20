@@ -5,7 +5,7 @@ using UnityEngine;
 
 public class AIEngineDifferentialsteering : AIEngineBase
 {
-    private float maxTorque = 200f; // 100f;
+    private float maxTorque = 300f; // 100f;
 
     public WheelCollider frontLeftWheelCollider;
     public WheelCollider frontRightWheelCollider;

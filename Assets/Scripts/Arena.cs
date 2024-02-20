@@ -37,7 +37,6 @@ public class Arena : MonoBehaviour
     public int arenaResHeight = 512;
 
     public List<Light> lights;
-    float defaultLightIntensity = 5f;
 
     public float velocityCoefficient;
     public float orientationCoefficient;
@@ -68,7 +67,6 @@ public class Arena : MonoBehaviour
     {
         if (this.car != null)
         {
-            //Debug.Log($"will destroy existing car");
             Destroy(this.car);
         }
 
@@ -78,10 +76,8 @@ public class Arena : MonoBehaviour
 
     public string reset(MapType mt, Spawn jetBotSpawn, float lightMultiplier, string video_filename)
     {
-        //Debug.Log($"Arena reset() called, id: {instancenumber}");
         if (this.car != null)
         {
-            //Debug.Log($"will destroy existing car");
             this.car.SetActive(false);
             // else there was strange behaviour when the new objects were spawned
             // it looked like there was collision detection for the Destroyed car
@@ -90,8 +86,6 @@ public class Arena : MonoBehaviour
 
         // destroy previous obstacles:
         gameManager.DestroyObstaclesOnMap();
-
-        //Debug.Log($"startEpisode");
 
         // spawn new obstacles:
         MapData md = gameManager.InitializeMapWithObstacles(mt, 0, jetBotSpawn);
@@ -138,7 +132,7 @@ public class Arena : MonoBehaviour
     {
         foreach (Light light in lights)
         {
-            light.intensity = defaultLightIntensity * lightMultiplier;
+            light.intensity = lightMultiplier;
         }
     }
 
@@ -159,8 +153,8 @@ public class Arena : MonoBehaviour
     {
         // TODO maybe move this code to the episodeManager
 
-        if (episodeManager.fixedTimesteps){
-            if (episodeManager.stepFinished == false){
+        if (episodeManager.fixedTimesteps && episodeManager.IsTerminated()==false){
+            if (episodeManager.episodeStatus != EpisodeStatus.WaitingForStep){
                 return new StepReturnObject(previousStepNotFinished: true);
             }
         }

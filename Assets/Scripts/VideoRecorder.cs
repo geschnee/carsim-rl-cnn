@@ -182,7 +182,7 @@ public class VideoRecorder : MonoBehaviour
             return;
         }
 
-        if (this.episodeManager.episodeRunning == false)
+        if (this.episodeManager.episodeStatus != EpisodeStatus.Running)
         {
             return;
         }

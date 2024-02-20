@@ -1,8 +1,8 @@
 
 
-public enum EndEvent
+public enum EpisodeStatus
 {
-    NotEnded = 0,
+    Running = 0,
     Success = 1,
     OutOfTime = 2,
     WallHit = 3,
@@ -10,6 +10,7 @@ public enum EndEvent
     RedObstacle = 5,
     BlueObstacle = 6,
     FinishMissed = 7,
+    WaitingForStep = 8,
 }
 
 public enum Spawn

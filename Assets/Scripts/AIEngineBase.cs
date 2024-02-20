@@ -8,14 +8,22 @@ public abstract class AIEngineBase : MonoBehaviour
     public float inputAccelerationLeft = 0;
     public float inputAccelerationRight = 0;
 
-    public bool episodeRunning = false;
+    
 
     public Transform carBody;
 
+    EpisodeManager episodeManager;
+
+    public void Start()
+    {
+        this.episodeManager = this.GetComponent<EpisodeManager>();
+    }
+
     public void FixedUpdate()
     {
-        if (!episodeRunning)
+        if (!episodeManager.isEpisodeRunning())
         {
+            ResetMotor();
             return;
         }
         this.HandleMotor();
@@ -27,7 +35,7 @@ public abstract class AIEngineBase : MonoBehaviour
         // normal input
         this.inputAccelerationLeft = inputAccelerationLeft;
         this.inputAccelerationRight = inputAccelerationRight;
-        episodeRunning = true;
+        
     }
 
     public virtual void HandleMotor()

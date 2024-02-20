@@ -347,11 +347,12 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         else:
             success_rate, mean_reward, mean_episode_length, mean_distance_reward, mean_velocity_reward, mean_event_reward, mean_orientation_reward, first_goal_completion_rate = 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
             timeout_rate = 0
+            rate_games_with_collisions = 0
         
         
         step_average_wait_time = waitTime / total_timesteps
 
-        print(f'collect rollouts finished', flush=True)
+        print(f'collect rollouts finished with {completed_games} games', flush=True)
 
         if successfully_passed_goals > 0:
             print(f'passed a goal succesfully, rate is {goal_completion_rate}')
@@ -493,12 +494,12 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
             if log_interval is not None and iteration % log_interval == 0:
                 print(f'Will eval now as after every {log_interval} collect and trains')
                 eval_time = time.time()
-                success_rate = self.eval(iteration=iteration, num_evals_per_difficulty=num_evals_per_difficulty)
+                self.eval(iteration=iteration, num_evals_per_difficulty=num_evals_per_difficulty)
 
                 
                 eval_time = time.time() - eval_time
                 self.logger.record("time/eval_time_seconds", eval_time)
-                self.logger.record("eval/success_rate", success_rate)
+
                 print(f'eval finished minutes: {eval_time / 60}')
                 total_eval_time += eval_time
 
@@ -531,6 +532,13 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         if total_success_rate > self.max_total_success_rate:
             self.max_total_success_rate = total_success_rate
             self.save(f"best_model_episode_{iteration}")
+
+
+        
+        self.logger.record("eval/success_rate", total_success_rate)
+        self.logger.record("eval/success_rate_easy", easy_success_rate)
+        self.logger.record("eval/success_rate_medium", medium_success_rate)
+        self.logger.record("eval/success_rate_hard", hard_success_rate)
 
         return total_success_rate
 
@@ -617,6 +625,9 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
                         passed_goals += int(infos[i]["passedGoals"])
                         number_of_goals += int(infos[i]["numberOfGoals"])
 
+
+                        print(f'collision_games {collision_games} + {int(infos[i]["collision"])}')
+                        # TODO why is the tb log rate_game_with_collision always 0?
                         collision_games += int(infos[i]["collision"])
 
                         first_goals += int(infos[i]["passedFirstGoal"])

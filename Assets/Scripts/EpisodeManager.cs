@@ -1,16 +1,10 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-//using Unity.MLAgents;
-//using Unity.MLAgents.Actuators;
-//using Unity.MLAgents.Sensors;
 using System;
 using System.IO;
 using System.Linq;
 
-
-// this script counts the obtained rewards and ends the episode if the time is up or another end event is triggered
-// this responsibility was previously a part of the CheckpointManager and other scripts
 public class EpisodeManager : MonoBehaviour
 {
     // needed for fixed timesteps
@@ -21,21 +15,20 @@ public class EpisodeManager : MonoBehaviour
 
     // for debugging its public, then you can lift the TimeLimit in unity
     private float allowedTimeDefault = 30f; // was 10f
-    private float allowedTimePerGoal = 30f; // was 10f
+    private float allowedTimePerGoal = 20f; // was 10f
 
     // multiply by some constant, the reward is very small
     public float distanceCoefficient;// = 10f;
     public float velocityCoefficient;// = 0.1f;
     public float orientationCoefficient;// = 0.1f;
-
     public float eventCoefficient;// = 1f;
 
-    public float finishCheckpointReward = 1f; // = 100f;
-    public float wallHitReward = -1f;
-    public float obstacleHitReward = -1f;
-    public float timeoutReward = -1f;
-    public float goalMissedReward = -1f;
-    public float goalPassedReward = 1f;
+    private float finishCheckpointReward = 1f; // = 100f;
+    private float wallHitReward = -1f;
+    private float obstacleHitReward = -1f;
+    private float timeoutReward = -1f;
+    private float goalMissedReward = -1f;
+    private float goalPassedReward = 1f;
     public float duration;
     public float allowedTime;
     public bool obstacleOrWallHit;
@@ -46,8 +39,7 @@ public class EpisodeManager : MonoBehaviour
     public List<int> passedGoals;
     public int numberOfGoals;
 
-    public bool episodeRunning = false;
-    private EndEvent endEvent;
+    public EpisodeStatus episodeStatus;
 
     private Vector3 lastPosition;
 
@@ -81,16 +73,8 @@ public class EpisodeManager : MonoBehaviour
 
     public void IncreaseSteps(int step)
     {
-        //Debug.LogWarning($"IncreaseSteps unity {this.step} python {step} {this.transform.parent.name}");
-
-
-
-        if (this.endEvent == EndEvent.NotEnded)
-        {
-            this.episodeRunning = true;
-            this.timeOfLastStepBegin = Time.time;
-        }
-
+       
+        this.timeOfLastStepBegin = Time.time;
 
         // int step from python is not yet incremented
         if (this.step != step)
@@ -109,6 +93,16 @@ public class EpisodeManager : MonoBehaviour
         {
             Debug.LogError($"count should be one higher than steps: step_rewards.Count {this.step_rewards.Count} step {this.step}");
 
+        }
+
+        if (this.episodeStatus == EpisodeStatus.WaitingForStep)
+        {
+            if (!this.fixedTimesteps)
+            {
+                Debug.LogWarning($"IncreaseSteps called while waiting for step {this.step} {this.episodeStatus} but we do not use fixed timesteps");
+            }
+            this.episodeStatus = EpisodeStatus.Running;
+            this.stepFinished = false;
         }
 
     }
@@ -131,7 +125,6 @@ public class EpisodeManager : MonoBehaviour
         this.lastPosition = this.transform.position;
         this.step = -1;
         this.allowedTime = this.allowedTimeDefault;
-        this.endEvent = EndEvent.NotEnded;
         this.obstacleOrWallHit = false;
 
         initializeStepRewards();
@@ -144,7 +137,7 @@ public class EpisodeManager : MonoBehaviour
 
 
         this.stepFinished = false;
-        this.episodeRunning = false; // has to wait for the first step command
+        this.episodeStatus = EpisodeStatus.WaitingForStep; // has to wait for the first step command
     }
 
     private void initializeStepRewards()
@@ -152,21 +145,17 @@ public class EpisodeManager : MonoBehaviour
         this.step_rewards = new List<float>();
     }
 
-    public void EndEpisode(EndEvent endEvent)
+    public void EndEpisode(EpisodeStatus episodeStatus)
     {
-        if (this.episodeRunning == false)
+        if (IsTerminated())
         {
-            Debug.LogWarning($"EndEpisode called again {endEvent} before {this.endEvent}");
+            Debug.LogWarning($"EndEpisode called again {episodeStatus} before {this.episodeStatus}");
         }
+        this.episodeStatus = episodeStatus;
         
         videoRecorder.StopVideo(this.duration);
 
-        this.episodeRunning = false;
-        this.endEvent = endEvent;
         this.stepFinished = true;
-
-        aIEngine.ResetMotor();
-        aIEngine.episodeRunning = false;
 
     }
 
@@ -179,24 +168,24 @@ public class EpisodeManager : MonoBehaviour
 
     public bool IsTerminated()
     {
-        return !this.episodeRunning;
+        return (this.episodeStatus != EpisodeStatus.Running) && (this.episodeStatus != EpisodeStatus.WaitingForStep);
     }
 
     private string GetEndEvent()
     {
-        if (this.episodeRunning == true)
+        if (IsTerminated() == false)
         {
-            Debug.LogWarning("GetEndEvent called but episode is still running");
+            Debug.LogWarning($"GetEndEvent called but episode is still running {this.episodeStatus}");
             Debug.Log("GetEndEvent called but episode is still running");
         }
 
-        return this.endEvent.ToString();
+        return this.episodeStatus.ToString();
     }
 
     public Dictionary<string, string> GetInfo()
     {
         Dictionary<string, string> info = new Dictionary<string, string>();
-        info.Add("endEvent", this.endEvent.ToString());
+        info.Add("endEvent", this.episodeStatus.ToString());
         info.Add("duration", this.duration.ToString());
         info.Add("cumreward", this.cumReward.ToString());
         info.Add("passedGoals", this.passedGoals.Count.ToString());
@@ -233,12 +222,17 @@ public class EpisodeManager : MonoBehaviour
         return this.step_rewards;
     }
 
+    public bool isEpisodeRunning()
+    {
+        return this.episodeStatus == EpisodeStatus.Running;
+    }
+
 
     public void AddReward(float reward)
     {
-        if (!this.episodeRunning) // reward that is obtained before a step is performed is given to the first step
+        if (!isEpisodeRunning()) // reward that is obtained before a step is performed is given to the first step
         {
-            Debug.LogError($"Adding reward while episode is not running {this.step}");
+            Debug.LogError($"Adding reward while episode is not running {this.step}, {this.episodeStatus}");
             return;
         }
 
@@ -285,7 +279,7 @@ public class EpisodeManager : MonoBehaviour
 
         if (this.centerIndicators.Count < 1)
         {
-            Debug.LogWarning($"{this.gameObject.name} there are no more centerIndicators {this.centerIndicators.Count} endEvent {this.endEvent} passedGoals {this.passedGoals}");
+            Debug.LogWarning($"{this.gameObject.name} there are no more centerIndicators {this.centerIndicators.Count} episodeStatus {this.episodeStatus} passedGoals {this.passedGoals}");
 
             return 0f;
         }
@@ -320,30 +314,14 @@ public class EpisodeManager : MonoBehaviour
 
         Vector3 agentOrientation = this.transform.forward;
 
-        /*
-        if (this.gameObject.name == "JetBot 0")
-        {
-            //Debug.Log($"agentOrientation {agentOrientation} for {this.gameObject.name}");
-            Debug.LogWarning($"agentOrientation {agentOrientation} for {this.gameObject.name}");
-            Debug.LogWarning($"bodyOrientation {carBody.transform.forward} for {this.gameObject.name}");
-            Debug.LogWarning($"carBody {carBody.transform.position} for {this.gameObject.name}");
-            Debug.LogWarning($"nextGoalDirection {nextGoalDirection} for {this.gameObject.name}");
-            nextGoalDirection.Normalize();
-            Debug.LogWarning($"nextGoalDirection norm {nextGoalDirection} for {this.gameObject.name}");
-        }*/
+        
 
 
         float angleBetween = Vector3.Angle(agentOrientation, nextGoalDirection);
 
 
-        //Debug.Log($"angle between {angleBetween} for {this.gameObject.name}");
-
         float cosine_similarity = GetCosineSimilarityXZPlane(nextGoalDirection, agentOrientation);
-        /*if (this.gameObject.name == "JetBot 0")
-        {
-            Debug.LogWarning($"angle between {angleBetween} cosine sim {cosine_similarity} for {this.gameObject.name}");
-
-        }*/
+        
 
         return nextGoalDirection.magnitude;
     }
@@ -368,11 +346,30 @@ public class EpisodeManager : MonoBehaviour
 
     public void FixedUpdate()
     {
+        if (this.duration >= this.allowedTime && this.episodeStatus == EpisodeStatus.Running)
+        {
+            AddEventReward(timeoutReward);
+            EndEpisode(EpisodeStatus.OutOfTime);
+            return;
+        }
 
-        if (this.episodeRunning == false)
+        if (this.fixedTimesteps && isEpisodeRunning())
+        {
+            if (Time.time - this.timeOfLastStepBegin  > this.fixedTimestepsLength)
+            {
+                this.episodeStatus = EpisodeStatus.WaitingForStep;
+                // fixed timesteps and the time of the current step is up
+                
+                this.stepFinished = true;
+            }
+        }
+
+        if (!isEpisodeRunning())
         {
             return;
         }
+
+        
         
         // count time only when it is running
         this.duration += Time.deltaTime;
@@ -398,21 +395,8 @@ public class EpisodeManager : MonoBehaviour
         this.lastDistance = GetDistanceToNextGoal();
 
 
-        if (this.duration >= this.allowedTime)
-        {
-            AddEventReward(timeoutReward);
-            EndEpisode(EndEvent.OutOfTime);
-        }
-        if (this.fixedTimesteps)
-        {
-            if (Time.time - this.timeOfLastStepBegin  > this.fixedTimestepsLength)
-            {
-                this.episodeRunning = false;
-                // fixed timesteps and the time of the current step is up
-                
-                this.stepFinished = true;
-            }
-        }
+        
+        
     }
 
     public void AddTime(float time)
@@ -441,7 +425,7 @@ public class EpisodeManager : MonoBehaviour
         GameObject goal2 = goal.transform.parent.gameObject;
         colorGreen(goal2);
 
-        EndEpisode(EndEvent.Success);
+        EndEpisode(EpisodeStatus.Success);
     }
 
     public void hitWall()
@@ -470,6 +454,9 @@ public class EpisodeManager : MonoBehaviour
 
     public void goalMissed(GameObject redBorder)
     {
+
+        
+
         GameObject goal = redBorder.transform.parent.gameObject;
         destroyCheckpoint(goal);
         AddEventReward(goalMissedReward);
@@ -481,8 +468,6 @@ public class EpisodeManager : MonoBehaviour
 
 
         colorRed(goal);
-
-        //EndEpisode(EndEvent.GoalMissed);
     }
 
     public void colorGreen(GameObject goal) {
@@ -503,10 +488,10 @@ public class EpisodeManager : MonoBehaviour
         Transform t = goal.transform;
         for (int i = 0; i < t.childCount; i++)
         {
-            string name = t.GetChild(i).gameObject.name;
-            if (name == "GoalBall")
+            string tag = t.GetChild(i).gameObject.tag;
+            if (tag == "GoalBall")
             {
-                t.GetComponent<BallColor>().SetRed();
+                t.GetChild(i).GetComponent<BallColor>().SetRed();
             }
         }
     }
@@ -521,11 +506,14 @@ public class EpisodeManager : MonoBehaviour
 
         colorRed(goal);
 
-        EndEpisode(EndEvent.FinishMissed);
+        EndEpisode(EpisodeStatus.FinishMissed);
     }
 
     public void goalPassed(GameObject goalMiddle)
     {
+        
+        IncreasePassedGoals(goalMiddle);
+
         GameObject goal = goalMiddle.transform.parent.gameObject;
         destroyCheckpoint(goal);
         AddEventReward(goalPassedReward);
@@ -533,7 +521,7 @@ public class EpisodeManager : MonoBehaviour
         AddTime(allowedTimePerGoal);
 
 
-        IncreasePassedGoals(goalMiddle);
+
         centerIndicators.RemoveAt(0); // remove an indicator
 
 
@@ -556,20 +544,27 @@ public class EpisodeManager : MonoBehaviour
     public void redObstacleHit()
     {
         obstacleHit();
-        //EndEpisode(EndEvent.RedObstacle);
     }
 
     public void blueObstacleHit()
     {
         obstacleHit();
-        //EndEpisode(EndEvent.BlueObstacle);
+    }
+
+    private void OnTriggerStay(Collider coll)
+    {
+        Collision(coll);
     }
 
     private void OnTriggerEnter(Collider coll)
     {
+        Collision(coll);
+    }
+
+    private void Collision(Collider coll){
         // This is attached to the JetBot
 
-        if (!this.episodeRunning)
+        if (!isEpisodeRunning())
         {
             //Debug.LogWarning("Episode not running, ignore collision with " + coll.tag);
             return;
