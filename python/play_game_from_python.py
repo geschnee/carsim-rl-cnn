@@ -19,7 +19,7 @@ import base64
 
 from dataclasses import dataclass
 
-from carsimGymEnv import BaseCarsimEnv
+from python.gymEnv.carsimGymEnv import BaseCarsimEnv
 
 import numpy as np
 

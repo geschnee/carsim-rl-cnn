@@ -41,7 +41,7 @@ public class VideoRecorder : MonoBehaviour
 
     public VideoData videoData;
 
-    public Camera arenaCamera;
+    public Camera camera;
     
     public string video_filename="";
 
@@ -50,6 +50,8 @@ public class VideoRecorder : MonoBehaviour
     float lastRecordTime;
 
     public bool isRecording;
+
+    public RenderTexture renderTexture;
 
 
     public void StartVideo(string video_filename_in)
@@ -63,35 +65,41 @@ public class VideoRecorder : MonoBehaviour
 
         lastRecordTime = -1; // this will result in an immediate Capture in Update
 
-        this.isRecording = true;
 
         videoData = new VideoData(video_filename_in + this.fileCounter, new List<float>(), new List<byte[]>(), 0);
         this.fileCounter++;
 
+        this.camera.targetTexture = renderTexture;
+
+        
+        this.isRecording = true;
     }
 
     public void Capture()
     {
-        if (lastRecordTime != -1)
-        {
-            this.videoData.delays.Add(this.episodeManager.duration - lastRecordTime);
-        }
-        lastRecordTime = this.episodeManager.duration;
+        this.camera.targetTexture = renderTexture;
+        // for some reason the target texture of the agent camera always resettet itself to null
+        // the arena cam always worked fine
 
 
         // https://forum.unity.com/threads/how-to-save-manually-save-a-png-of-a-camera-view.506269/
         RenderTexture activeRenderTexture = RenderTexture.active;
-        RenderTexture.active = arenaCamera.targetTexture;
+        RenderTexture.active = camera.targetTexture;
  
-        arenaCamera.Render();
+        camera.Render();
  
-        Texture2D image = new Texture2D(arenaCamera.targetTexture.width, arenaCamera.targetTexture.height);
-        image.ReadPixels(new Rect(0, 0, arenaCamera.targetTexture.width, arenaCamera.targetTexture.height), 0, 0);
+        Texture2D image = new Texture2D(camera.targetTexture.width, camera.targetTexture.height);
+        image.ReadPixels(new Rect(0, 0, camera.targetTexture.width, camera.targetTexture.height), 0, 0);
         image.Apply();
         RenderTexture.active = activeRenderTexture;
  
         this.videoData.frames.Add(image.EncodeToPNG());
         
+        if (lastRecordTime != -1)
+        {
+            this.videoData.delays.Add(this.episodeManager.duration - lastRecordTime);
+        }
+        lastRecordTime = this.episodeManager.duration;
         
         Destroy(image);
     }
@@ -136,7 +144,7 @@ public class VideoRecorder : MonoBehaviour
             }
             else
             {
-                Debug.LogError($"Frames and delays do not match in length. Frames: {videoData.frames.Count}, Delays: {videoData.delays.Count}");
+                Debug.LogError($"Frames and delays do not match in length. Frames: {videoData.frames.Count}, Delays: {videoData.delays.Count} for {this.gameObject.name}");
             }
             
         }

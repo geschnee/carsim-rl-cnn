@@ -308,6 +308,7 @@ class myPPO(MyOnPolicyAlgorithm):
         reset_num_timesteps: bool = True,
         progress_bar: bool = False,
         num_evals_per_difficulty: int = 10,
+        eval_light_settings: bool = False,
     ) -> SelfPPO:
         return super().learn(
             total_timesteps=total_timesteps,
@@ -317,6 +318,29 @@ class myPPO(MyOnPolicyAlgorithm):
             reset_num_timesteps=reset_num_timesteps,
             progress_bar=progress_bar,
             num_evals_per_difficulty=num_evals_per_difficulty,
+            eval_light_settings=eval_light_settings,
+        )
+    
+    def eval_only(
+        self: SelfPPO,
+        total_eval_runs: int,
+        callback: MaybeCallback = None,
+        log_interval: int = 1,
+        tb_log_name: str = "PPO",
+        reset_num_timesteps: bool = True,
+        progress_bar: bool = False,
+        num_evals_per_difficulty: int = 10,
+        eval_light_settings: bool = False,
+    ) -> SelfPPO:
+        return super().learn(
+            total_eval_runs=total_eval_runs,
+            callback=callback,
+            log_interval=log_interval,
+            tb_log_name=tb_log_name,
+            reset_num_timesteps=reset_num_timesteps,
+            progress_bar=progress_bar,
+            num_evals_per_difficulty=num_evals_per_difficulty,
+            eval_light_settings=eval_light_settings,
         )
 
     def visualize_sample(self):

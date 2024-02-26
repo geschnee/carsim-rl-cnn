@@ -11,11 +11,11 @@ from stable_baselines3.common.env_util import make_vec_env
 
 from stable_baselines3.common.vec_env import DummyVecEnv
 
-import carsimGymEnv
+import gymEnv.carsimGymEnv as carsimGymEnv
 
 from myPPO.myPPO import myPPO
 
-from carsimGymEnv import MapType
+from gymEnv.carsimGymEnv import MapType
 import torch
 from torch.utils.tensorboard import SummaryWriter
 
@@ -28,7 +28,7 @@ from omegaconf import OmegaConf
 import logging
 import os
 
-def run_ppo(cfg):
+def run_ppo_eval(cfg):
     logger = SummaryWriter(log_dir="./tmp")
     log_dir = "tmp/"
     os.makedirs(log_dir, exist_ok=True)
@@ -43,8 +43,9 @@ def run_ppo(cfg):
     print(f"Output directory  : {hydra.core.hydra_config.HydraConfig.get().runtime.output_dir}")
 
    
-    # TODO do we need some approaches from RL path/trajectory planning to complete the parcour?
 
+    assert cfg.copy_model_from != False, "copy_model_from must be set to a model path"
+    
 
     n_envs = cfg.n_envs
 
@@ -86,13 +87,6 @@ def run_ppo(cfg):
                 tensorboard_log="./tmp", n_epochs=n_epochs, batch_size=batch_size, n_steps=n_steps, policy_kwargs=policy_kwargs)
     # CnnPolicy network architecture can be seen in sb3.common.torch_layers.py
 
-    # TODO wo ist epsilon definiert?
-    # nimmt epsilon mit der Zeit ab?
-    # es gibt einen ent_coef was exploration fördert
-
-    # TODO preprocessing steps help?
-    # increase contrast of images?
-    # https://stackoverflow.com/questions/39308030/how-do-i-increase-the-contrast-of-an-image-in-python-opencv
 
     
     if cfg.copy_model_from:
@@ -101,11 +95,10 @@ def run_ppo(cfg):
         model = algo.load(string, env=vec_env, tensorboard_log="./tmp",
                         n_epochs=n_epochs, batch_size=batch_size)
 
-    model.learn(total_timesteps=cfg.total_timesteps, log_interval=cfg.log_interval, num_evals_per_difficulty = cfg.num_evals_per_difficulty)
-    model.save("finished_ppo")
+    model.eval_only(total_eval_runs=cfg.eval_settings.number_eval_runs, num_evals_per_difficulty = cfg.eval_settings.num_evals_per_difficulty, eval_light_settings=cfg.eval_settings.eval_light_settings)
 
 
-@hydra.main(config_path=".", config_name="cfg/ppo.yaml")
+@hydra.main(config_path=".", config_name="cfg/ppo_eval.yaml")
 def main(cfg):
 
     logging.info(f"cfg {cfg}")
@@ -114,7 +107,7 @@ def main(cfg):
         OmegaConf.save(cfg, f)
 
     import cProfile
-    cProfile.runctx('run_ppo(cfg.cfg)', globals(), locals(), sort='cumtime')
+    cProfile.runctx('run_ppo_eval(cfg.cfg)', globals(), locals(), sort='cumtime')
     #run_ppo(cfg.cfg)
 
 if __name__ == "__main__":

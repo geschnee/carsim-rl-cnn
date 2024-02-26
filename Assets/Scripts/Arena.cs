@@ -46,7 +46,11 @@ public class Arena : MonoBehaviour
     public bool fixedTimesteps;
     public float fixedTimestepsLength;
 
-    public VideoRecorder videoRecorder;
+    public VideoRecorder arenaRecorder;
+
+    public Material skyboxMaterialBright;
+    public Material skyboxMaterialDark;
+    public Material skyboxMaterialDefault;
 
     void Awake()
     {
@@ -102,6 +106,8 @@ public class Arena : MonoBehaviour
         this.aIEngine.ResetMotor();
 
         this.carCam = car.GetComponentInChildren<Camera>();
+        
+        SetSkyboxMaterial(lightMultiplier);
 
 
         episodeManager = car.GetComponent<EpisodeManager>();
@@ -115,17 +121,42 @@ public class Arena : MonoBehaviour
         episodeManager.fixedTimestepsLength = fixedTimestepsLength;
 
         episodeManager.StartEpisode();
-        episodeManager.videoRecorder = videoRecorder;
+        episodeManager.arenaRecorder = arenaRecorder;
+
+        VideoRecorder jetBotRecorder = car.GetComponent<VideoRecorder>();
+        episodeManager.jetBotRecorder = jetBotRecorder;
 
         if (video_filename != "")
         {
             //Debug.Log($"start video recording");
-            videoRecorder.episodeManager = episodeManager;
-            videoRecorder.StartVideo(video_filename);
+            arenaRecorder.episodeManager = episodeManager;
+            arenaRecorder.StartVideo(video_filename);
+
+            jetBotRecorder.episodeManager = episodeManager;
+            jetBotRecorder.StartVideo(video_filename + "_jetbot");
         }
 
 
         return this.getObservation();
+    }
+
+    public void SetSkyboxMaterial(float lightMultiplier)
+    {
+        // This sets the skybox material of the agent's camera based on the lightMultiplier
+        Skybox skybox = carCam.GetComponent<Skybox>();
+
+        if (lightMultiplier < 6)
+        {
+            skybox.material = skyboxMaterialDark;
+        }
+        else if (lightMultiplier > 6)
+        {
+            skybox.material = skyboxMaterialBright;
+        }
+        else
+        {
+            skybox.material = skyboxMaterialDefault;
+        }
     }
     
     public void SetLightIntensity(float lightMultiplier)

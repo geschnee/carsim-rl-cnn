@@ -58,7 +58,8 @@ public class EpisodeManager : MonoBehaviour
     public List<GameObject> centerIndicators = new List<GameObject>();
 
     private GameManager gameManager;
-    public VideoRecorder videoRecorder;
+    public VideoRecorder arenaRecorder;
+    public VideoRecorder jetBotRecorder;
 
     List<float> step_rewards;
     // the index indicates the step in which the reward was found
@@ -69,6 +70,7 @@ public class EpisodeManager : MonoBehaviour
 
         gameManager = this.transform.parent.Find("GameManager").GetComponent<GameManager>();
         carBody = this.transform.Find("carBody").gameObject;
+
     }
 
     public void IncreaseSteps(int step)
@@ -153,7 +155,8 @@ public class EpisodeManager : MonoBehaviour
         }
         this.episodeStatus = episodeStatus;
         
-        videoRecorder.StopVideo(this.duration);
+        arenaRecorder.StopVideo(this.duration);
+        jetBotRecorder.StopVideo(this.duration);
 
         this.stepFinished = true;
 

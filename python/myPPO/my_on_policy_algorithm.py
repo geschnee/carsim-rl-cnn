@@ -157,7 +157,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         """
 
         print(f'collect rollouts started', flush=True)
-
+        cr_time = time.time() 
 
         # Switch to eval mode (this affects batch norm / dropout)
         self.policy.set_training_mode(False)
@@ -352,7 +352,6 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         
         step_average_wait_time = waitTime / total_timesteps
 
-        print(f'collect rollouts finished with {completed_games} games', flush=True)
 
         if successfully_passed_goals > 0:
             print(f'passed a goal succesfully, rate is {goal_completion_rate}')
@@ -383,7 +382,12 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         self.logger.record("rollout/step_average_wait_time", step_average_wait_time)
         self.logger.record("rollout/rate_games_with_collisions", rate_games_with_collisions)
         
-        return True
+
+        cr_time = time.time() - cr_time
+        
+        print(f'collect rollouts finished with {completed_games} games in {cr_time} seconds', flush=True)
+
+        return True, cr_time
     
 
     def train(self) -> None:
@@ -402,6 +406,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         reset_num_timesteps: bool = True,
         progress_bar: bool = False,
         num_evals_per_difficulty: int = 10,
+        eval_light_settings: bool = False,
     ) -> SelfOnPolicyAlgorithm:
         iteration = 0
 
@@ -425,11 +430,11 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
 
         while self.num_timesteps < total_timesteps:
             # collect_rollouts
-            cr_time = time.time() 
+            
             should_log = log_interval is not None and iteration % log_interval == 0
-            continue_training = self.collect_rollouts(
+            continue_training, cr_time = self.collect_rollouts(
                 self.env, callback, self.rollout_buffer, n_rollout_steps=self.n_steps, log=should_log)
-            cr_time = time.time() - cr_time
+            
             total_collection_time += cr_time
 
             total_cr_time += cr_time
@@ -456,6 +461,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
                 # what is fps?
                 # num_timestep is increased in collect_rollouts for n_env after each step
                 # The time/fps are thus distributed for the n_envs
+                # computed in real-time not simulation time
                 fps_per_env = float(fps / self.n_envs)
 
                 # fps takes the time for the whole training, collect_rollout_fps_per_env only counts collection time
@@ -494,7 +500,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
             if log_interval is not None and iteration % log_interval == 0:
                 print(f'Will eval now as after every {log_interval} collect and trains')
                 eval_time = time.time()
-                self.eval(iteration=iteration, num_evals_per_difficulty=num_evals_per_difficulty)
+                self.eval(iteration=iteration, num_evals_per_difficulty=num_evals_per_difficulty, eval_light_settings=eval_light_settings)
 
                 
                 eval_time = time.time() - eval_time
@@ -519,26 +525,50 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
 
         return state_dicts, []
     
-    def eval(self: SelfOnPolicyAlgorithm, iteration: int = 0, num_evals_per_difficulty: int = 20):
+    def eval(self: SelfOnPolicyAlgorithm, iteration: int = 0, num_evals_per_difficulty: int = 20, eval_light_settings: bool = False) -> float:
         print(f'eval started', flush=True)
+
+
+
+        if eval_light_settings:
+            light_settings = {"low": 2.5, "standard": 5, "bright": 7.5}
+        else: 
+            light_settings = {"standard": 5}
 
         os.mkdir(f'{os.getcwd()}\\videos_iter_{iteration}')
 
-        easy_success_rate = self.eval_model_track(num_evals_per_difficulty, "easy", iteration)
-        medium_success_rate = self.eval_model_track(num_evals_per_difficulty, "medium", iteration)
-        hard_success_rate = self.eval_model_track(num_evals_per_difficulty, "hard", iteration)
+        total_success_rate = 0
 
-        total_success_rate = (easy_success_rate + medium_success_rate + hard_success_rate) / 3
+        avg_easy_success_rate, avg_medium_success_rate, avg_hard_success_rate = 0, 0, 0
+
+        for light_setting, light_value in light_settings.items():
+            
+            easy_success_rate = self.eval_model_track(num_evals_per_difficulty, "easy", iteration, light_setting, light_value)
+            medium_success_rate = self.eval_model_track(num_evals_per_difficulty, "medium", iteration, light_setting, light_value)
+            hard_success_rate = self.eval_model_track(num_evals_per_difficulty, "hard", iteration, light_setting, light_value)
+            total_success_rate += easy_success_rate + medium_success_rate + hard_success_rate
+            light_success_rate = (easy_success_rate + medium_success_rate + hard_success_rate) / 3
+            
+            self.logger.record(f"eval/success_easy_light_{light_setting}", easy_success_rate)
+            self.logger.record(f"eval/success_medium_light_{light_setting}", medium_success_rate)
+            self.logger.record(f"eval/success_hard_light_{light_setting}", hard_success_rate)
+            self.logger.record(f"eval/success_light_{light_setting}", light_success_rate)
+            avg_easy_success_rate += easy_success_rate
+            avg_medium_success_rate += medium_success_rate
+            avg_hard_success_rate += hard_success_rate
+
+        if eval_light_settings:
+            self.logger.record(f"eval/success_easy_across_light_settings", avg_easy_success_rate / len(light_settings))
+            self.logger.record(f"eval/success_medium_across_light_settings", avg_medium_success_rate / len(light_settings))
+            self.logger.record(f"eval/success_hard_across_light_settings", avg_hard_success_rate / len(light_settings))
+
+        total_success_rate = total_success_rate / (3 * len(light_settings))
         if total_success_rate > self.max_total_success_rate:
             self.max_total_success_rate = total_success_rate
             self.save(f"best_model_episode_{iteration}")
 
 
-        
         self.logger.record("eval/success_rate", total_success_rate)
-        self.logger.record("eval/success_rate_easy", easy_success_rate)
-        self.logger.record("eval/success_rate_medium", medium_success_rate)
-        self.logger.record("eval/success_rate_hard", hard_success_rate)
 
         return total_success_rate
 
@@ -547,7 +577,8 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         n_eval_episodes: int = 10,
         difficulty: str = "easy",
         iteration: int = 0,
-        # TODO also the lighting level should be varied
+        light_setting: str = "standard",
+        light_value: float = 5
     ):
         # spawn position and orientation is defined by the env via cfg.env_kwargs.spawn_point
 
@@ -580,13 +611,14 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
             env.env_method(
                 method_name="setVideoFilename",
                 indices=[i],
-                video_filename = f'{os.getcwd()}\\videos_iter_{iteration}\\{difficulty}_env_{i}_video_'
+                video_filename = f'{os.getcwd()}\\videos_iter_{iteration}\\{difficulty}_{light_setting}_env_{i}_video_'
             )
         
         env.env_method(
             method_name="reset_with_difficulty",
             indices=range(n_envs),
             difficulty=difficulty,
+            lightMultiplier=light_value,
         )
         
         # switch to eval mode
@@ -665,6 +697,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
                             method_name="reset_with_difficulty",
                             indices=[i],
                             difficulty=difficulty,
+                            lightMultiplier=light_value
                         )
 
         assert np.sum(episode_counts) == n_eval_episodes, f"not all episodes were finished, {np.sum(episode_counts)} != {n_eval_episodes}"
@@ -691,19 +724,20 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
 
 
 
-        self.logger.record(f'eval_{difficulty}/mean_reward', mean_reward)
+        self.logger.record(f'eval_{difficulty}_{light_setting}/mean_reward', mean_reward)
         
-        self.logger.record(f'eval_{difficulty}/std_reward', std_reward)
-        self.logger.record(f'eval_{difficulty}/success_rate', success_rate)
-        self.logger.record(f'eval_{difficulty}/rate_passed_goals', rate_of_passed_goals)
-        self.logger.record(f'eval_{difficulty}/rate_first_goal', rate_of_passed_first_goals)
-        self.logger.record(f'eval_{difficulty}/rate_second_goal_given_first', rate_of_second_goal_given_first)
-        self.logger.record(f'eval_{difficulty}/rate_third_goal_given_second', rate_of_third_goal_given_second)
-        self.logger.record(f'eval_{difficulty}/timeout_rate', timeout_rate)
-        self.logger.record(f'eval_{difficulty}/rate_game_with_collision', collision_games / n_eval_episodes)
+        self.logger.record(f'eval_{difficulty}_{light_setting}/std_reward', std_reward)
+        self.logger.record(f'eval_{difficulty}_{light_setting}/success_rate', success_rate)
+        self.logger.record(f'eval_{difficulty}_{light_setting}/rate_passed_goals', rate_of_passed_goals)
+        self.logger.record(f'eval_{difficulty}_{light_setting}/rate_first_goal', rate_of_passed_first_goals)
+        self.logger.record(f'eval_{difficulty}_{light_setting}/rate_second_goal_given_first', rate_of_second_goal_given_first)
+        self.logger.record(f'eval_{difficulty}_{light_setting}/rate_third_goal_given_second', rate_of_third_goal_given_second)
+        self.logger.record(f'eval_{difficulty}_{light_setting}/timeout_rate', timeout_rate)
+        self.logger.record(f'eval_{difficulty}_{light_setting}/rate_game_with_collision', collision_games / n_eval_episodes)
 
         step_average_wait_time = wait_time / np.sum(episode_lengths)
-        self.logger.record("rollout/step_average_wait_time", step_average_wait_time)
+        self.logger.record(f"eval_{difficulty}_{light_setting}/step_average_wait_time", step_average_wait_time)
+        self.logger.record(f'eval_{difficulty}_{light_setting}/average_episode_length', np.average(episode_lengths))
 
         # set to no video afterwards
         env.env_method(
@@ -713,6 +747,47 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         )
 
         return success_rate
+    
+
+    
+
+    def eval_only(
+        self: SelfOnPolicyAlgorithm,
+        total_eval_runs: int,
+        callback: MaybeCallback = None,
+        log_interval: int = 1,
+        tb_log_name: str = "OnPolicyAlgorithm",
+        reset_num_timesteps: bool = True,
+        progress_bar: bool = False,
+        num_evals_per_difficulty: int = 10,
+        eval_light_settings: bool = False,
+    ) -> SelfOnPolicyAlgorithm:
+        iteration = 0
+
+        
+        from stable_baselines3.common import utils
+        self._logger = utils.configure_logger(self.verbose, self.tensorboard_log, tb_log_name, reset_num_timesteps)
+
+        assert self.env is not None
+
+        total_eval_time = 0
+
+        for i in range(total_eval_runs):
+            eval_time = time.time()
+            self.eval(iteration=iteration, num_evals_per_difficulty=num_evals_per_difficulty, eval_light_settings=eval_light_settings)
+
+            
+            eval_time = time.time() - eval_time
+            self.logger.record("time/eval_time_seconds", eval_time)
+
+            print(f'eval finished minutes: {eval_time / 60}')
+            total_eval_time += eval_time
+
+            self.logger.dump(step=i)
+
+            print(f'total_eval_time: {total_eval_time}', flush=True)
+
+        return self
 
 def get_obs(env):
     # env is a vectorized BaseCarsimEnv

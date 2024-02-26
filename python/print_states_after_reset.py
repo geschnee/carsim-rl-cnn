@@ -7,7 +7,7 @@ import time
 import pygame
 import sys
 
-import carsimGymEnv
+import gymEnv.carsimGymEnv as carsimGymEnv
 
 
 import hydra
@@ -20,12 +20,12 @@ import base64
 
 from dataclasses import dataclass
 
-from carsimGymEnv import BaseCarsimEnv
+from gymEnv.carsimGymEnv import BaseCarsimEnv
 
 import numpy as np
 
-from myEnums import MapType
-from myEnums import Spawn
+from gymEnv.myEnums import MapType
+from gymEnv.myEnums import Spawn
 
 import os
 
@@ -44,6 +44,9 @@ def run(cfg) -> None:
     
     mps = [MapType(i) for i in range(11)]
 
+    lighting_settings = {"low": {"low": 2.5, "high": 2.5}, "standard": {"low": 5.0, "high": 5.0}, "high": {"low": 7.5, "high": 7.5}}
+
+
     directory = "resetlog"
     if not os.path.exists(directory):
         os.makedirs(directory)
@@ -59,22 +62,32 @@ def run(cfg) -> None:
             if not os.path.exists(mapdir):
                 os.makedirs(mapdir)
 
-            env_kwargs = cfg.env_kwargs
-            env_kwargs["trainingMapType"] = mapType
-            env_kwargs["spawn_point"] = spawn
 
-            env = BaseCarsimEnv(**env_kwargs)
-            for i in range(20):
-                #filepath = os.path.join(mapdir, f"{i}_obs.png")
-                savepath = os.path.join(mapdir, f"{i}_arena.png")
-                prefix = os.path.join(mapdir, f"{i}_")
-                
-                new_obs, info_dict = env.reset()
-                time.sleep(0.1)
+            for lighting_name, lighting_setting in lighting_settings.items():
 
-                #env.saveObservationNoPreprocessing(filepath)
-                env.saveObservation(filename_prefix=prefix)
-                env.get_arena_screenshot(savepath)
+                env_kwargs = cfg.env_kwargs
+                env_kwargs["trainingMapType"] = mapType
+                env_kwargs["spawn_point"] = spawn
+                env_kwargs["lighting_setting"] = lighting_setting
+
+                lightdir = os.path.join(mapdir, lighting_name)
+                if not os.path.exists(lightdir):
+                    os.makedirs(lightdir)
+
+                print(f"running {spawn} {mapType} {lighting_name}", flush=True)
+
+                env = BaseCarsimEnv(**env_kwargs)
+                for i in range(20):
+                    #filepath = os.path.join(mapdir, f"{i}_obs.png")
+                    savepath = os.path.join(lightdir, f"{i}_arena.png")
+                    prefix = os.path.join(lightdir, f"{i}_")
+                    
+                    new_obs, info_dict = env.reset()
+                    time.sleep(0.1)
+
+                    #env.saveObservationNoPreprocessing(filepath)
+                    env.saveObservation(filename_prefix=prefix)
+                    env.get_arena_screenshot(savepath)
 
     print("check outputs/... for the results")
         

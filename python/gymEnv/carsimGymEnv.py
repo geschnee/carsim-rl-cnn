@@ -24,9 +24,9 @@ import time
 
 from stable_baselines3.common import torch_layers
 
-from histogram_equilization import hist_eq
+from gymEnv.histogram_equilization import hist_eq
 
-from myEnums import MapType, EndEvent, Spawn
+from gymEnv.myEnums import MapType, EndEvent, Spawn
 
 import random
 
@@ -52,8 +52,8 @@ class BaseCarsimEnv(gym.Env):
 
         self.fixedTimestepsLength = fixedTimestepsLength
 
-        self.equalize = image_preprocessing["equalize"]
-        self.downsampling = 2
+        self.read_preprocessing(image_preprocessing)
+        
 
         self.video_filename = ""
 
@@ -63,8 +63,8 @@ class BaseCarsimEnv(gym.Env):
 
         self.log = log
 
-        self.width = int(width / self.downsampling)
-        self.height = int(height / self.downsampling)
+        self.width = int(width / self.downsampling_factor)
+        self.height = int(height / self.downsampling_factor)
         # width and height in pixels of the screen
 
         # how are RL algos trained for continuous action spaces?
@@ -83,14 +83,13 @@ class BaseCarsimEnv(gym.Env):
         # frame stacking of one means there is no stacking done
         self.frame_stacking = frame_stacking
 
-        self.grayscale = image_preprocessing["grayscale"]
         
         if self.grayscale:
             self.channels=1
         else:
             self.channels=3
 
-        # we use the channel to stack the frames, let's see if that works
+        # we use the channel to stack the frames
         if self.frame_stacking == 1:
             self.channels_total = self.channels
         else:
@@ -100,7 +99,7 @@ class BaseCarsimEnv(gym.Env):
             
             if self.instancenumber == 0:
                 print(f'channels total {self.channels_total}', flush=True)
-        self.normalize_images = image_preprocessing["normalize_images"]
+        
         
         if self.normalize_images:
             high = 1
@@ -132,7 +131,6 @@ class BaseCarsimEnv(gym.Env):
         if BaseCarsimEnv.unity_comms is None:
             # all instances of this class share the same UnityComms instance
             # they use their self.instancenumber to differentiate between them
-            # the PPCCR.cs has to be rewritten to use these instancenumbers
             BaseCarsimEnv.unity_comms = UnityComms(port=port)
             self.unityDeleteAllArenas()
 
@@ -149,6 +147,7 @@ class BaseCarsimEnv(gym.Env):
         self.spawn_point = spawn_point
 
         self.mapType = trainingMapType
+
 
     def step(self, action: Any) -> tuple[Any, SupportsFloat, bool, bool, dict[str, Any]]:
         """Perform step, return observation, reward, terminated, false, info."""
@@ -172,7 +171,7 @@ class BaseCarsimEnv(gym.Env):
         if waitTime:
             self.episodeWaitTime += waitTime
 
-        reward = 0 # this reward is corrected in the policy later on
+        reward = 0 # this reward is corrected in the policy later on (using the info dictionary)
         terminated = stepObj["done"]
         truncated = stepObj["done"]
 
@@ -247,9 +246,7 @@ class BaseCarsimEnv(gym.Env):
         info = {"mapType": mp_name}
 
         # do not take the observation from the reset, since the camera needs a frame to get sorted out
-        # between the two jrpc calls this should happen
-        new_obs = self.stringToObservation(self.unityGetObservation())                                               
-        # obsstring)
+        new_obs = self.stringToObservation(self.unityGetObservation())
 
 
         if self.frame_stacking > 1:
@@ -266,10 +263,64 @@ class BaseCarsimEnv(gym.Env):
         mapTypeName = MapType.resolvePseudoEnum(mp).name
         return mapTypeName
     
-    def reset_with_difficulty(self, difficulty):
+    def reset_with_difficulty(self, difficulty, lightMultiplier = None):
         mapType = MapType.getMapTypeFromDifficulty(difficulty)
-        return self.reset(mapType=mapType)
+        return self.reset(mapType=mapType, lightMultiplier=lightMultiplier)
 
+
+    def rollover_log_before(self, new_obs, channels):
+        if not os.path.exists('imagelog'):
+                os.makedirs('imagelog')
+
+        d = new_obs
+        if self.normalize_images:
+            d = d * 255.0
+        if channels== 3:
+            img = Image.fromarray(d, 'RGB')
+            img.save(f'imagelog/{self.step_nr}_new_obs.png')
+        else:
+            img = Image.fromarray(d, 'L')
+            img.save(f'imagelog/{self.step_nr}_new_obs.png')
+
+
+        for i in range(self.frame_stacking):
+            data = self.memory[:,:,i*channels:i*channels+channels]
+            if self.normalize_images:
+                data = data * 255.0
+
+            if channels== 3:
+                img = Image.fromarray(data, 'RGB')
+                img.save(f'imagelog/{self.step_nr}_pre_rollover{i}.png')
+            else:
+                data = np.squeeze(data, axis=2)
+                img = Image.fromarray(data, 'L')
+                img.save(f'imagelog/{self.step_nr}_pre_rollover{i}.png')
+
+    def rollover_log_post_rollover(self, channels):
+        for i in range(self.frame_stacking):
+            data = self.memory[:,:,i*channels:i*channels+channels]
+            if self.normalize_images:
+                data = data * 255.0
+            if channels== 3:
+                img = Image.fromarray(data, 'RGB')
+                img.save(f'imagelog/{self.step_nr}_post_rollover{i}.png')
+            else: 
+                data = np.squeeze(data, axis=2)
+                img = Image.fromarray(data, 'L')
+                img.save(f'imagelog/{self.step_nr}_post_rollover{i}.png')
+
+    def rollover_log_post_replace(self, channels):
+        for i in range(self.frame_stacking):
+            data = self.memory[:,:,i*channels:i*channels+channels]
+            if self.normalize_images:
+                data = data * 255.0
+            if channels== 3:
+                img = Image.fromarray(data, 'RGB')
+                img.save(f'imagelog/{self.step_nr}_post_replace{i}.png')
+            else:
+                data = np.squeeze(data, axis=2)
+                img = Image.fromarray(data, 'L')
+                img.save(f'imagelog/{self.step_nr}_post_replace{i}.png')
 
     # TODO try this wrapper instead: https://github.com/DLR-RM/stable-baselines3/blob/b413f4c285bc3bfafa382559b08ce9d64a551d26/stable_baselines3/common/vec_env/vec_frame_stack.py#L12
     def memory_rollover(self, new_obs, log = None):
@@ -279,59 +330,18 @@ class BaseCarsimEnv(gym.Env):
         if log is None:
             log = self.log
 
-        #print(f'new obs min and max {np.min(new_obs)} {np.max(new_obs)}', flush=True)
-
         assert new_obs.dtype == self.obs_dtype, f'new_obs.dtype {new_obs.dtype} self.obs_dtype {self.obs_dtype}'
 
         channels = self.channels
-        #print(f'mem shape {self.memory.shape} {self.memory.dtype} channels {channels} new_obs shape {new_obs.shape} {new_obs.dtype}', flush=True)
         
         if log:
-            
-            if not os.path.exists('imagelog'):
-                os.makedirs('imagelog')
-
-            d = new_obs
-            if self.normalize_images:
-                d = d * 255.0
-            if channels== 3:
-                img = Image.fromarray(d, 'RGB')
-                img.save(f'imagelog/{self.step_nr}_new_obs.png')
-            else:
-                img = Image.fromarray(d, 'L')
-                img.save(f'imagelog/{self.step_nr}_new_obs.png')
-
-
-            for i in range(self.frame_stacking):
-                data = self.memory[:,:,i*channels:i*channels+channels]
-                if self.normalize_images:
-                    data = data * 255.0
-
-                if channels== 3:
-                    img = Image.fromarray(data, 'RGB')
-                    img.save(f'imagelog/{self.step_nr}_pre_rollover{i}.png')
-                else:
-                    #print(f'data shape {data.shape}', flush=True)
-                    data = np.squeeze(data, axis=2)
-                    #print(f'data shape {data.shape}', flush=True)
-                    img = Image.fromarray(data, 'L')
-                    img.save(f'imagelog/{self.step_nr}_pre_rollover{i}.png')
+            self.rollover_log_before(new_obs, channels)
 
         # shift the channels to get rid of old stuff
         self.memory = np.roll(self.memory, shift=self.channels, axis=2)
 
         if log:
-            for i in range(self.frame_stacking):
-                data = self.memory[:,:,i*channels:i*channels+channels]
-                if self.normalize_images:
-                    data = data * 255.0
-                if channels== 3:
-                    img = Image.fromarray(data, 'RGB')
-                    img.save(f'imagelog/{self.step_nr}_post_rollover{i}.png')
-                else: 
-                    data = np.squeeze(data, axis=2)
-                    img = Image.fromarray(data, 'L')
-                    img.save(f'imagelog/{self.step_nr}_post_rollover{i}.png')
+            self.rollover_log_post_rollover(channels)
 
         if self.grayscale:
             new_obs = np.expand_dims(new_obs, axis=2)
@@ -339,17 +349,7 @@ class BaseCarsimEnv(gym.Env):
         self.memory[:,:,0:self.channels] = new_obs
         
         if log:
-            for i in range(self.frame_stacking):
-                data = self.memory[:,:,i*channels:i*channels+channels]
-                if self.normalize_images:
-                    data = data * 255.0
-                if channels== 3:
-                    img = Image.fromarray(data, 'RGB')
-                    img.save(f'imagelog/{self.step_nr}_post_replace{i}.png')
-                else:
-                    data = np.squeeze(data, axis=2)
-                    img = Image.fromarray(data, 'L')
-                    img.save(f'imagelog/{self.step_nr}_post_replace{i}.png')
+            self.rollover_log_post_replace(channels)
 
         return self.memory
 
@@ -371,10 +371,9 @@ class BaseCarsimEnv(gym.Env):
 
     def saveObservationNoPreprocessing(self, filename):
         obsstring = self.unityGetObservation()
-        base64_bytes = obsstring.encode('ascii')
-        message_bytes = base64.b64decode(base64_bytes)
+        
 
-        im = Image.open(io.BytesIO(message_bytes))
+        im = self.stringToImg(obsstring)
 
         pixels_rgb = np.array(im, dtype=np.uint8)
         
@@ -382,170 +381,131 @@ class BaseCarsimEnv(gym.Env):
         img.save(filename)
 
     def saveObservation(self, filename_prefix):
-        obsstring = self.unityGetObservation()
-        
-        base64_bytes = obsstring.encode('ascii')
-        message_bytes = base64.b64decode(base64_bytes)
+        obs = self.stringToObservation(self.unityGetObservation(), log=filename_prefix)
+        im = Image.fromarray(obs, 'L') # https://pillow.readthedocs.io/en/stable/handbook/concepts.html#concept-modes
+        im.save(f"{filename_prefix}.png")
 
-        im = Image.open(io.BytesIO(message_bytes))
+    def saveImage(self, array, filename):
+        img = Image.fromarray(array, 'RGB')
+        img.save(filename)
 
-        #print(f'Image size {im.size}', flush=True)
-        #print(f'image type {type(im)}', flush=True)
-        # PIL.PngImagePlugin.PngImageFile
+    def saveImageGreyscale(self, array, filename):
+        img = Image.fromarray(array, 'L')
+        img.save(filename)
 
-        pixels_rgb = np.array(im, dtype=np.uint8)
-        #print(f'pixels shape {pixels.shape}', flush=True)
-        # it looks like this switches the height and width
-        
-        #print(f'unit img max {np.max(pixels_rgb)} min {np.min(pixels_rgb)}', flush=True)
-
-        
-
-        img = Image.fromarray(pixels_rgb, 'RGB')
-        img.save(f"{filename_prefix}_image_from_unity.png")
-
-        pixels_float = np.array(im, dtype=np.float32)
-        #print(f'unit img float max {np.max(pixels_float)} min {np.min(pixels_float)}', flush=True)
-
-        #print(f'pixels float shape {pixels_float.shape}', flush=True)
-
-        
-        pixels_float_uint8 = pixels_float.astype(np.uint8)
-        img = Image.fromarray(pixels_float_uint8, 'RGB')
-
-
-        pixels_downsampled = block_reduce(pixels_float, block_size=(2, 2, 1), func=np.mean)
-        # this halves the size along each dim
-
-
-        
-        pixels_downsampled_uint8 = pixels_downsampled.astype(np.uint8)
-        im = Image.fromarray(pixels_downsampled_uint8, 'RGB')
-        im.save(f"{filename_prefix}_image_from_unity_downsampled.png")
-
-        pixels_gray = color.rgb2gray(pixels_downsampled)
-
-        #print(f'pixels gray shape {pixels_gray.shape}', flush=True)
-
-        pixels_gray_uint8 = pixels_gray.astype(np.uint8)
-        im = Image.fromarray(pixels_gray_uint8, 'L') # https://pillow.readthedocs.io/en/stable/handbook/concepts.html#concept-modes
-        im.save(f"{filename_prefix}_image_from_unity_grey.png")
-
-        if self.equalize:
-            assert self.grayscale, f'equalize only works with grayscale images'
-            pixels_equalized, histOrig, histEq = hist_eq(pixels_gray)
-
-            
-            pixels_equalized_uint8 = pixels_equalized.astype(np.uint8)
-            im = Image.fromarray(pixels_equalized_uint8, 'L')
-            im.save(f"{filename_prefix}_image_from_unity_equalized.png")
-
-        if self.grayscale:
-            pixels_result = pixels_gray
+    def read_preprocessing(self, image_preprocessing):
+        if image_preprocessing["downsampling_factor"]:
+            self.downsampling_factor = image_preprocessing["downsampling_factor"]
+            self.downsample = True
         else:
-            pixels_result = pixels_downsampled
-        
-        #print(f'self normalize_images {self.normalize_images} pixels_result max {np.max(pixels_result)} min {np.min(pixels_result)}', flush=True)
-        if self.normalize_images:
+            self.downsample = False
+
             
-            pixels_result = pixels_result / 255.0
-            #print(f'min and max after normalize_images {np.min(pixels_result)} {np.max(pixels_result)}', flush=True)
-        
-        
-        pixels_result = pixels_result.astype(self.obs_dtype)
-        #print(f'min max after dtype change {np.min(pixels_result)} {np.max(pixels_result)}', flush=True)
-        
-        assert pixels_result.dtype == self.obs_dtype, f'pixels_result.dtype {pixels_result.dtype} self.obs_dtype {self.obs_dtype}'
+        self.grayscale = image_preprocessing["grayscale"]
 
-        return pixels_result
+        self.equalize = image_preprocessing["equalize"]
+        self.normalize_images = image_preprocessing["normalize_images"]
+        if self.normalize_images:
+            assert self.obs_dtype == np.float32, f'normalize_images=True requires dtype float32 (int cannot store 0-1 range, only 0-255 range)'
 
 
+    def preprocessDownsample(self, pixels, log):
+        x, y = self.downsampling_factor, self.downsampling_factor
+        pixels_downsampled = block_reduce(pixels, block_size=(x, y, 1), func=np.mean)
+        # if x==y==2 it halves the size along each dim
+
+        if log:
+            pixels_downsampled_uint8 = pixels_downsampled.astype(np.uint8)
+            self.saveImage(pixels_downsampled_uint8, "imagelog/image_from_unity_downsampled.png")
+            self.saveImage(pixels_downsampled_uint8, "expose_images/agent_downsampled.png")
+
+            if type(log) == str:
+                self.saveImage(pixels_downsampled_uint8, f"{log}_downsampled.png")
+        
+        return pixels_downsampled
+
+    def preprocessGrayscale(self, pixels, log):
+
+        pixels_gray = color.rgb2gray(pixels)
+
+        if log:
+            pixels_gray_uint8 = pixels_gray.astype(np.uint8)
+            self.saveImageGreyscale(pixels_gray_uint8, "imagelog/image_from_unity_grey.png")
+            self.saveImageGreyscale(pixels_gray_uint8, "expose_images/agent_grey.png")
+
+            if type(log) == str:
+                self.saveImageGreyscale(pixels_gray_uint8, f"{log}_greyscale.png")
+
+        return pixels_gray
+    
+    def preprocessEqualize(self, pixels, log):
+        assert self.grayscale, f'equalize only works with grayscale images'
+        pixels_equalized, histOrig, histEq = hist_eq(pixels)
+
+        if log:
+            pixels_equalized_uint8 = pixels_equalized.astype(np.uint8)
+            self.saveImageGreyscale(pixels_equalized_uint8, "imagelog/images_from_unity_equalized.png")
+            self.saveImageGreyscale(pixels_equalized_uint8, "expose_images/agent_equalized.png")
+
+            if type(log) == str:
+                self.saveImageGreyscale(pixels_equalized_uint8, f"{log}_equalized.png")
+
+        return pixels_equalized
+
+    def preprocessNormalizeImages(self, pixels, log):
+        # this just makes the pixel values in the range [0, 1]
+        # this can help learn quicker
+
+        return pixels / 255.0
 
     def stringToObservation(self, obsstring, log=None):
+
+        preprocessing_priority = ["downsample", "grayscale", "equalize", "normalize_images"]
+
         if log is None:
             log = self.log
 
-        base64_bytes = obsstring.encode('ascii')
-        message_bytes = base64.b64decode(base64_bytes)
+        im = self.stringToImg(obsstring)
 
-        im = Image.open(io.BytesIO(message_bytes))
-
-        #print(f'Image size {im.size}', flush=True)
-        #print(f'image type {type(im)}', flush=True)
-        # PIL.PngImagePlugin.PngImageFile
+        
 
         pixels_rgb = np.array(im, dtype=np.uint8)
-        #print(f'pixels shape {pixels.shape}', flush=True)
         # it looks like this switches the height and width
         
-        #print(f'unit img max {np.max(pixels_rgb)} min {np.min(pixels_rgb)}', flush=True)
-
         if log:
-
             if not os.path.exists('imagelog'):
                 os.makedirs('imagelog')
             if not os.path.exists('expose_images'):
                 os.makedirs('expose_images')
 
-            img = Image.fromarray(pixels_rgb, 'RGB')
-            img.save("imagelog/image_from_unity.png")
-            img.save("expose_images/agent_image_from_unity.png")
+            self.saveImage(pixels_rgb, "imagelog/image_from_unity.png")
+            self.saveImage(pixels_rgb, "expose_images/agent_image_from_unity.png")
+
+            if type(log) == str:
+                self.saveImage(pixels_rgb, f"{log}_image_from_unity.png")
 
         pixels_float = np.array(im, dtype=np.float32)
-        #print(f'unit img float max {np.max(pixels_float)} min {np.min(pixels_float)}', flush=True)
-
-        #print(f'pixels float shape {pixels_float.shape}', flush=True)
-
-        if log:
-            pixels_float_uint8 = pixels_float.astype(np.uint8)
-            img = Image.fromarray(pixels_float_uint8, 'RGB')
-            img.save("imagelog/image_from_unity_float.png")
-
-
-        pixels_downsampled = block_reduce(pixels_float, block_size=(2, 2, 1), func=np.mean)
-        # this halves the size along each dim
-
-
-        if log:
-            pixels_downsampled_uint8 = pixels_downsampled.astype(np.uint8)
-            im = Image.fromarray(pixels_downsampled_uint8, 'RGB')
-            im.save("imagelog/image_from_unity_downsampled.png")
-            im.save("expose_images/agent_downsampled.png")
-
-        pixels_gray = color.rgb2gray(pixels_downsampled)
-
-        #print(f'pixels gray shape {pixels_gray.shape}', flush=True)
-
-        if log:
-            pixels_gray_uint8 = pixels_gray.astype(np.uint8)
-            im = Image.fromarray(pixels_gray_uint8, 'L') # https://pillow.readthedocs.io/en/stable/handbook/concepts.html#concept-modes
-            im.save("imagelog/image_from_unity_grey.png")
-            im.save("expose_images/agent_grey.png")
-
-        if self.equalize:
-            assert self.grayscale, f'equalize only works with grayscale images'
-            pixels_equalized, histOrig, histEq = hist_eq(pixels_gray)
-
-            if log:
-                pixels_equalized_uint8 = pixels_equalized.astype(np.uint8)
-                im = Image.fromarray(pixels_equalized_uint8, 'L')
-                im.save("imagelog/image_from_unity_equalized.png")
-                im.save("expose_images/agent_equalized.png")
-
-        if self.grayscale:
-            pixels_result = pixels_gray
-        else:
-            pixels_result = pixels_downsampled
         
-        #print(f'self normalize_images {self.normalize_images} pixels_result max {np.max(pixels_result)} min {np.min(pixels_result)}', flush=True)
-        if self.normalize_images:
-            
-            pixels_result = pixels_result / 255.0
-            #print(f'min and max after normalize_images {np.min(pixels_result)} {np.max(pixels_result)}', flush=True)
+        
+        pixels_result = pixels_float
+        for step in preprocessing_priority:
+            if step == "downsample":
+                if self.downsample:
+                    pixels_result = self.preprocessDownsample(pixels_result, log)
+            elif step == "grayscale":
+                if self.grayscale:
+                    pixels_result = self.preprocessGrayscale(pixels_result, log)
+            elif step == "equalize":
+                if self.equalize:
+                    pixels_result = self.preprocessEqualize(pixels_result, log)
+            elif step == "normalize_images": 
+                if self.normalize_images:
+                    pixels_result = self.preprocessNormalizeImages(pixels_result, log)
+            else:
+                assert False, f'unknown step {step}'
         
         
         pixels_result = pixels_result.astype(self.obs_dtype)
-        #print(f'min max after dtype change {np.min(pixels_result)} {np.max(pixels_result)}', flush=True)
         
         assert pixels_result.dtype == self.obs_dtype, f'pixels_result.dtype {pixels_result.dtype} self.obs_dtype {self.obs_dtype}'
 
@@ -554,23 +514,23 @@ class BaseCarsimEnv(gym.Env):
     def render(self, mode='human'):
         obs = self.unityGetObservation()
 
-        base64_bytes = obs.encode('ascii')
-        message_bytes = base64.b64decode(base64_bytes)
+        im = self.stringToImg(obs)
 
-        with open("imagepython_base64_gym_env.png", "wb") as file:
-            file.write(message_bytes)
+        im.save("savepath.png")
+        im.save("imagepython_base64_gym_env.png")
+
+    def stringToImg(self, string):
+        base64_bytes = string.encode('ascii')
+        message_bytes = base64.b64decode(base64_bytes)
 
         im = Image.open(io.BytesIO(message_bytes))
 
-        im.save("savepath.png")
-
+        return im
 
     def get_arena_screenshot(self, savepath="arena_screenshot.png"):
         screenshot = self.unityGetArenaScreenshot()
-        base64_bytes = screenshot.encode('ascii')
-        message_bytes = base64.b64decode(base64_bytes)
 
-        im = Image.open(io.BytesIO(message_bytes))
+        im = self.stringToImg(screenshot)
 
         im.save(savepath)
         return im
