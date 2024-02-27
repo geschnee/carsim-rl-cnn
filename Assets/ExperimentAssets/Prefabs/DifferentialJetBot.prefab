@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 8374566411005743182}
   - component: {fileID: 2926713500848659217}
   - component: {fileID: 7616221305317437918}
+  - component: {fileID: 8714323539514837569}
   m_Layer: 6
   m_Name: DifferentialJetBot
   m_TagString: Untagged
@@ -79,22 +80,23 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e861ba74c6d9b9a4984f9d7dc260bcfc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  fixedTimesteps: 0
+  fixedTimestepsLength: 0
+  stepFinished: 0
   distanceCoefficient: 0
   velocityCoefficient: 0
   orientationCoefficient: 0
   eventCoefficient: 0
-  finishCheckpointReward: 1
-  wallHitReward: -1
-  obstacleHitReward: -1
-  timeoutReward: -1
-  goalMissedReward: -1
-  goalPassedReward: 1
   duration: 0
   allowedTime: 20
+  obstacleOrWallHit: 0
   passedGoals: 
   numberOfGoals: 0
+  episodeStatus: 0
   step: 0
   centerIndicators: []
+  arenaRecorder: {fileID: 0}
+  jetBotRecorder: {fileID: 0}
 --- !u!114 &7616221305317437918
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -109,12 +111,29 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   inputAccelerationLeft: 0
   inputAccelerationRight: 0
-  episodeRunning: 0
   carBody: {fileID: 144286601695018148}
   frontLeftWheelCollider: {fileID: 2555060398321077506}
   frontRightWheelCollider: {fileID: 3298807448374130550}
   frontLeftWheelTransform: {fileID: 785220003840488692}
   frontRightWheeTransform: {fileID: 5328559696594334273}
+--- !u!114 &8714323539514837569
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 157310755166477506}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5d3490f39b582e74483c60384bc484d1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  episodeManager: {fileID: 2926713500848659217}
+  camera: {fileID: 5665677670532686738}
+  video_filename: 
+  fileCounter: 0
+  isRecording: 0
+  renderTexture: {fileID: 8400000, guid: 62f13769f1994d04abaf98ad608585c2, type: 2}
 --- !u!1 &685241405481594876
 GameObject:
   m_ObjectHideFlags: 0
@@ -231,6 +250,7 @@ GameObject:
   - component: {fileID: 3539638070068219462}
   - component: {fileID: 5665677670532686738}
   - component: {fileID: 590805239827199682}
+  - component: {fileID: 8223089266292442246}
   m_Layer: 6
   m_Name: Camera
   m_TagString: Untagged
@@ -262,7 +282,7 @@ Camera:
   m_GameObject: {fileID: 1468078331221567074}
   m_Enabled: 1
   serializedVersion: 2
-  m_ClearFlags: 2
+  m_ClearFlags: 1
   m_BackGroundColor: {r: 0.938044, g: 1, b: 0.9009434, a: 0}
   m_projectionMatrixMode: 1
   m_GateFitMode: 2
@@ -294,8 +314,8 @@ Camera:
     serializedVersion: 2
     m_Bits: 55
   m_RenderingPath: -1
-  m_TargetTexture: {fileID: 0}
-  m_TargetDisplay: 1
+  m_TargetTexture: {fileID: 8400000, guid: 62f13769f1994d04abaf98ad608585c2, type: 2}
+  m_TargetDisplay: 2
   m_TargetEye: 3
   m_HDR: 1
   m_AllowMSAA: 1
@@ -317,6 +337,15 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   cameraPositionRelativeToCar: {x: 0, y: 0, z: 0}
+--- !u!45 &8223089266292442246
+Skybox:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1468078331221567074}
+  m_Enabled: 1
+  m_CustomSkybox: {fileID: 0}
 --- !u!1 &2710557706035432315
 GameObject:
   m_ObjectHideFlags: 0

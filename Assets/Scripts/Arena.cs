@@ -145,7 +145,7 @@ public class Arena : MonoBehaviour
         // This sets the skybox material of the agent's camera based on the lightMultiplier
         Skybox skybox = carCam.GetComponent<Skybox>();
 
-        if (lightMultiplier < 6)
+        if (lightMultiplier < 4)
         {
             skybox.material = skyboxMaterialDark;
         }

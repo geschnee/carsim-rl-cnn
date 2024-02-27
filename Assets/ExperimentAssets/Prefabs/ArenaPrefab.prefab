@@ -1835,7 +1835,10 @@ MonoBehaviour:
   eventCoefficient: 0
   fixedTimesteps: 0
   fixedTimestepsLength: 0
-  videoRecorder: {fileID: 8721291465432444832}
+  arenaRecorder: {fileID: 8721291465432444832}
+  skyboxMaterialBright: {fileID: 2100000, guid: 74264d6eb6e1c554096ac75b6e4e140c, type: 2}
+  skyboxMaterialDark: {fileID: 2100000, guid: 0c6e7371297c8924a8a56d1fd2f62b12, type: 2}
+  skyboxMaterialDefault: {fileID: 2100000, guid: 93ac6d6463ce68441973236ab20d9e16, type: 2}
 --- !u!114 &8721291465432444832
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1849,10 +1852,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   episodeManager: {fileID: 0}
-  arenaCamera: {fileID: 420009083408027165}
+  camera: {fileID: 420009083408027165}
   video_filename: 
   fileCounter: 0
   isRecording: 0
+  renderTexture: {fileID: 8400000, guid: 1c56a9e8d5cd9bc4285b01a0345d6d9c, type: 2}
 --- !u!1 &7588829394326925877
 GameObject:
   m_ObjectHideFlags: 0
