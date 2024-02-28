@@ -1,4 +1,5 @@
-comment: "Trying with fixed light settings to see if the model still works (there was no noticeable progress for varying light)"
+comment: "Trying settings from 2024-02-19 again, now without equalize (since 02-19 the skybox was implemented, this results in a different image distribution, especially for equalized images (big sharp horizon lines))"
+# "Trying with fixed light settings and variable timesteps, we want to see learning progress again. Did something break?"
 # we should also try it with the fixed spawn to be closer to the evaluation scenario, maybe the differential can do it 
 
 n_envs: 10
@@ -12,9 +13,7 @@ eval_settings:
 
 batch_size: 64
 
-
-
-n_steps: 256 # 64 # amount of steps to collect per collect_rollouts per environment
+n_steps: 1024 # 64 # amount of steps to collect per collect_rollouts per environment
 # Tensorboard shows the mean_episode_length is below 3
 # we can reduce the n_steps to make the collection time shorter while still collecting a lot of games
 # n_steps * fixedTimestepsLength = the amount of seconds required for the collection
@@ -33,7 +32,7 @@ env_kwargs:
   image_preprocessing:
     downsampling_factor: 2
     grayscale: True
-    equalize: True
+    equalize: False
     contrast_increase: "TODO"
     # vielleicht eine art Mode variable hier reinpacken contrast increase s equalize
     normalize_images: False
@@ -43,12 +42,12 @@ env_kwargs:
     velocityCoefficient: 0.0
     eventCoefficient: 1.0
   trainingMapType: randomEval
-  fixedTimestepsLength: 0.5
+  fixedTimestepsLength: 0.3
   # fixedTimestepsLength can either be False or a number (seconds that each timestep contains)
   # 2024-02-04/11-56-53 used non-fixed timesteps and had 0.4 fps per environment
   # this run achgieved the highest accuracies yet --> we can increase the duration of fixed timesteps to above a second
 
-  width: 500 #336
+  width: 800 #500 #336
   height: 168
   lighting_setting:
     # was fixed at 5 before

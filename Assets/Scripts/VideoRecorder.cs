@@ -12,6 +12,7 @@ using System.Threading;
 
 using ImageMagick;
 // steps to making ImageMagick work in Unity:
+// it worked with version 13.5.0
 // use NuGet to install Magick.NET-Q16-AnyCPU
 // use NuGet to install Magick.NET.Core
 // download Magick.Native-Q16-x64.dll from internet and place it in the unity packages directory

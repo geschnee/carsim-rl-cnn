@@ -494,6 +494,8 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
             self.train()
             train_time = time.time() - train_time
             self.logger.record("time/train_time_seconds", train_time)
+            
+            self.logger.dump(step=self.num_timesteps)
             total_train_time += train_time
 
             # model eval 
@@ -658,8 +660,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
                         number_of_goals += int(infos[i]["numberOfGoals"])
 
 
-                        print(f'collision_games {collision_games} + {int(infos[i]["collision"])}')
-                        # TODO why is the tb log rate_game_with_collision always 0?
+                        #print(f'collision_games {collision_games} + {int(infos[i]["collision"])}')
                         collision_games += int(infos[i]["collision"])
 
                         first_goals += int(infos[i]["passedFirstGoal"])
