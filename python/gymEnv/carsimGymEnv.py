@@ -26,7 +26,7 @@ from stable_baselines3.common import torch_layers
 
 from gymEnv.histogram_equilization import hist_eq
 
-from gymEnv.myEnums import MapType, EndEvent, Spawn
+from gymEnv.myEnums import MapType, EndEvent, Spawn, LightSetting
 
 import random
 
@@ -44,7 +44,7 @@ class BaseCarsimEnv(gym.Env):
     unity_comms: UnityComms = None
     instancenumber = 0
 
-    def __init__(self, width=336, height=168, port=9000, log=False, jetbot=None, spawn_point=None, fixedTimestepsLength=None, trainingMapType=MapType.randomEval, image_preprocessing={}, frame_stacking=5, lighting_setting=None, coefficients=None):
+    def __init__(self, width=336, height=168, port=9000, log=False, jetbot=None, spawn_point=None, fixedTimestepsLength=None, trainingMapType=MapType.randomEval, trainingLightSetting=LightSetting.random, image_preprocessing={}, frame_stacking=5, coefficients=None):
         # height and width was previous 168, that way we could downsample and reach the same dimensions as the nature paper of 84 x 84
         self.instancenumber = BaseCarsimEnv.instancenumber
         assert jetbot is not None
@@ -57,9 +57,7 @@ class BaseCarsimEnv(gym.Env):
 
         self.video_filename = ""
 
-        if lighting_setting is None:
-            lighting_setting = {"low": 5, "high": 5}
-        self.lighting_setting = lighting_setting
+        self.trainingLightSetting = trainingLightSetting
 
         self.log = log
 
@@ -201,9 +199,9 @@ class BaseCarsimEnv(gym.Env):
         return BaseCarsimEnv.unity_comms.immediateStep(id=self.instancenumber, step=self.step_nr, inputAccelerationLeft=float(
             left_acceleration), inputAccelerationRight=float(right_acceleration))
 
-    def unityReset(self, mp_name, video_filename, lightMultiplier):
+    def unityReset(self, mp_name, video_filename, lightSettingName):
         return BaseCarsimEnv.unity_comms.reset(mapType=mp_name,
-            id=self.instancenumber, spawn=self.spawn_point, lightMultiplier=lightMultiplier, video_filename=video_filename) 
+            id=self.instancenumber, spawn=self.spawn_point, lightSettingName=lightSettingName, video_filename=video_filename) 
 
     def unityGetObservation(self):
         return BaseCarsimEnv.unity_comms.getObservation(id=self.instancenumber)
@@ -223,7 +221,7 @@ class BaseCarsimEnv(gym.Env):
         self.video_filename = video_filename
         #print(f'{self.instancenumber} video filename {self.video_filename}', flush=True)
 
-    def reset(self, seed=None, mapType = None, lightMultiplier = None):
+    def reset(self, seed=None, mapType = None, lightSetting = None):
         super().reset(seed=seed)  # gynasium migration guide https://gymnasium.farama.org/content/migration-guide/
 
         self.step_nr = -1
@@ -235,12 +233,10 @@ class BaseCarsimEnv(gym.Env):
             self.memory = np.zeros((self.height, self.width, self.channels_total), dtype=self.obs_dtype)
 
         mp_name = self.getMapTypeName(mapType=mapType)
-
-        if lightMultiplier is None:
-            lightMultiplier = random.random() * (self.lighting_setting["high"] - self.lighting_setting["low"]) + self.lighting_setting["low"]
+        lightSettingName = self.getLightSettingName(lightSetting)
 
 
-        obsstring = self.unityReset(mp_name, video_filename=self.video_filename, lightMultiplier=lightMultiplier)
+        obsstring = self.unityReset(mp_name, video_filename=self.video_filename, lightSettingName=lightSettingName)
 
         
         info = {"mapType": mp_name}
@@ -257,15 +253,24 @@ class BaseCarsimEnv(gym.Env):
     def getMapTypeName(self, mapType):
         if mapType is not None:
             mp = mapType
-            assert not isinstance(mp, str), f'mapType must be maptype, not {type(mp)}'
+            assert isinstance(mp, MapType), f'mapType must be maptype, not {type(mp)}'
         else:
             mp = self.mapType
         mapTypeName = MapType.resolvePseudoEnum(mp).name
         return mapTypeName
     
-    def reset_with_difficulty(self, difficulty, lightMultiplier = None):
+    def getLightSettingName(self, lightSetting):
+        if lightSetting is not None:
+            ls = lightSetting
+            assert isinstance(ls, LightSetting), f'lightSetting must be lightSetting enum, not {type(ls)}'
+        else:
+            ls = self.trainingLightSetting
+        lightSettingName = LightSetting.resolvePseudoEnum(ls).name
+        return lightSettingName
+    
+    def reset_with_difficulty(self, difficulty, lightSetting = None):
         mapType = MapType.getMapTypeFromDifficulty(difficulty)
-        return self.reset(mapType=mapType, lightMultiplier=lightMultiplier)
+        return self.reset(mapType=mapType, lightSetting=lightSetting)
 
 
     def rollover_log_before(self, new_obs, channels):

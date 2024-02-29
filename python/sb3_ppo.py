@@ -15,7 +15,9 @@ import gymEnv.carsimGymEnv as carsimGymEnv
 
 from myPPO.myPPO import myPPO
 
-from gymEnv.carsimGymEnv import MapType
+from gymEnv.myEnums import MapType
+from gymEnv.myEnums import LightSetting
+
 import torch
 from torch.utils.tensorboard import SummaryWriter
 
@@ -50,6 +52,7 @@ def run_ppo(cfg):
 
     env_kwargs = cfg.env_kwargs
     env_kwargs["trainingMapType"] = MapType[cfg.env_kwargs.trainingMapType]
+    env_kwargs["trainingLightSetting"] = LightSetting[cfg.env_kwargs.trainingLightSetting]
     # get proper enum type from string
 
 

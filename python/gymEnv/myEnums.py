@@ -7,6 +7,22 @@ class Spawn(Enum):
     OrientationVeryRandom = 2
     FullyRandom = 3
 
+class LightSetting(Enum):
+    random = 0
+    bright = 1
+    standard = 2
+    dark = 3
+
+    @classmethod
+    def resolvePseudoEnum(myEnum, pseudoEnum):
+        if pseudoEnum.value == 0:
+            return myEnum.getRandom()
+        else:
+            return pseudoEnum
+    
+    @classmethod
+    def getRandom(myEnum):
+        return LightSetting(np.random.choice([1,2,3]))
 
 class MapType(Enum):
     random = 0

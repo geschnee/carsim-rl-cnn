@@ -16,6 +16,7 @@ from stable_baselines3.common.vec_env import VecEnv
 
 from myPPO.my_buffers import MyRolloutBuffer
 
+from gymEnv.myEnums import LightSetting
 
 import os
 
@@ -140,7 +141,6 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         callback: BaseCallback,
         rollout_buffer: MyRolloutBuffer,
         n_rollout_steps: int,
-        log: bool = False,
     ) -> bool:
         """
         Collect experiences using the current policy and fill a ``RolloutBuffer``.
@@ -170,8 +170,8 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
 
         callback.on_rollout_start()
 
-        completed_games, successfully_completed_games, number_of_goals, successfully_passed_goals, total_reward, total_timesteps, distance_reward, velocity_reward, event_reward, orientation_reward, successfully_passed_first_goals = 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
-        timesteps_of_completed_games, collision_games = 0, 0
+        completed_episodes, successfully_completed_episodes, number_of_goals, successfully_passed_goals, total_reward, total_timesteps, distance_reward, velocity_reward, event_reward, orientation_reward, successfully_passed_first_goals = 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+        timesteps_of_completed_episodes, collision_episodes = 0, 0
 
         # event_reward is the reward that is not distance or velocity reward
         # such as collisions, passed goals and episode terminated
@@ -244,18 +244,18 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
                     rewards[idx] += self.gamma * terminal_value
 
                 if done:
-                    completed_games += 1
+                    completed_episodes += 1
                 
                     if infos[idx]["endEvent"] == "Success":
-                        successfully_completed_games += 1
+                        successfully_completed_episodes += 1
                     if infos[i]["endEvent"] == "OutOfTime":
                         timeouts += 1
 
                     successfully_passed_goals += int(infos[idx]["passedGoals"])
                     number_of_goals += int(infos[idx]["numberOfGoals"])
                     total_reward += float(infos[idx]["cumreward"].replace(",","."))
-                    timesteps_of_completed_games += int(infos[idx]["amount_of_steps"])
-                    collision_games += int(infos[idx]["collision"])
+                    timesteps_of_completed_episodes += int(infos[idx]["amount_of_steps"])
+                    collision_episodes += int(infos[idx]["collision"])
                     
 
                     distance_reward += float(infos[idx]["distanceReward"].replace(",","."))
@@ -296,7 +296,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
             for idx, done in enumerate(dones):
                 # obtain the real rewards from the env
                 if done:
-                    self.collected_games += 1
+                    self.collected_episodes += 1
 
                 if done or n_steps >= n_rollout_steps:
                     # playout finished or cancelling due to enough collected datapoints
@@ -333,21 +333,21 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         else:
             goal_completion_rate = 0
         
-        if completed_games != 0:
-            success_rate = successfully_completed_games / completed_games
-            timeout_rate = timeouts / completed_games
-            mean_reward = total_reward / completed_games
-            mean_episode_length = timesteps_of_completed_games / completed_games
-            mean_distance_reward = distance_reward / completed_games
-            mean_velocity_reward = velocity_reward / completed_games
-            mean_event_reward = event_reward / completed_games
-            mean_orientation_reward = orientation_reward / completed_games
-            first_goal_completion_rate = successfully_passed_first_goals / completed_games
-            rate_games_with_collisions = collision_games / completed_games
+        if completed_episodes != 0:
+            success_rate = successfully_completed_episodes / completed_episodes
+            timeout_rate = timeouts / completed_episodes
+            mean_reward = total_reward / completed_episodes
+            mean_episode_length = timesteps_of_completed_episodes / completed_episodes
+            mean_distance_reward = distance_reward / completed_episodes
+            mean_velocity_reward = velocity_reward / completed_episodes
+            mean_event_reward = event_reward / completed_episodes
+            mean_orientation_reward = orientation_reward / completed_episodes
+            first_goal_completion_rate = successfully_passed_first_goals / completed_episodes
+            rate_episodes_with_collisions = collision_episodes / completed_episodes
         else:
             success_rate, mean_reward, mean_episode_length, mean_distance_reward, mean_velocity_reward, mean_event_reward, mean_orientation_reward, first_goal_completion_rate = 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
             timeout_rate = 0
-            rate_games_with_collisions = 0
+            rate_episodes_with_collisions = 0
         
         
         step_average_wait_time = waitTime / total_timesteps
@@ -378,14 +378,14 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         self.logger.record("rollout/mean_orientation_reward", mean_orientation_reward)
         self.logger.record("rollout/mean_event_reward", mean_event_reward)
         self.logger.record("rollout/first_goal_completion_rate", first_goal_completion_rate)
-        self.logger.record("rollout/completed_games", completed_games)
+        self.logger.record("rollout/completed_episodes", completed_episodes)
         self.logger.record("rollout/step_average_wait_time", step_average_wait_time)
-        self.logger.record("rollout/rate_games_with_collisions", rate_games_with_collisions)
+        self.logger.record("rollout/rate_episodes_with_collisions", rate_episodes_with_collisions)
         
 
         cr_time = time.time() - cr_time
         
-        print(f'collect rollouts finished with {completed_games} games in {cr_time} seconds', flush=True)
+        print(f'collect rollouts finished with {completed_episodes} episodes in {cr_time} seconds', flush=True)
 
         return True, cr_time
     
@@ -423,7 +423,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         assert self.env is not None
 
         total_cr_time, total_train_time, total_eval_time = 0, 0, 0
-        self.collected_games = 0
+        self.collected_episodes = 0
         self.max_total_success_rate = 0
 
         total_collection_time = 0
@@ -433,7 +433,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
             
             should_log = log_interval is not None and iteration % log_interval == 0
             continue_training, cr_time = self.collect_rollouts(
-                self.env, callback, self.rollout_buffer, n_rollout_steps=self.n_steps, log=should_log)
+                self.env, callback, self.rollout_buffer, n_rollout_steps=self.n_steps)
             
             total_collection_time += cr_time
 
@@ -482,7 +482,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
                                    int(time_elapsed), exclude="tensorboard")
                 self.logger.record("time/total_timesteps",
                                    self.num_timesteps, exclude="tensorboard")
-                self.logger.record("rollout/collected_games", self.collected_games)
+                self.logger.record("rollout/collected_episodes", self.collected_episodes)
 
                 self.logger.record("time/collection_time_seconds", cr_time)
                 self.logger.record("time/iteration", iteration)
@@ -533,9 +533,9 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
 
 
         if eval_light_settings:
-            light_settings = {"low": 2.5, "standard": 5, "bright": 7.5}
+            light_settings = [LightSetting.bright, LightSetting.standard, LightSetting.dark]
         else: 
-            light_settings = {"standard": 5}
+            light_settings = [LightSetting.standard]
 
         os.mkdir(f'{os.getcwd()}\\videos_iter_{iteration}')
 
@@ -543,18 +543,18 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
 
         avg_easy_success_rate, avg_medium_success_rate, avg_hard_success_rate = 0, 0, 0
 
-        for light_setting, light_value in light_settings.items():
+        for light_setting in light_settings:
             
-            easy_success_rate = self.eval_model_track(num_evals_per_difficulty, "easy", iteration, light_setting, light_value)
-            medium_success_rate = self.eval_model_track(num_evals_per_difficulty, "medium", iteration, light_setting, light_value)
-            hard_success_rate = self.eval_model_track(num_evals_per_difficulty, "hard", iteration, light_setting, light_value)
+            easy_success_rate = self.eval_model_track(num_evals_per_difficulty, "easy", iteration, light_setting)
+            medium_success_rate = self.eval_model_track(num_evals_per_difficulty, "medium", iteration, light_setting)
+            hard_success_rate = self.eval_model_track(num_evals_per_difficulty, "hard", iteration, light_setting)
             total_success_rate += easy_success_rate + medium_success_rate + hard_success_rate
             light_success_rate = (easy_success_rate + medium_success_rate + hard_success_rate) / 3
             
-            self.logger.record(f"eval/success_easy_light_{light_setting}", easy_success_rate)
-            self.logger.record(f"eval/success_medium_light_{light_setting}", medium_success_rate)
-            self.logger.record(f"eval/success_hard_light_{light_setting}", hard_success_rate)
-            self.logger.record(f"eval/success_light_{light_setting}", light_success_rate)
+            self.logger.record(f"eval/success_easy_light_{light_setting.name}", easy_success_rate)
+            self.logger.record(f"eval/success_medium_light_{light_setting.name}", medium_success_rate)
+            self.logger.record(f"eval/success_hard_light_{light_setting.name}", hard_success_rate)
+            self.logger.record(f"eval/success_light_{light_setting.name}", light_success_rate)
             avg_easy_success_rate += easy_success_rate
             avg_medium_success_rate += medium_success_rate
             avg_hard_success_rate += hard_success_rate
@@ -579,8 +579,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         n_eval_episodes: int = 10,
         difficulty: str = "easy",
         iteration: int = 0,
-        light_setting: str = "standard",
-        light_value: float = 5
+        light_setting: LightSetting = LightSetting.standard,
     ):
         # spawn position and orientation is defined by the env via cfg.env_kwargs.spawn_point
 
@@ -591,7 +590,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         success_count, finished_episodes, passed_goals, number_of_goals = 0, 0, 0, 0
         first_goals, second_goals, third_goals = 0, 0, 0
         second_goals_given_first, third_goals_given_second = 0, 0
-        collision_games = 0
+        collision_episodes = 0
 
         timeouts = 0
         wait_time = 0
@@ -600,7 +599,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         episode_counts = np.zeros(n_envs, dtype="int")
         # Divides episodes among different sub environments in the vector as evenly as possible
         episode_count_targets = np.array([(n_eval_episodes + i) // n_envs for i in range(n_envs)], dtype="int")
-        # episode_count_targets represents the amount of games that have to be played in the corresponding env
+        # episode_count_targets represents the amount of episodes that have to be played in the corresponding env
         # the sum of these values is equal to n_eval_episodes
 
         current_rewards = np.zeros(n_envs)
@@ -613,14 +612,14 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
             env.env_method(
                 method_name="setVideoFilename",
                 indices=[i],
-                video_filename = f'{os.getcwd()}\\videos_iter_{iteration}\\{difficulty}_{light_setting}_env_{i}_video_'
+                video_filename = f'{os.getcwd()}\\videos_iter_{iteration}\\{difficulty}_{light_setting.name}_env_{i}_video_'
             )
         
         env.env_method(
             method_name="reset_with_difficulty",
             indices=range(n_envs),
             difficulty=difficulty,
-            lightMultiplier=light_value,
+            lightSetting=light_setting,
         )
         
         # switch to eval mode
@@ -660,8 +659,8 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
                         number_of_goals += int(infos[i]["numberOfGoals"])
 
 
-                        #print(f'collision_games {collision_games} + {int(infos[i]["collision"])}')
-                        collision_games += int(infos[i]["collision"])
+                        #print(f'collision_episodes {collision_episodes} + {int(infos[i]["collision"])}')
+                        collision_episodes += int(infos[i]["collision"])
 
                         first_goals += int(infos[i]["passedFirstGoal"])
                         #if int(infos[i]["passedGoals"]) >= 2:
@@ -698,7 +697,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
                             method_name="reset_with_difficulty",
                             indices=[i],
                             difficulty=difficulty,
-                            lightMultiplier=light_value
+                            lightSetting=light_setting
                         )
 
         assert np.sum(episode_counts) == n_eval_episodes, f"not all episodes were finished, {np.sum(episode_counts)} != {n_eval_episodes}"
@@ -725,20 +724,20 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
 
 
 
-        self.logger.record(f'eval_{difficulty}_{light_setting}/mean_reward', mean_reward)
+        self.logger.record(f'eval_{difficulty}_{light_setting.name}/mean_reward', mean_reward)
         
-        self.logger.record(f'eval_{difficulty}_{light_setting}/std_reward', std_reward)
-        self.logger.record(f'eval_{difficulty}_{light_setting}/success_rate', success_rate)
-        self.logger.record(f'eval_{difficulty}_{light_setting}/rate_passed_goals', rate_of_passed_goals)
-        self.logger.record(f'eval_{difficulty}_{light_setting}/rate_first_goal', rate_of_passed_first_goals)
-        self.logger.record(f'eval_{difficulty}_{light_setting}/rate_second_goal_given_first', rate_of_second_goal_given_first)
-        self.logger.record(f'eval_{difficulty}_{light_setting}/rate_third_goal_given_second', rate_of_third_goal_given_second)
-        self.logger.record(f'eval_{difficulty}_{light_setting}/timeout_rate', timeout_rate)
-        self.logger.record(f'eval_{difficulty}_{light_setting}/rate_game_with_collision', collision_games / n_eval_episodes)
+        self.logger.record(f'eval_{difficulty}_{light_setting.name}/std_reward', std_reward)
+        self.logger.record(f'eval_{difficulty}_{light_setting.name}/success_rate', success_rate)
+        self.logger.record(f'eval_{difficulty}_{light_setting.name}/rate_passed_goals', rate_of_passed_goals)
+        self.logger.record(f'eval_{difficulty}_{light_setting.name}/rate_first_goal', rate_of_passed_first_goals)
+        self.logger.record(f'eval_{difficulty}_{light_setting.name}/rate_second_goal_given_first', rate_of_second_goal_given_first)
+        self.logger.record(f'eval_{difficulty}_{light_setting.name}/rate_third_goal_given_second', rate_of_third_goal_given_second)
+        self.logger.record(f'eval_{difficulty}_{light_setting.name}/timeout_rate', timeout_rate)
+        self.logger.record(f'eval_{difficulty}_{light_setting.name}/rate_episode_with_collision', collision_episodes / n_eval_episodes)
 
         step_average_wait_time = wait_time / np.sum(episode_lengths)
-        self.logger.record(f"eval_{difficulty}_{light_setting}/step_average_wait_time", step_average_wait_time)
-        self.logger.record(f'eval_{difficulty}_{light_setting}/average_episode_length', np.average(episode_lengths))
+        self.logger.record(f"eval_{difficulty}_{light_setting.name}/step_average_wait_time", step_average_wait_time)
+        self.logger.record(f'eval_{difficulty}_{light_setting.name}/average_episode_length', np.average(episode_lengths))
 
         # set to no video afterwards
         env.env_method(
