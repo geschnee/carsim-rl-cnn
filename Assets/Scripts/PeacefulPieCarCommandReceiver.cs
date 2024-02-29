@@ -75,13 +75,15 @@ public class PeacefulPieCarCommandReceiver : MonoBehaviour
 
 
         [JsonRpcMethod]
-        string reset(int id, string mapType, string spawn, float lightMultiplier, string video_filename)
+        string reset(int id, string mapType, string spawn, string lightSettingName, string video_filename)
         {
             //Debug.Log($"reset() called, id: {id}");
             MapType mt = (MapType)Enum.Parse(typeof(MapType), mapType);
             Spawn sp = (Spawn)Enum.Parse(typeof(Spawn), spawn);
+            LightSetting lightSetting = (LightSetting)Enum.Parse(typeof(LightSetting), lightSettingName);
+
             //Debug.Log($"mt: {mt}");
-            return arenas[id].reset(mt, sp, lightMultiplier, video_filename);
+            return arenas[id].reset(mt, sp, lightSetting, video_filename);
         }
 
         [JsonRpcMethod]

@@ -78,7 +78,7 @@ public class Arena : MonoBehaviour
         gameManager.DestroyObstaclesOnMap();
     }
 
-    public string reset(MapType mt, Spawn jetBotSpawn, float lightMultiplier, string video_filename)
+    public string reset(MapType mt, Spawn jetBotSpawn, LightSetting lightSetting, string video_filename)
     {
         if (this.car != null)
         {
@@ -96,7 +96,6 @@ public class Arena : MonoBehaviour
 
         GameObject car = gameManager.spawnJetbot(md, this.instancenumber);
 
-        SetLightIntensity(lightMultiplier);
 
 
         this.car = car;
@@ -107,8 +106,8 @@ public class Arena : MonoBehaviour
 
         this.carCam = car.GetComponentInChildren<Camera>();
         
-        SetSkyboxMaterial(lightMultiplier);
 
+        SetLightSetting(lightSetting);
 
         episodeManager = car.GetComponent<EpisodeManager>();
 
@@ -140,8 +139,29 @@ public class Arena : MonoBehaviour
         return this.getObservation();
     }
 
-    public void SetSkyboxMaterial(float lightMultiplier)
+    public void SetLightSetting(LightSetting lightSetting)
     {
+        float lightMultiplier;
+        if (lightSetting == LightSetting.bright)
+        {
+            lightMultiplier = 7.5f;
+        } else if (lightSetting == LightSetting.standard)
+        {
+            lightMultiplier = 5f;
+        } else if (lightSetting == LightSetting.dark)
+        {
+            lightMultiplier = 2.5f;
+        } else {
+
+            lightMultiplier = -100;
+            Debug.LogError("LightSetting random should not be used");
+        }
+
+        foreach (Light light in lights)
+        {
+            light.intensity = lightMultiplier;
+        }
+
         // This sets the skybox material of the agent's camera based on the lightMultiplier
         Skybox skybox = carCam.GetComponent<Skybox>();
 
@@ -156,14 +176,6 @@ public class Arena : MonoBehaviour
         else
         {
             skybox.material = skyboxMaterialDefault;
-        }
-    }
-    
-    public void SetLightIntensity(float lightMultiplier)
-    {
-        foreach (Light light in lights)
-        {
-            light.intensity = lightMultiplier;
         }
     }
 

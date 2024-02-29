@@ -26,7 +26,7 @@ RenderSettings:
   m_AmbientIntensity: 1.11
   m_AmbientMode: 3
   m_SubtractiveShadowColor: {r: 0.13296545, g: 0.19145328, b: 0.33962262, a: 1}
-  m_SkyboxMaterial: {fileID: 2100000, guid: 0ffaa0b7117ba8c47a9d05ae701d4b4d, type: 2}
+  m_SkyboxMaterial: {fileID: 2100000, guid: ada6458fea087684ab37662d5bc02a14, type: 2}
   m_HaloStrength: 0.362
   m_FlareStrength: 1
   m_FlareFadeSpeed: 3
@@ -917,6 +917,18 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 1345372868834416548, guid: edbcff21dfdf323458c46bc7170d7c24, type: 3}
+      propertyPath: skyboxMaterialDark
+      value: 
+      objectReference: {fileID: 2100000, guid: d442213dcf4a4c348b08978f13676364, type: 2}
+    - target: {fileID: 1345372868834416548, guid: edbcff21dfdf323458c46bc7170d7c24, type: 3}
+      propertyPath: skyboxMaterialBright
+      value: 
+      objectReference: {fileID: 2100000, guid: febda482812e2b54dae989433c3d16e4, type: 2}
+    - target: {fileID: 1345372868834416548, guid: edbcff21dfdf323458c46bc7170d7c24, type: 3}
+      propertyPath: skyboxMaterialDefault
+      value: 
+      objectReference: {fileID: 2100000, guid: 467d24dd638ac8b49ac49bfc98045797, type: 2}
     - target: {fileID: 7574534660565161624, guid: edbcff21dfdf323458c46bc7170d7c24, type: 3}
       propertyPath: m_Name
       value: ArenaPrefab

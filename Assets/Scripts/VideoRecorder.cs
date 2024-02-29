@@ -168,7 +168,12 @@ public class VideoRecorder : MonoBehaviour
                     collection[i].AnimationDelay = delay;
                 }
             }
-        
+
+            // https://github.com/search?q=repo%3Adlemstra%2FMagick.NET%20loop&type=code
+            collection[0].AnimationIterations = 1; // repeat only once
+
+
+
             // Optionally reduce colors
             QuantizeSettings settings = new QuantizeSettings();
             settings.Colors = 256;
@@ -181,7 +186,7 @@ public class VideoRecorder : MonoBehaviour
         }
        
         
-        Debug.Log($"Gif length: {videoData.frames.Count} frames {gif_duration_in_seconds} seconds. Game length {videoData.gameDuration} seconds. Saved to {videoData.video_filename}.gif");
+        //Debug.Log($"Gif length: {videoData.frames.Count} frames {gif_duration_in_seconds} seconds. Game length {videoData.gameDuration} seconds. Saved to {videoData.video_filename}.gif");
     }
 
     public void FixedUpdate()

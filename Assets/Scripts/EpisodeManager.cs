@@ -99,9 +99,9 @@ public class EpisodeManager : MonoBehaviour
 
         if (this.episodeStatus == EpisodeStatus.WaitingForStep)
         {
-            if (!this.fixedTimesteps)
+            if (!this.fixedTimesteps && this.step != 0)
             {
-                Debug.LogWarning($"IncreaseSteps called while waiting for step {this.step} {this.episodeStatus} but we do not use fixed timesteps");
+                Debug.LogWarning($"IncreaseSteps called while waiting for step {this.step} {this.episodeStatus} but we do not use fixed timesteps, there must be some implementation error");
             }
             this.episodeStatus = EpisodeStatus.Running;
             this.stepFinished = false;

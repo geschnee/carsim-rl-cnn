@@ -7,7 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using UnityEngine;
 
-public class GameManager : MonoBehaviour
+public class GameManager: MonoBehaviour
 {
 	/*
 	 *This class controls the Game settings. In Unity & in this class you can choose which type of map should be

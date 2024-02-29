@@ -13,6 +13,14 @@ public enum EpisodeStatus
     WaitingForStep = 8,
 }
 
+public enum LightSetting
+{
+    random = 0,
+    bright = 1,
+    standard = 2,
+    dark = 3,
+}
+
 public enum Spawn
 {
     Fixed = 0,

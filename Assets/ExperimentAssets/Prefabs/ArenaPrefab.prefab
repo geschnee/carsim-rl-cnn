@@ -1836,9 +1836,9 @@ MonoBehaviour:
   fixedTimesteps: 0
   fixedTimestepsLength: 0
   arenaRecorder: {fileID: 8721291465432444832}
-  skyboxMaterialBright: {fileID: 2100000, guid: 74264d6eb6e1c554096ac75b6e4e140c, type: 2}
-  skyboxMaterialDark: {fileID: 2100000, guid: 0c6e7371297c8924a8a56d1fd2f62b12, type: 2}
-  skyboxMaterialDefault: {fileID: 2100000, guid: 93ac6d6463ce68441973236ab20d9e16, type: 2}
+  skyboxMaterialBright: {fileID: 2100000, guid: febda482812e2b54dae989433c3d16e4, type: 2}
+  skyboxMaterialDark: {fileID: 2100000, guid: d442213dcf4a4c348b08978f13676364, type: 2}
+  skyboxMaterialDefault: {fileID: 2100000, guid: 467d24dd638ac8b49ac49bfc98045797, type: 2}
 --- !u!114 &8721291465432444832
 MonoBehaviour:
   m_ObjectHideFlags: 0
