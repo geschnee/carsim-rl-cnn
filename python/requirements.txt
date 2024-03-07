@@ -184,7 +184,6 @@ threadpoolctl==3.1.0
 tifffile==2023.12.9
 tinycss2==1.2.1
 tokenizers==0.13.2
-tomli==2.0.1
 torch==1.13.1+cu116
 torchaudio==0.13.1+cu116
 torchvision==0.14.1+cu116
