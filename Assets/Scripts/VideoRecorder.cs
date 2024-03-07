@@ -186,7 +186,7 @@ public class VideoRecorder : MonoBehaviour
         }
        
         
-        //Debug.Log($"Gif length: {videoData.frames.Count} frames {gif_duration_in_seconds} seconds. Game length {videoData.gameDuration} seconds. Saved to {videoData.video_filename}.gif");
+        // Debug.Log($"Gif length: {videoData.frames.Count} frames {gif_duration_in_seconds} seconds. Game length {videoData.gameDuration} seconds. Saved to {videoData.video_filename}.gif");
     }
 
     public void FixedUpdate()

@@ -43,7 +43,6 @@ ExportedObj/
 *.opendb
 *.VC.db
 *.zip
-*.png
 *.txt
 
 # Unity3D generated meta files
@@ -70,6 +69,7 @@ Assets/Packages
 python/tmp
 python/outputs
 python/models_and_dumps
+python/imagelog
 
 *.pyc
 

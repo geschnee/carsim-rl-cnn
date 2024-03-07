@@ -1,21 +1,22 @@
-comment: "trying unrestricted policy with random training light"
+comment: "trying with configs from 2024-02-19"
 # "Trying with fixed light settings and variable timesteps, we want to see learning progress again. Did something break?"
 # we should also try it with the fixed spawn to be closer to the evaluation scenario, maybe the differential can do it 
 
 
 eval_settings:
-  log_interval: 2
+  log_interval: 5
   num_evals_per_difficulty: 20
-  eval_light_settings: True
+  eval_light_settings: False
 
-
+# reducing n_envs results in higher fps (per env)
 n_envs: 10
 n_epochs: 5 # amount of training passes over the replay buffer per timestep
 
 
 batch_size: 64
 
-n_steps: 128 # 64 # amount of steps to collect per collect_rollouts per environment
+n_steps: 1024 # 64 
+# amount of steps to collect per collect_rollouts per environment
 # Tensorboard shows the mean_episode_length is below 3
 # we can reduce the n_steps to make the collection time shorter while still collecting a lot of episodes
 # n_steps * fixedTimestepsLength = the amount of seconds required for the collection
@@ -34,22 +35,24 @@ env_kwargs:
   image_preprocessing:
     downsampling_factor: 2
     grayscale: True
-    equalize: False
+    equalize: True
     contrast_increase: "TODO"
     # vielleicht eine art Mode variable hier reinpacken contrast increase s equalize
     normalize_images: False
   coefficients:
     distanceCoefficient: 0.5
-    orientationCoefficient: 0.0
-    velocityCoefficient: 0.0
-    eventCoefficient: 1.0
+    orientationCoefficient: 0
+    velocityCoefficient: 0
+    eventCoefficient: 1
   trainingMapType: randomEval
-  trainingLightSetting: random
-  fixedTimestepsLength: False
+  trainingLightSetting: standard
+  fixedTimestepsLength: 0.3
+  # non fixed with 10 envs takes 0.5 seconds for vecenv_step --> this results in 1 fps (per env)
+
   # fixedTimestepsLength can either be False or a number (seconds that each timestep contains)
   # 2024-02-04/11-56-53 used non-fixed timesteps and had 0.4 fps per environment
   # this run achgieved the highest accuracies yet --> we can increase the duration of fixed timesteps to above a second
 
-  width: 800 #500 #336
+  width: 500 #800 #500 #336
   height: 168
 

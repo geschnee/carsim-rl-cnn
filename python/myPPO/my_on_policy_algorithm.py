@@ -448,7 +448,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
 
 
             # Display training infos
-            if log_interval is not None and iteration % log_interval == 0:
+            if True: #log_interval is not None and iteration % log_interval == 0:
                 # log interval is 0, thus after every ollect rollouts the tb logging is done
                 # the log x axis is self.num_timesteps, which is modified in collect_rollouts
 
@@ -465,7 +465,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
                 fps_per_env = float(fps / self.n_envs)
 
                 # fps takes the time for the whole training, collect_rollout_fps_per_env only counts collection time
-                collect_rollout_fps_per_env = float((self.num_timesteps - self._num_timesteps_at_start) / total_collection_time)
+                collect_rollout_fps_per_env = float(((self.num_timesteps - self._num_timesteps_at_start) / self.n_envs ) / total_collection_time)
 
                 self.logger.record("time/iterations",
                                    iteration, exclude="tensorboard")

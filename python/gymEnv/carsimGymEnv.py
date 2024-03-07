@@ -187,10 +187,10 @@ class BaseCarsimEnv(gym.Env):
             print(
                 f'stepObj reward {stepObj["reward"]} done {stepObj["done"]} info {stepObj["info"]}', flush=True)
 
-        new_obs = self.stringToObservation(stepObj["observation"])
+        new_obs = self.stringToObservationStep(stepObj["observation"])
 
         if self.frame_stacking > 1:
-            new_obs = self.memory_rollover(new_obs)
+            new_obs = self.memory_rolloverStep(new_obs)
 
         return new_obs, reward, terminated, truncated, info_dict
 
@@ -327,6 +327,9 @@ class BaseCarsimEnv(gym.Env):
                 img = Image.fromarray(data, 'L')
                 img.save(f'imagelog/{self.step_nr}_post_replace{i}.png')
 
+    def memory_rolloverStep(self, new_obs, log = None):
+        return self.memory_rollover(new_obs, log) 
+
     # TODO try this wrapper instead: https://github.com/DLR-RM/stable-baselines3/blob/b413f4c285bc3bfafa382559b08ce9d64a551d26/stable_baselines3/common/vec_env/vec_frame_stack.py#L12
     def memory_rollover(self, new_obs, log = None):
         # was verified with an RGB example
@@ -462,6 +465,9 @@ class BaseCarsimEnv(gym.Env):
         # this can help learn quicker
 
         return pixels / 255.0
+
+    def stringToObservationStep(self, obsstring, log=None):
+        return self.stringToObservation(obsstring, log)
 
     def stringToObservation(self, obsstring, log=None):
 

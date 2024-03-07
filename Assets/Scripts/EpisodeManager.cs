@@ -260,6 +260,7 @@ public class EpisodeManager : MonoBehaviour
     {
         float weightedDistanceReward = reward * distanceCoefficient;
         this.distanceReward += weightedDistanceReward;
+        // Debug.Log($"AddDistanceReward {weightedDistanceReward} {this.distanceReward}");
         AddReward(weightedDistanceReward);
     }
 
@@ -455,23 +456,7 @@ public class EpisodeManager : MonoBehaviour
         }
     }
 
-    public void goalMissed(GameObject redBorder)
-    {
-
-        
-
-        GameObject goal = redBorder.transform.parent.gameObject;
-        destroyCheckpoint(goal);
-        AddEventReward(goalMissedReward);
-
-        centerIndicators.RemoveAt(0); // remove an indicator
-        
-
-        this.lastDistance = GetDistanceToNextGoal();
-
-
-        colorRed(goal);
-    }
+    
 
     public void colorGreen(GameObject goal) {
 
@@ -523,15 +508,27 @@ public class EpisodeManager : MonoBehaviour
 
         AddTime(allowedTimePerGoal);
 
-
-
         centerIndicators.RemoveAt(0); // remove an indicator
-
 
         // update the distance to the next goal
         this.lastDistance = GetDistanceToNextGoal();
 
         colorGreen(goal);
+    }
+
+    public void goalMissed(GameObject redBorder)
+    {
+        GameObject goal = redBorder.transform.parent.gameObject;
+        destroyCheckpoint(goal);
+        AddEventReward(goalMissedReward);
+
+        centerIndicators.RemoveAt(0); // remove an indicator
+        
+
+        this.lastDistance = GetDistanceToNextGoal();
+
+
+        colorRed(goal);
     }
 
     public void obstacleHit()

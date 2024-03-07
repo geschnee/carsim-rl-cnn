@@ -234,6 +234,7 @@ public class Arena : MonoBehaviour
     private string GetCameraInput(Camera cam, int resWidth, int resHeight, string filename)
     {
         // TODO should the downsampling to 84 x 84 happen here instead of python?
+        // yes
         RenderTexture rt = new RenderTexture(resWidth, resHeight, 24);
         cam.targetTexture = rt;
         Texture2D screenShot = new Texture2D(resWidth, resHeight, TextureFormat.RGB24, false);
@@ -249,14 +250,17 @@ public class Arena : MonoBehaviour
         Destroy(rt);
         Destroy(screenShot);
 
-        File.WriteAllBytes(filename, pictureInBytes);
+        //Debug.Log($"Writing file {filename} with length {pictureInBytes.Length}");
+        //File.WriteAllBytes(filename, pictureInBytes);
 
         string base64_string = System.Convert.ToBase64String(pictureInBytes);
 
 
-        byte[] base64EncodedBytes = System.Convert.FromBase64String(base64_string);
+        
 
         /*
+        byte[] base64EncodedBytes = System.Convert.FromBase64String(base64_string);
+
         Debug.Log($"base64_string {base64_string}");
 
         Debug.Log($"Shape of byte[] {pictureInBytes.Length}");
@@ -275,6 +279,7 @@ public class Arena : MonoBehaviour
     {
         if (car == null)
         {
+            Debug.LogError("car is null");
             // car is not spawned yet, give some default image
             return DefaultImage.getDefaultImage();
         }
