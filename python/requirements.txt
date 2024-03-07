@@ -185,9 +185,9 @@ tifffile==2023.12.9
 tinycss2==1.2.1
 tokenizers==0.13.2
 torch
-torchaudio==0.13.1+cu116
-torchvision==0.14.1+cu116
-torchviz==0.0.2
+torchaudio
+torchvision
+torchviz
 tornado==6.3.1
 tqdm==4.64.1
 traitlets==5.9.0
