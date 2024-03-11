@@ -12,12 +12,22 @@ https://de.wikipedia.org/wiki/JSON-RPC
 
 https://github.com/Maddi97/master_thesis
 
-# required python libraries
+# install instructions on fresh windows machine
 
-stable-baselines3 (torch version)
-scikit-image
-peacefulpie
-gymnasium
+- clone repo
+- python -m pip install -r python/requirements.txt
+- add Path variables
+    - Python310
+    - Python310/Scripts
+        - this is for tensorboard
+- Install Unity version 2022.3.10f1
+- use NuGet in Unity to install 
+    - Magick.NET-Q16-AnyCPU
+    - Magick.NET.Core
+- add Magick.Native-Q16-x64.dll to Assets/Packages
+- add to Assets/Plugins
+    - AustinHarrisJsonRpc.dll
+    - PeacefulPie.dll
 
 
 # Slack

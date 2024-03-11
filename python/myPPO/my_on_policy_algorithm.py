@@ -128,12 +128,48 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
             gae_lambda=self.gae_lambda,
             n_envs=self.n_envs,
         )
+        print(f'policy class: {self.policy_class}')
+
         # pytype:disable=not-instantiable
         self.policy = self.policy_class(  # type: ignore[assignment]
             self.observation_space, self.action_space, self.lr_schedule, use_sde=self.use_sde, **self.policy_kwargs
         )
         # pytype:enable=not-instantiable
         self.policy = self.policy.to(self.device)
+
+    def inferFromObservations(self, env):
+        # moved to its own function to be able to profile the forward passes (during rollout collection and evaluation) easily
+
+        with th.no_grad():
+            # Convert to pytorch tensor or to TensorDict
+            fresh_obs = get_obs(env)
+            obs_tensor = obs_as_tensor(fresh_obs, self.device)
+
+            actions, values, log_probs = self.policy(obs_tensor)
+        
+        return actions, values, log_probs, fresh_obs
+
+    def print_network_structure(self, env):
+        if self.network_printed:
+            return
+        
+        # do not use no_grad here
+        # Convert to pytorch tensor or to TensorDict
+        fresh_obs = get_obs(env)
+        obs_tensor = obs_as_tensor(fresh_obs, self.device)
+
+        actions, values, log_probs = self.policy(obs_tensor)
+
+        # https://stackoverflow.com/questions/52468956/how-do-i-visualize-a-net-in-pytorch
+        from torchviz import make_dot
+        make_dot(actions).render(
+            "action_graph", format="png")
+        
+        print("network printed", flush= True)
+
+        # die graphen sind in den working directories (outputs/.../... zu finden)
+
+        self.network_printed = True
 
     def collect_rollouts(
         self,
@@ -194,13 +230,10 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
                 # Sample a new noise matrix
                 self.policy.reset_noise(env.num_envs)
 
-            with th.no_grad():
-                # Convert to pytorch tensor or to TensorDict
-                fresh_obs = get_obs(env)
-                obs_tensor = obs_as_tensor(fresh_obs, self.device)
+            
 
-                
-                actions, values, log_probs = self.policy(obs_tensor)
+            actions, values, log_probs, fresh_obs = self.inferFromObservations(env)
+
             actions = actions.cpu().numpy()
 
             # Rescale and perform action
@@ -409,6 +442,8 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         eval_light_settings: bool = False,
     ) -> SelfOnPolicyAlgorithm:
         iteration = 0
+        
+        assert self.env is not None
 
         total_timesteps, callback = self._setup_learn(
             total_timesteps,
@@ -418,9 +453,12 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
             progress_bar,
         )
 
+        
+        self.print_network_structure(self.env)
+
+
         callback.on_training_start(locals(), globals())
 
-        assert self.env is not None
 
         total_cr_time, total_train_time, total_eval_time = 0, 0, 0
         self.collected_episodes = 0
@@ -627,11 +665,8 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
 
         while (episode_counts < episode_count_targets).any():
     
-            with th.no_grad():
-                # Convert to pytorch tensor or to TensorDict
-                fresh_obs = get_obs(env) 
-                obs_tensor = obs_as_tensor(fresh_obs, self.device)
-                actions, values, log_probs = self.policy(obs_tensor)
+            
+            actions, values, log_probs, fresh_obs = self.inferFromObservations(env)
             actions = actions.cpu().numpy()
 
             # Rescale and perform action

@@ -15,7 +15,6 @@ attrs==22.1.0
 backcall==0.2.0
 beautifulsoup4==4.12.2
 bleach==6.0.0
-box2d-py==2.3.5
 cachetools==5.2.0
 certifi==2022.6.15
 cffi==1.15.1

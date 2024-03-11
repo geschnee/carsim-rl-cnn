@@ -78,7 +78,7 @@ def run_ppo(cfg):
 
 
     print(f'using {algo} with {n_epochs} epochs, {batch_size} batch size and {n_steps} steps per epoch')
-    policy_kwargs = {"normalize_images": cfg.env_kwargs.image_preprocessing.normalize_images}
+    policy_kwargs = {"normalize_images": cfg.env_kwargs.image_preprocessing.normalize_images, "net_arch": OmegaConf.to_container(cfg.net_arch)}
 
     # normalize_imagess=True scales the images to 0-1 range
     # requires dtype float32
@@ -106,6 +106,7 @@ def run_ppo(cfg):
 
     model.learn(total_timesteps=cfg.total_timesteps, log_interval=cfg.eval_settings.log_interval, num_evals_per_difficulty = cfg.eval_settings.num_evals_per_difficulty, eval_light_settings=cfg.eval_settings.eval_light_settings)
     model.save("finished_ppo")
+    print("finished without issues")
 
 
 @hydra.main(config_path=".", config_name="cfg/ppo.yaml")

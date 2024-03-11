@@ -163,6 +163,9 @@ class myPPO(MyOnPolicyAlgorithm):
         self.normalize_advantage = normalize_advantage
         self.target_kl = target_kl
 
+        self.network_printed = False
+        self.loss_printed = False
+
         if _init_setup_model:
             self._setup_model()
 
@@ -176,6 +179,24 @@ class myPPO(MyOnPolicyAlgorithm):
                 assert self.clip_range_vf > 0, "`clip_range_vf` must be positive, " "pass `None` to deactivate vf clipping"
 
             self.clip_range_vf = get_schedule_fn(self.clip_range_vf)
+
+
+
+    def print_loss_structure(self, loss):
+        if self.loss_printed:
+            return
+
+        # https://stackoverflow.com/questions/52468956/how-do-i-visualize-a-net-in-pytorch
+        from torchviz import make_dot
+        
+        
+        # die graphen sind in den working directories (outputs/.../... zu finden)
+
+        make_dot(loss).render("loss_graph", format="png")
+
+        print("loss printed")
+
+        self.loss_printed = True
 
     def train(self) -> None:
         """
@@ -273,9 +294,13 @@ class myPPO(MyOnPolicyAlgorithm):
                 # Optimization step
                 self.policy.optimizer.zero_grad()
                 loss.backward()
+
+
                 # Clip grad norm
                 th.nn.utils.clip_grad_norm_(self.policy.parameters(), self.max_grad_norm)
                 self.policy.optimizer.step()
+
+                self.print_loss_structure(loss)
 
             self._n_updates += 1
             if not continue_training:

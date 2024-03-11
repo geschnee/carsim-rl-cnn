@@ -76,7 +76,6 @@ public class EpisodeManager : MonoBehaviour
     public void IncreaseSteps(int step)
     {
        
-        this.timeOfLastStepBegin = Time.time;
 
         // int step from python is not yet incremented
         if (this.step != step)
@@ -85,6 +84,9 @@ public class EpisodeManager : MonoBehaviour
             // There was a timeout in python resulting in a second call to the step function with the same arguments
             return;
         }
+        
+        this.timeOfLastStepBegin = Time.time;
+
         this.step++;
         // add new entry in the rewards counting list
         // with this added 0 reward there is an entry for every step even if there was no reward signal encountered

@@ -44,7 +44,7 @@ class MapType(Enum):
     randomEvalMedium = 12
     randomEvalHard = 13
     randomEval=14
-    randomEvalEasyOrMedium = 15
+    randomEvalIncreasedMediumAndHard = 15
 
     @classmethod
     def resolvePseudoEnum(myEnum, pseudoEnum):
@@ -59,9 +59,9 @@ class MapType(Enum):
         elif pseudoEnum.value == 14:
             return myEnum.getRandomEval()
         elif pseudoEnum.value == 15:
-            return myEnum.getRandomEasyOrMedium()
+            return myEnum.getRandomIncreasedMediumAndHard()
         else:
-            # pseudoEnum is not a pseudo enum (real enum)
+            # pseudoEnum is not a pseudo enum (it is real enum)
             return pseudoEnum
 
     @classmethod
@@ -92,8 +92,19 @@ class MapType(Enum):
         return MapType(np.random.choice([1,2,3,4,5,6,7,8,9,10]))
 
     @classmethod
-    def getRandomEasyOrMedium(myEnum):
-        return MapType(np.random.choice([1,2,3,4,5,6]))
+    def getRandomIncreasedMediumAndHard(myEnum):
+        # random eval is 20% easy, 40% medium, 40% hard
+
+        # this is 10% easy, 45% medium, 45% hard
+
+        difficulty = np.random.choice([0,1,2], p=[0.1, 0.45, 0.45])
+        if difficulty == 0:
+            return myEnum.getRandomEasy()
+        elif difficulty == 1:
+            return myEnum.getRandomMedium()
+        elif difficulty == 2:
+            return myEnum.getRandomHard()
+        
     
 
 class EndEvent(Enum):
