@@ -68,7 +68,7 @@ def run_ppo(cfg):
     vec_env.env_method(
         method_name="setLog",
         indices=0,
-        log=True,
+        log=False,
     )
 
     n_epochs, batch_size = cfg.n_epochs, cfg.batch_size

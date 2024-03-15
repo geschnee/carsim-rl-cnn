@@ -38,6 +38,12 @@ public class StepReturnObject
     }
 }
 
+public class StepReturnObjectList
+{
+    public List<StepReturnObject> objects = new List<StepReturnObject>();
+}   
+
+
 public class PeacefulPieCarCommandReceiver : MonoBehaviour
 {
     class Rpc : JsonRpcService
@@ -93,6 +99,13 @@ public class PeacefulPieCarCommandReceiver : MonoBehaviour
         }
 
         [JsonRpcMethod]
+        int ping(int id)
+        {
+            //Debug.Log($"you sent {message}");
+            return 0;
+        }
+
+        [JsonRpcMethod]
         void forwardInputsToCar(int id, float inputAccelerationLeft, float inputAccelerationRight)
         {
             arenas[id].forwardInputsToCar(inputAccelerationLeft, inputAccelerationRight);
@@ -102,6 +115,21 @@ public class PeacefulPieCarCommandReceiver : MonoBehaviour
         StepReturnObject immediateStep(int id, int step, float inputAccelerationLeft, float inputAccelerationRight)
         {
             return arenas[id].immediateStep(step, inputAccelerationLeft, inputAccelerationRight);
+        }
+
+        [JsonRpcMethod]
+        StepReturnObjectList bundledStep(List<int> step_nrs, List<float> left_actions, List<float> right_actions)
+        {
+            StepReturnObjectList objects = new StepReturnObjectList();
+            List<StepReturnObject> stepReturnObjects = new List<StepReturnObject>();
+
+            for (int i = 0; i < left_actions.Count; i++)
+            {
+                StepReturnObject stepReturnObject = arenas[i].immediateStep(step_nrs[i], left_actions[i], right_actions[i]);
+                stepReturnObjects.Add(stepReturnObject);
+                objects.objects.Add(stepReturnObject);
+            }
+            return objects;
         }
 
         [JsonRpcMethod]
@@ -142,6 +170,24 @@ public class PeacefulPieCarCommandReceiver : MonoBehaviour
         string getObservation(int id)
         {
             return arenas[id].getObservation();
+        }
+
+        [JsonRpcMethod]
+        string[] getObservationAllEnvs()
+        {
+            List<string> observations = new List<string>();
+            foreach (Arena arena in arenas)
+            {
+                observations.Add(arena.getObservation());
+            }
+
+            return observations.ToArray();
+        }
+
+        [JsonRpcMethod]
+        System.Byte[] getObservationBytes(int id)
+        {
+            return arenas[id].getObservationBytes();
         }
 
         [JsonRpcMethod]

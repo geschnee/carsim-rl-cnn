@@ -142,7 +142,8 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
 
         with th.no_grad():
             # Convert to pytorch tensor or to TensorDict
-            fresh_obs = get_obs(env)
+            fresh_obs = get_obs_single_calls(env)
+            fresh_obs = get_obs_bundled_calls(env)
             obs_tensor = obs_as_tensor(fresh_obs, self.device)
 
             actions, values, log_probs = self.policy(obs_tensor)
@@ -155,7 +156,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         
         # do not use no_grad here
         # Convert to pytorch tensor or to TensorDict
-        fresh_obs = get_obs(env)
+        fresh_obs = get_obs_single_calls(env)
         obs_tensor = obs_as_tensor(fresh_obs, self.device)
 
         actions, values, log_probs = self.policy(obs_tensor)
@@ -208,6 +209,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
 
         completed_episodes, successfully_completed_episodes, number_of_goals, successfully_passed_goals, total_reward, total_timesteps, distance_reward, velocity_reward, event_reward, orientation_reward, successfully_passed_first_goals = 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
         timesteps_of_completed_episodes, collision_episodes = 0, 0
+        unity_duration = 0
 
         # event_reward is the reward that is not distance or velocity reward
         # such as collisions, passed goals and episode terminated
@@ -243,8 +245,15 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
                 clipped_actions = np.clip(
                     actions, self.action_space.low, self.action_space.high)
 
-            new_obs, rewards, dones, infos = env.step(clipped_actions)
-        
+            new_obs, rewards, dones, infos = step_wrapper(env, clipped_actions)
+            print(f'observations shape: {new_obs.shape} {type(new_obs)}')
+            print(f'rewards shape: {rewards.shape} {type(rewards)}')
+            print(f'dones shape: {dones.shape} {type(dones)}')
+            print(f'infos shape: {len(infos)} {type(infos)}')
+            # observations shape: (10, 30, 84, 250) <class 'numpy.ndarray'>
+            # rewards shape: (10,) <class 'numpy.ndarray'>
+            # dones shape: (10,) <class 'numpy.ndarray'>
+            # infos shape: 10 <class 'list'>
 
             self.num_timesteps += env.num_envs
             total_timesteps += env.num_envs
@@ -300,6 +309,8 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
                     successfully_passed_second_goals += int(infos[idx]["passedSecondGoal"])
 
                     waitTime += float(infos[idx]["episodeWaitTime"])
+
+                    unity_duration += float(infos[idx]["duration"].replace(",","."))
                     
                     if int(infos[idx]["passedFirstGoal"]) == 1 and int(infos[idx]["passedSecondGoal"]) == 1:
                         second_goals_given_first +=1
@@ -377,10 +388,12 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
             mean_orientation_reward = orientation_reward / completed_episodes
             first_goal_completion_rate = successfully_passed_first_goals / completed_episodes
             rate_episodes_with_collisions = collision_episodes / completed_episodes
+            avg_step_duration_unity_env = unity_duration / timesteps_of_completed_episodes
         else:
             success_rate, mean_reward, mean_episode_length, mean_distance_reward, mean_velocity_reward, mean_event_reward, mean_orientation_reward, first_goal_completion_rate = 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
             timeout_rate = 0
             rate_episodes_with_collisions = 0
+            avg_step_duration_unity_env = 0
         
         
         step_average_wait_time = waitTime / total_timesteps
@@ -414,7 +427,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         self.logger.record("rollout/completed_episodes", completed_episodes)
         self.logger.record("rollout/step_average_wait_time", step_average_wait_time)
         self.logger.record("rollout/rate_episodes_with_collisions", rate_episodes_with_collisions)
-        
+        self.logger.record("rollout/avg_step_duration_unity", avg_step_duration_unity_env) # average duration of a step measured in unity episode duration time
 
         cr_time = time.time() - cr_time
         
@@ -676,7 +689,8 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
                 clipped_actions = np.clip(
                     actions, self.action_space.low, self.action_space.high)
             
-            observations, rewards, dones, infos = env.step(clipped_actions)
+            observations, rewards, dones, infos = step_wrapper(env, clipped_actions )
+
             
             current_lengths += 1
             for i in range(n_envs):
@@ -824,7 +838,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
 
         return self
 
-def get_obs(env):
+def get_obs_single_calls(env):
     # env is a vectorized BaseCarsimEnv
     # it is wrapped in a vec_transpose env for the CNN
 
@@ -842,3 +856,55 @@ def get_obs(env):
 
     obs = env._obs_from_buf()
     return env.transpose_observations(obs)
+
+def get_obs_bundled_calls(env):
+    # env is a vectorized BaseCarsimEnv
+    # it is wrapped in a vec_transpose env for the CNN
+
+    
+    # TODO this does a memory rollover, as well as the step function
+    # should one of them not do it? or does it not matter?
+    # the frequent rollovers might result in the history not being deep enough
+
+    # I think the cleanest way to solve this is by simply increasing frame stacking n
+
+    all_obs = env.envs[0].get_obs_with_single_request()
+    for idx in range(env.num_envs):
+        # get_obseration_including memory does a memory rolloer as well
+        env._save_obs(idx, all_obs[idx])
+
+    obs = env._obs_from_buf()
+    return env.transpose_observations(obs)
+
+def step_wrapper(env, clipped_actions):
+
+    if False:
+        # old approach
+        return env.step(clipped_actions)
+    else:
+        print(f'step with single request started', flush=True)
+
+        step_nrs = [env.envs[i].step_nr for i in range(env.num_envs)]
+        left_actions = [float(clipped_actions[i][0]) for i in range(env.num_envs)]
+        right_actions = [float(clipped_actions[i][1]) for i in range(env.num_envs)]
+
+        stepReturnObjects = env.envs[0].step_with_single_request(step_nrs = step_nrs, left_actions=left_actions, right_actions=right_actions)
+        # first do the bundled request to unity
+
+        # TODO new_obs muss ein Tensor sein, keine liste
+        new_obs = []
+        rewards = []
+        dones = []
+        truncateds = []
+        infos = []
+        for idx in range(env.num_envs):
+            # give the results to the corresponding envs
+            # print(f'stepReturnObjects[idx]: {stepReturnObjects[idx]}', flush=True)
+
+            new_ob, reward, done, truncated, info = env.envs[idx].processStepReturnObject(stepReturnObjects[idx])
+            new_obs.append(new_ob)
+            rewards.append(reward)
+            dones.append(done)
+            truncateds.append(truncated)
+            infos.append(info)
+        return np.array(new_obs), np.array(rewards), np.array(dones), infos

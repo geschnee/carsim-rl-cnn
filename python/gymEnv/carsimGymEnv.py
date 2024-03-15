@@ -33,11 +33,15 @@ import random
 @dataclass
 class StepReturnObject:
     previousStepNotFinished: bool
-    obs: str
+    observation: str
     done: bool
     terminated: bool
     info: dict
     rewards: list[float]
+
+@dataclass
+class StepReturnObjectList:
+    objects: list[StepReturnObject]
 
 class BaseCarsimEnv(gym.Env):
 
@@ -150,6 +154,8 @@ class BaseCarsimEnv(gym.Env):
     def step(self, action: Any) -> tuple[Any, SupportsFloat, bool, bool, dict[str, Any]]:
         """Perform step, return observation, reward, terminated, false, info."""
 
+        _ = self.unityPing()
+
         left_acceleration, right_acceleration = action
 
         assert left_acceleration >= - \
@@ -158,23 +164,52 @@ class BaseCarsimEnv(gym.Env):
             1 and right_acceleration <= 1, f'right_acceleration {right_acceleration} is not in range [-1, 1]'
 
         
-        stepObj = self.unityImmediateStep(left_acceleration, right_acceleration)
+        stepObj: StepReturnObject = self.unityImmediateStep(left_acceleration, right_acceleration)
         waitTimeStart=time.time()
         waitTime=False
-        while stepObj["previousStepNotFinished"]:
+        while stepObj.previousStepNotFinished:
             print(f'waiting for previous step to finish', flush=True)
             waitTime = time.time() - waitTimeStart
-            stepObj = self.unityImmediateStep(left_acceleration, right_acceleration)
+            stepObj: StepReturnObject = self.unityImmediateStep(left_acceleration, right_acceleration)
 
         if waitTime:
             self.episodeWaitTime += waitTime
 
-        reward = 0 # this reward is corrected in the policy later on (using the info dictionary)
-        terminated = stepObj["done"]
-        truncated = stepObj["done"]
+        return self.processStepReturnObject(stepObj)
 
-        info_dict = stepObj["info"]
-        info_dict["rewards"] = stepObj["rewards"]
+    
+    def step_with_single_request(self, step_nrs, left_actions: list[float], right_actions: list[float]) -> list[StepReturnObject]:
+
+        stepObjList = self.unityBundledStep(step_nrs, left_actions, right_actions)
+
+        waitTimeStart=time.time()
+        waitTime=False
+        while not self.allPreviousStepsFinished(stepObjList):
+            print(f'waiting for previous step to finish', flush=True)
+            waitTime = time.time() - waitTimeStart
+            stepObjList = self.unityBundledStep(step_nrs, left_actions, right_actions)
+
+        if waitTime:
+            self.episodeWaitTime += waitTime
+
+        return stepObjList
+
+    def allPreviousStepsFinished(self, stepObjList):
+        for stepObj in stepObjList:
+            if stepObj.previousStepNotFinished:
+                return False
+        return True
+
+
+    def processStepReturnObject(self, stepObj: StepReturnObject):
+        # this function is made for the bundled calls
+        
+        reward = 0 # this reward is corrected in the policy later on (using the info dictionary)
+        terminated = stepObj.done
+        truncated = stepObj.done
+
+        info_dict = stepObj.info
+        info_dict["rewards"] = stepObj.rewards
         info_dict["episodeWaitTime"] = self.episodeWaitTime
 
         self.step_nr += 1
@@ -187,16 +222,19 @@ class BaseCarsimEnv(gym.Env):
             print(
                 f'stepObj reward {stepObj["reward"]} done {stepObj["done"]} info {stepObj["info"]}', flush=True)
 
-        new_obs = self.stringToObservationStep(stepObj["observation"])
+        new_obs = self.stringToObservationStep(stepObj.observation)
 
         if self.frame_stacking > 1:
             new_obs = self.memory_rolloverStep(new_obs)
 
         return new_obs, reward, terminated, truncated, info_dict
 
+    def unityBundledStep(self, step_nrs, left_actions, right_actions):
+        return BaseCarsimEnv.unity_comms.bundledStep(ResultClass=StepReturnObjectList, step_nrs=step_nrs, left_actions=left_actions, right_actions=right_actions).objects
+
     # move all calls to seperate functions for profiling
     def unityImmediateStep(self, left_acceleration, right_acceleration):
-        return BaseCarsimEnv.unity_comms.immediateStep(id=self.instancenumber, step=self.step_nr, inputAccelerationLeft=float(
+        return BaseCarsimEnv.unity_comms.immediateStep(ResultClass=StepReturnObject, id=self.instancenumber, step=self.step_nr, inputAccelerationLeft=float(
             left_acceleration), inputAccelerationRight=float(right_acceleration))
 
     def unityReset(self, mp_name, video_filename, lightSettingName):
@@ -206,6 +244,15 @@ class BaseCarsimEnv(gym.Env):
     def unityGetObservation(self):
         return BaseCarsimEnv.unity_comms.getObservation(id=self.instancenumber)
     
+    def unityGetObservationAllEnvs(self):
+        return BaseCarsimEnv.unity_comms.getObservationAllEnvs()
+    
+    def unityGetObservationBytes(self):
+        return BaseCarsimEnv.unity_comms.getObservationBytes(id=self.instancenumber)
+    
+    def unityPing(self):
+        return BaseCarsimEnv.unity_comms.ping(id=self.instancenumber)
+
     def unityStartArena(self, width, height, jetbot, fixedTimesteps, fixedTimestepsLength):
 
         return BaseCarsimEnv.unity_comms.startArena(
@@ -364,13 +411,40 @@ class BaseCarsimEnv(gym.Env):
     def get_observation_including_memory(self, log=False):
         # this should not be used for logging some image files
 
+        # get_observation_including_memory has 0.032 percall time
+        # unityGetObservation has 0.023 percall time
+        # stringToObservation has 0.009 percall time
+        # for stringTOObservation the time is mostly the preprocessing
+
         obs_string = self.unityGetObservation()
         obs = self.stringToObservation(obs_string, log)
+
+        #obs_bytes = self.unityGetObservationBytes()
+        #obs_from_bytes = self.byteArrayToImg(obs_bytes)
+
+        #assert np.array_equal(obs, obs_from_bytes), f'obs and obs_from_bytes are not equal'
 
         if self.frame_stacking > 1:
             obs = self.memory_rollover(obs, log)
         return obs
     
+    def get_obs_with_single_request(self, log = False):
+        # TODO refactoring later on when the speed improvement is shown
+        # or rather fixing (for the different envs)
+
+        all_obsstrings = self.unityGetObservationAllEnvs()
+        
+
+        all_observations = []
+        for i in range(len(all_obsstrings)):
+            obs = self.stringToObservation(all_obsstrings[i])
+            if self.frame_stacking > 1:
+                obs = self.memory_rollover(obs, log)
+            all_observations.append(obs)
+
+        return all_observations
+
+
     def setLog(self, log):
         self.log = log
 
@@ -407,6 +481,7 @@ class BaseCarsimEnv(gym.Env):
             self.downsample = True
         else:
             self.downsample = False
+            self.downsampling_factor = 1
 
             
         self.grayscale = image_preprocessing["grayscale"]
@@ -465,25 +540,32 @@ class BaseCarsimEnv(gym.Env):
         # this can help learn quicker
 
         return pixels / 255.0
+    
+
+
 
     def stringToObservationStep(self, obsstring, log=None):
         return self.stringToObservation(obsstring, log)
 
     def stringToObservation(self, obsstring, log=None):
 
-        preprocessing_priority = ["downsample", "grayscale", "equalize", "normalize_images"]
-
         if log is None:
             log = self.log
 
         im = self.stringToImg(obsstring)
 
-        
+        pixels_result = self.preprocessing(im, log)
+
+        return pixels_result
+    
+    def preprocessing(self, im, log=None):
+        preprocessing_priority = ["downsample", "grayscale", "equalize", "normalize_images"]
 
         pixels_rgb = np.array(im, dtype=np.uint8)
         # it looks like this switches the height and width
         
         if log:
+            print("logging the image")
             if not os.path.exists('imagelog'):
                 os.makedirs('imagelog')
             if not os.path.exists('expose_images'):
@@ -519,7 +601,6 @@ class BaseCarsimEnv(gym.Env):
         pixels_result = pixels_result.astype(self.obs_dtype)
         
         assert pixels_result.dtype == self.obs_dtype, f'pixels_result.dtype {pixels_result.dtype} self.obs_dtype {self.obs_dtype}'
-
         return pixels_result
 
     def render(self, mode='human'):
@@ -533,6 +614,15 @@ class BaseCarsimEnv(gym.Env):
     def stringToImg(self, string):
         base64_bytes = string.encode('ascii')
         message_bytes = base64.b64decode(base64_bytes)
+
+        im = Image.open(io.BytesIO(message_bytes))
+
+        return im
+    
+    def byteArrayToImg(self, message_bytes):
+        print(f'type {type(message_bytes)}', flush=True)
+        print(f'length {len(message_bytes)}', flush=True)
+        print(f'first 10 bytes {message_bytes[:10]}', flush=True)
 
         im = Image.open(io.BytesIO(message_bytes))
 

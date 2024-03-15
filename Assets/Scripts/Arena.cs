@@ -275,6 +275,32 @@ public class Arena : MonoBehaviour
         return base64_string;
     }
 
+    //Get the AI vehicles camera input encode as byte array
+    private System.Byte[] GetCameraInputBytes(Camera cam, int resWidth, int resHeight, string filename)
+    {
+        // TODO should the downsampling to 84 x 84 happen here instead of python?
+        // yes
+        RenderTexture rt = new RenderTexture(resWidth, resHeight, 24);
+        cam.targetTexture = rt;
+        Texture2D screenShot = new Texture2D(resWidth, resHeight, TextureFormat.RGB24, false);
+        cam.Render();
+        RenderTexture.active = rt;
+        screenShot.ReadPixels(new Rect(0, 0, resWidth, resHeight), 0, 0);
+
+        System.Byte[] pictureInBytes = screenShot.EncodeToPNG(); // the length of the array changes depending on the content
+                                                                 // screenShot.EncodeToJPG(); auch möglich
+
+        cam.targetTexture = null;
+        RenderTexture.active = null; // JC: added to avoid errors
+        Destroy(rt);
+        Destroy(screenShot);
+
+        //Debug.Log($"Writing file {filename} with length {pictureInBytes.Length}");
+        //File.WriteAllBytes(filename, pictureInBytes);
+
+        return pictureInBytes;
+    }
+
     public string getObservation()
     {
         if (car == null)
@@ -286,6 +312,24 @@ public class Arena : MonoBehaviour
 
         //Debug.Log("getObservation");
         return GetCameraInput(this.carCam, this.resWidth, this.resHeight, "observation.png");
+    }
+
+    public System.Byte[] getObservationBytes()
+    {
+        if (car == null)
+        {
+            Debug.LogError("car is null");
+            // car is not spawned yet, give some default image
+            return DefaultImage.getDefaultImageBytes();
+        }
+
+        System.Byte[] pictureInBytes = GetCameraInputBytes(this.carCam, this.resWidth, this.resHeight, "observation.png");
+        
+
+        Debug.Log($"picture in bytes length {pictureInBytes.Length}");
+        Debug.Log($"picture in bytes first 10 bytes {Encoding.Default.GetString(pictureInBytes.Take(10).ToArray())}");
+        Debug.Log($"picture in bytes first 10 bytes {Encoding.UTF8.GetString(pictureInBytes.Take(10).ToArray())}");
+        return pictureInBytes;
     }
 
     public string getArenaScreenshot()

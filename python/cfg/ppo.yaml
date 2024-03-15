@@ -1,4 +1,4 @@
-comment: "trying with configs from 2024-02-19 but with more medium and hard maps during training"
+comment: "profiling unity"
 # "Trying with fixed light settings and variable timesteps, we want to see learning progress again. Did something break?"
 # we should also try it with the fixed spawn to be closer to the evaluation scenario, maybe the differential can do it 
 
@@ -53,8 +53,8 @@ env_kwargs:
   frame_stacking: 10
   image_preprocessing:
     downsampling_factor: 2
-    grayscale: True
-    equalize: True
+    grayscale: False
+    equalize: False
     contrast_increase: "TODO"
     # vielleicht eine art Mode variable hier reinpacken contrast increase s equalize
     normalize_images: False
