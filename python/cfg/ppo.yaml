@@ -17,7 +17,7 @@ n_epochs: 5 # amount of training passes over the replay buffer per timestep
 
 batch_size: 64
 
-n_steps: 1024 # 64 
+n_steps: 512 # 64 
 # amount of steps to collect per collect_rollouts per environment
 # Tensorboard shows the mean_episode_length is below 3
 # we can reduce the n_steps to make the collection time shorter while still collecting a lot of episodes
@@ -31,6 +31,9 @@ total_timesteps: 2500000
 
 
 policy: "CnnPolicy"
+use_bundled_calls: False
+
+
 net_arch:
   pi:
     - 64

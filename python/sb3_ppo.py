@@ -86,7 +86,7 @@ def run_ppo(cfg):
 
 
     model = algo("CnnPolicy", vec_env, verbose=1,
-                tensorboard_log="./tmp", n_epochs=n_epochs, batch_size=batch_size, n_steps=n_steps, policy_kwargs=policy_kwargs)
+                tensorboard_log="./tmp", n_epochs=n_epochs, batch_size=batch_size, n_steps=n_steps, policy_kwargs=policy_kwargs, use_bundled_calls=cfg.use_bundled_calls)
     # CnnPolicy network architecture can be seen in sb3.common.torch_layers.py
 
     # TODO wo ist epsilon definiert?

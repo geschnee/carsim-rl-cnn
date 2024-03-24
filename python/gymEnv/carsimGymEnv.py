@@ -154,7 +154,7 @@ class BaseCarsimEnv(gym.Env):
     def step(self, action: Any) -> tuple[Any, SupportsFloat, bool, bool, dict[str, Any]]:
         """Perform step, return observation, reward, terminated, false, info."""
 
-        _ = self.unityPing()
+        #_ = self.unityPing()
 
         left_acceleration, right_acceleration = action
 
@@ -178,7 +178,7 @@ class BaseCarsimEnv(gym.Env):
         return self.processStepReturnObject(stepObj)
 
     
-    def step_with_single_request(self, step_nrs, left_actions: list[float], right_actions: list[float]) -> list[StepReturnObject]:
+    def bundledStep(self, step_nrs, left_actions: list[float], right_actions: list[float]) -> list[StepReturnObject]:
 
         stepObjList = self.unityBundledStep(step_nrs, left_actions, right_actions)
 
@@ -428,21 +428,14 @@ class BaseCarsimEnv(gym.Env):
             obs = self.memory_rollover(obs, log)
         return obs
     
-    def get_obs_with_single_request(self, log = False):
+    def get_obsstrings_with_single_request(self, log = False):
         # TODO refactoring later on when the speed improvement is shown
         # or rather fixing (for the different envs)
 
         all_obsstrings = self.unityGetObservationAllEnvs()
+
+        return all_obsstrings
         
-
-        all_observations = []
-        for i in range(len(all_obsstrings)):
-            obs = self.stringToObservation(all_obsstrings[i])
-            if self.frame_stacking > 1:
-                obs = self.memory_rollover(obs, log)
-            all_observations.append(obs)
-
-        return all_observations
 
 
     def setLog(self, log):

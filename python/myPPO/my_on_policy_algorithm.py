@@ -85,6 +85,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         device: Union[th.device, str] = "auto",
         _init_setup_model: bool = True,
         supported_action_spaces: Optional[Tuple[Type[spaces.Space], ...]] = None,
+        use_bundled_calls: bool = False,
     ):
         super().__init__(
             policy=policy,
@@ -108,6 +109,9 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         self.ent_coef = ent_coef
         self.vf_coef = vf_coef
         self.max_grad_norm = max_grad_norm
+
+        self.use_bundled_calls = use_bundled_calls
+        print(f'use_bundled_calls: {use_bundled_calls}')
 
         if _init_setup_model:
             self._setup_model()
@@ -142,8 +146,13 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
 
         with th.no_grad():
             # Convert to pytorch tensor or to TensorDict
-            fresh_obs = get_obs_single_calls(env)
-            fresh_obs = get_obs_bundled_calls(env)
+
+            if self.use_bundled_calls:
+                fresh_obs = get_obs_bundled_calls(env)
+            else:
+                fresh_obs = get_obs_single_calls(env)
+        
+            #print(f'fresh_obs shape: {fresh_obs.shape}', flush=True)
             obs_tensor = obs_as_tensor(fresh_obs, self.device)
 
             actions, values, log_probs = self.policy(obs_tensor)
@@ -245,11 +254,11 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
                 clipped_actions = np.clip(
                     actions, self.action_space.low, self.action_space.high)
 
-            new_obs, rewards, dones, infos = step_wrapper(env, clipped_actions)
-            print(f'observations shape: {new_obs.shape} {type(new_obs)}')
-            print(f'rewards shape: {rewards.shape} {type(rewards)}')
-            print(f'dones shape: {dones.shape} {type(dones)}')
-            print(f'infos shape: {len(infos)} {type(infos)}')
+            new_obs, rewards, dones, infos = step_wrapper(env, clipped_actions, self.use_bundled_calls)
+            #print(f'observations shape: {new_obs.shape} {type(new_obs)}')
+            #print(f'rewards shape: {rewards.shape} {type(rewards)}')
+            #print(f'dones shape: {dones.shape} {type(dones)}')
+            #print(f'infos shape: {len(infos)} {type(infos)}')
             # observations shape: (10, 30, 84, 250) <class 'numpy.ndarray'>
             # rewards shape: (10,) <class 'numpy.ndarray'>
             # dones shape: (10,) <class 'numpy.ndarray'>
@@ -333,6 +342,9 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
 
                 assert int(info['step']) not in reward_correction_dict[idx].keys(), f"step {info['step']} already in reward correction dict for env {idx}"
                 if int(info['step']) != 0:
+                    #print(f'info["step"]: {info["step"]}')
+                    #print(f'reward_correction_dict[idx]: {reward_correction_dict[idx]}')
+                    #print(f'done: {dones[idx]}')
                     assert int(info["step"]) == max(reward_correction_dict[idx].keys()) + 1, f"step {info['step']} is not the next step in reward correction dict for env {idx}: {reward_correction_dict[idx]}"
                 
                 reward_correction_dict[idx][int(info['step'])] = insertpos
@@ -357,6 +369,11 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
 
                     # reset the reward correction dict
                     reward_correction_dict[env_id] = {}
+                
+                if done and self.use_bundled_calls:
+                    env.envs[idx].reset()
+                    # we need to do the reset here, since our bundled calls do not reset by themselves
+
 
             
             self._last_episode_starts = dones
@@ -689,7 +706,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
                 clipped_actions = np.clip(
                     actions, self.action_space.low, self.action_space.high)
             
-            observations, rewards, dones, infos = step_wrapper(env, clipped_actions )
+            observations, rewards, dones, infos = step_wrapper(env, clipped_actions, self.use_bundled_calls)
 
             
             current_lengths += 1
@@ -868,27 +885,47 @@ def get_obs_bundled_calls(env):
 
     # I think the cleanest way to solve this is by simply increasing frame stacking n
 
-    all_obs = env.envs[0].get_obs_with_single_request()
+    all_obsstrings = env.envs[0].get_obsstrings_with_single_request()
+
+    #print(f'all_obsstrings type and length: {type(all_obsstrings)} {len(all_obsstrings)}')
+
+    assert len(all_obsstrings) == env.num_envs, f"all_obsstrings has wrong length {len(all_obsstrings)} != {env.num_envs}"
+
+    all_observations = []
+    for i in range(len(all_obsstrings)):
+        obs = env.envs[i].stringToObservation(all_obsstrings[i])
+        if env.envs[i].frame_stacking > 1:
+            obs = env.envs[i].memory_rollover(obs)
+        all_observations.append(obs)
+
     for idx in range(env.num_envs):
         # get_obseration_including memory does a memory rolloer as well
-        env._save_obs(idx, all_obs[idx])
+
+        
+        env._save_obs(idx, all_observations[idx])
+
+    #print(f'get_obs_bundled_calls observations shape: {all_observations[0].shape} {type(all_observations[0])}')
+    # TODO does the _save_obs change the dimensions?
+    # or the transpose_observations?
 
     obs = env._obs_from_buf()
-    return env.transpose_observations(obs)
+    #print(f'get_obs_bundled_calls observations from buf shape: {obs.shape} {type(obs)}')
+    rtn_obs = env.transpose_observations(obs)
+    
+    #print(f'get_obs_bundled_calls observations transposed shape: {rtn_obs.shape} {type(rtn_obs)}')
+    
+    return rtn_obs
 
-def step_wrapper(env, clipped_actions):
+def step_wrapper(env, clipped_actions, use_bundled_calls):
 
-    if False:
-        # old approach
-        return env.step(clipped_actions)
-    else:
-        print(f'step with single request started', flush=True)
+    if use_bundled_calls:
+        #print(f'step with single request started', flush=True)
 
         step_nrs = [env.envs[i].step_nr for i in range(env.num_envs)]
         left_actions = [float(clipped_actions[i][0]) for i in range(env.num_envs)]
         right_actions = [float(clipped_actions[i][1]) for i in range(env.num_envs)]
 
-        stepReturnObjects = env.envs[0].step_with_single_request(step_nrs = step_nrs, left_actions=left_actions, right_actions=right_actions)
+        stepReturnObjects = env.envs[0].bundledStep(step_nrs = step_nrs, left_actions=left_actions, right_actions=right_actions)
         # first do the bundled request to unity
 
         # TODO new_obs muss ein Tensor sein, keine liste
@@ -902,9 +939,26 @@ def step_wrapper(env, clipped_actions):
             # print(f'stepReturnObjects[idx]: {stepReturnObjects[idx]}', flush=True)
 
             new_ob, reward, done, truncated, info = env.envs[idx].processStepReturnObject(stepReturnObjects[idx])
+            
+
             new_obs.append(new_ob)
             rewards.append(reward)
             dones.append(done)
             truncateds.append(truncated)
             infos.append(info)
-        return np.array(new_obs), np.array(rewards), np.array(dones), infos
+
+        #rint(f'shape new_ob: {new_ob.shape} {type(new_ob)}', flush=True)
+
+        # observations shape: (10, 84, 250, 30) <class 'numpy.ndarray'>
+        # should be (10, 30, 84, 250)
+
+        rtn_new_obs = np.array(new_obs)
+        #print(f'shape new obs: {rtn_new_obs.shape} {type(rtn_new_obs)}', flush=True)
+
+        transpose_obs = env.transpose_observations(rtn_new_obs)
+        #print(f'shape transposed obs: {transpose_obs.shape} {type(transpose_obs)}', flush=True)
+
+        return transpose_obs, np.array(rewards), np.array(dones), infos
+    else:
+        # old approach
+        return env.step(clipped_actions)
