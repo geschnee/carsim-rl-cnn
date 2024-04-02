@@ -41,7 +41,8 @@ public class StepReturnObject
 public class StepReturnObjectList
 {
     public List<StepReturnObject> objects = new List<StepReturnObject>();
-}   
+    public float step_script_realtime_duration;
+}
 
 
 public class PeacefulPieCarCommandReceiver : MonoBehaviour
@@ -56,17 +57,20 @@ public class PeacefulPieCarCommandReceiver : MonoBehaviour
         private Vector3 arenaPosition = new Vector3(0, 0, 0);
         private Vector3 arenaOffset;
 
+        private float step_script_realtime_duration;
 
         public Rpc(GameObject arenaPrefab, Vector3 arenaOffset)
         {
             this.arenaPrefab = arenaPrefab;
             this.arenaOffset = arenaOffset;
+            step_script_realtime_duration = 0.0f;
         }
 
         [JsonRpcMethod]
         void destroyMap(int id)
         {
             arenas[id].destroyMap();
+            step_script_realtime_duration = 0.0f;
         }
 
         [JsonRpcMethod]
@@ -77,6 +81,7 @@ public class PeacefulPieCarCommandReceiver : MonoBehaviour
                 Destroy(arena.gameObject);
             }
             arenas.Clear();
+            step_script_realtime_duration = 0.0f;
         }
 
 
@@ -114,21 +119,29 @@ public class PeacefulPieCarCommandReceiver : MonoBehaviour
         [JsonRpcMethod]
         StepReturnObject immediateStep(int id, int step, float inputAccelerationLeft, float inputAccelerationRight)
         {
-            return arenas[id].immediateStep(step, inputAccelerationLeft, inputAccelerationRight);
+            float beforeTime = Time.realtimeSinceStartup;
+            StepReturnObject obj = arenas[id].step(step, inputAccelerationLeft, inputAccelerationRight);
+            float step_script_realtime = Time.realtimeSinceStartup - beforeTime;
+            step_script_realtime_duration += step_script_realtime;
+            return obj;
         }
 
         [JsonRpcMethod]
         StepReturnObjectList bundledStep(List<int> step_nrs, List<float> left_actions, List<float> right_actions)
         {
+            float beforeTime = Time.realtimeSinceStartup;
             StepReturnObjectList objects = new StepReturnObjectList();
-            List<StepReturnObject> stepReturnObjects = new List<StepReturnObject>();
 
             for (int i = 0; i < left_actions.Count; i++)
             {
-                StepReturnObject stepReturnObject = arenas[i].immediateStep(step_nrs[i], left_actions[i], right_actions[i]);
-                stepReturnObjects.Add(stepReturnObject);
+                StepReturnObject stepReturnObject = arenas[i].step(step_nrs[i], left_actions[i], right_actions[i]);
                 objects.objects.Add(stepReturnObject);
             }
+            float step_script_realtime = Time.realtimeSinceStartup - beforeTime;
+            step_script_realtime_duration += step_script_realtime;
+
+            objects.step_script_realtime_duration = step_script_realtime_duration;
+
             return objects;
         }
 

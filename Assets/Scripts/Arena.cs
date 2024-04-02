@@ -105,7 +105,7 @@ public class Arena : MonoBehaviour
         this.aIEngine.ResetMotor();
 
         this.carCam = car.GetComponentInChildren<Camera>();
-        
+
 
         SetLightSetting(lightSetting);
 
@@ -145,13 +145,17 @@ public class Arena : MonoBehaviour
         if (lightSetting == LightSetting.bright)
         {
             lightMultiplier = 7.5f;
-        } else if (lightSetting == LightSetting.standard)
+        }
+        else if (lightSetting == LightSetting.standard)
         {
             lightMultiplier = 5f;
-        } else if (lightSetting == LightSetting.dark)
+        }
+        else if (lightSetting == LightSetting.dark)
         {
             lightMultiplier = 2.5f;
-        } else {
+        }
+        else
+        {
 
             lightMultiplier = -100;
             Debug.LogError("LightSetting random should not be used");
@@ -192,12 +196,13 @@ public class Arena : MonoBehaviour
         return episodeManager;
     }
 
-    public StepReturnObject immediateStep(int step, float inputAccelerationLeft, float inputAccelerationRight)
+    public StepReturnObject step(int step, float inputAccelerationLeft, float inputAccelerationRight)
     {
-        // TODO maybe move this code to the episodeManager
 
-        if (episodeManager.fixedTimesteps && episodeManager.IsTerminated()==false){
-            if (episodeManager.episodeStatus != EpisodeStatus.WaitingForStep){
+        if (episodeManager.fixedTimesteps && episodeManager.IsTerminated() == false)
+        {
+            if (episodeManager.episodeStatus != EpisodeStatus.WaitingForStep)
+            {
                 return new StepReturnObject(previousStepNotFinished: true);
             }
         }
@@ -226,8 +231,8 @@ public class Arena : MonoBehaviour
         gameManager.setJetbot(jetbotName);
     }
 
-  
-  
+
+
 
 
     //Get the AI vehicles camera input encode as byte array
@@ -256,7 +261,7 @@ public class Arena : MonoBehaviour
         string base64_string = System.Convert.ToBase64String(pictureInBytes);
 
 
-        
+
 
         /*
         byte[] base64EncodedBytes = System.Convert.FromBase64String(base64_string);
@@ -324,7 +329,7 @@ public class Arena : MonoBehaviour
         }
 
         System.Byte[] pictureInBytes = GetCameraInputBytes(this.carCam, this.resWidth, this.resHeight, "observation.png");
-        
+
 
         Debug.Log($"picture in bytes length {pictureInBytes.Length}");
         Debug.Log($"picture in bytes first 10 bytes {Encoding.Default.GetString(pictureInBytes.Take(10).ToArray())}");

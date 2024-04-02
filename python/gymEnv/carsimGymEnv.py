@@ -42,6 +42,7 @@ class StepReturnObject:
 @dataclass
 class StepReturnObjectList:
     objects: list[StepReturnObject]
+    step_script_realtime_duration: float
 
 class BaseCarsimEnv(gym.Env):
 
@@ -180,7 +181,7 @@ class BaseCarsimEnv(gym.Env):
     
     def bundledStep(self, step_nrs, left_actions: list[float], right_actions: list[float]) -> list[StepReturnObject]:
 
-        stepObjList = self.unityBundledStep(step_nrs, left_actions, right_actions)
+        stepObjList, step_script_realtime_duration = self.unityBundledStep(step_nrs, left_actions, right_actions)
 
         waitTimeStart=time.time()
         waitTime=False
@@ -191,6 +192,8 @@ class BaseCarsimEnv(gym.Env):
 
         if waitTime:
             self.episodeWaitTime += waitTime
+
+        print(f'time recorded in c# step calls {step_script_realtime_duration}', flush=True)
 
         return stepObjList
 
@@ -230,7 +233,8 @@ class BaseCarsimEnv(gym.Env):
         return new_obs, reward, terminated, truncated, info_dict
 
     def unityBundledStep(self, step_nrs, left_actions, right_actions):
-        return BaseCarsimEnv.unity_comms.bundledStep(ResultClass=StepReturnObjectList, step_nrs=step_nrs, left_actions=left_actions, right_actions=right_actions).objects
+        objectList = BaseCarsimEnv.unity_comms.bundledStep(ResultClass=StepReturnObjectList, step_nrs=step_nrs, left_actions=left_actions, right_actions=right_actions)
+        return objectList.objects, objectList.step_script_realtime_duration
 
     # move all calls to seperate functions for profiling
     def unityImmediateStep(self, left_acceleration, right_acceleration):

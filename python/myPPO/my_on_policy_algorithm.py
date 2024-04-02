@@ -498,6 +498,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
 
         while self.num_timesteps < total_timesteps:
             # collect_rollouts
+
             
             should_log = log_interval is not None and iteration % log_interval == 0
             continue_training, cr_time = self.collect_rollouts(
