@@ -35,6 +35,11 @@ public class StepReturnObject
     public StepReturnObject(bool previousStepNotFinished)
     {
         this.previousStepNotFinished = previousStepNotFinished;
+        this.rewards = new List<float>();
+        this.done = false;
+        this.terminated = false;
+        this.info = new Dictionary<string, string>();
+        this.observation = "stepWaiting";
     }
 }
 

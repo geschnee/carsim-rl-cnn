@@ -17,6 +17,7 @@ from stable_baselines3.common.vec_env import VecEnv
 from myPPO.my_buffers import MyRolloutBuffer
 
 from gymEnv.myEnums import LightSetting
+from gymEnv.myEnums import MapType
 
 import os
 
@@ -86,6 +87,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         _init_setup_model: bool = True,
         supported_action_spaces: Optional[Tuple[Type[spaces.Space], ...]] = None,
         use_bundled_calls: bool = False,
+        use_fresh_obs: bool = False,
     ):
         super().__init__(
             policy=policy,
@@ -112,6 +114,8 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
 
         self.use_bundled_calls = use_bundled_calls
         print(f'use_bundled_calls: {use_bundled_calls}')
+        
+        self.use_fresh_obs = use_fresh_obs
 
         if _init_setup_model:
             self._setup_model()
@@ -144,20 +148,30 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
     def inferFromObservations(self, env):
         # moved to its own function to be able to profile the forward passes (during rollout collection and evaluation) easily
 
+
         with th.no_grad():
             # Convert to pytorch tensor or to TensorDict
 
-            if self.use_bundled_calls:
-                fresh_obs = get_obs_bundled_calls(env)
+            
+            if self.use_fresh_obs:
+
+                if self.use_bundled_calls:
+                    obs = get_obs_bundled_calls(env)
+                else:
+                    obs = get_obs_single_calls(env)
+            
+                #print(f'fresh_obs shape: {fresh_obs.shape}', flush=True)
+                obs_tensor = obs_as_tensor(obs, self.device)
             else:
-                fresh_obs = get_obs_single_calls(env)
-        
-            #print(f'fresh_obs shape: {fresh_obs.shape}', flush=True)
-            obs_tensor = obs_as_tensor(fresh_obs, self.device)
+
+                # we use the obs from the last step, no fresh collection
+                # this is how it was originally done in sb3 and uses less calls to unity
+                obs_tensor = obs_as_tensor(self._last_obs, self.device)
+                obs = self._last_obs
 
             actions, values, log_probs = self.policy(obs_tensor)
         
-        return actions, values, log_probs, fresh_obs
+        return actions, values, log_probs, obs
 
     def print_network_structure(self, env):
         if self.network_printed:
@@ -226,6 +240,8 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         second_goals_given_first, third_goals_given_second, successfully_passed_second_goals = 0, 0, 0
         waitTime = 0
 
+        
+
         reward_correction_dict = {}
         for i in range(env.num_envs):
             reward_correction_dict[i] = {}
@@ -233,8 +249,11 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         # inner dictionary maps step number to the corresponding position in rollout_buffer
 
         
-        env.reset()
+        new_obs = env.reset()
         # we need to reset the env to get the correct rewards
+
+        if not self.use_fresh_obs:
+            self._last_obs = new_obs
 
         while n_steps < n_rollout_steps:
             if self.use_sde and self.sde_sample_freq > 0 and n_steps % self.sde_sample_freq == 0:
@@ -243,7 +262,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
 
             
 
-            actions, values, log_probs, fresh_obs = self.inferFromObservations(env)
+            actions, values, log_probs, obs = self.inferFromObservations(env)
 
             actions = actions.cpu().numpy()
 
@@ -327,7 +346,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
                         third_goals_given_second +=1
 
             insertpos = rollout_buffer.add(
-                fresh_obs,  # type: ignore[arg-type]
+                obs,  # type: ignore[arg-type]
                 actions,
                 rewards,
                 self._last_episode_starts,  # type: ignore[arg-type]
@@ -377,6 +396,8 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
 
             
             self._last_episode_starts = dones
+            if not self.use_fresh_obs:
+                self._last_obs = new_obs
 
         with th.no_grad():
             # Compute value for the last timestep
@@ -482,6 +503,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
             tb_log_name,
             progress_bar,
         )
+
 
         
         self.print_network_structure(self.env)
@@ -684,20 +706,27 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
                 video_filename = f'{os.getcwd()}\\videos_iter_{iteration}\\{difficulty}_{light_setting.name}_env_{i}_video_'
             )
         
+
+
         env.env_method(
             method_name="reset_with_difficulty",
             indices=range(n_envs),
             difficulty=difficulty,
             lightSetting=light_setting,
         )
-        
+
         # switch to eval mode
         self.policy.set_training_mode(False)
+
+        if not self.use_fresh_obs:
+            # get the first observations
+            actions, values, log_probs, obs = self.inferFromObservations(env)
+            self._last_obs = obs
 
         while (episode_counts < episode_count_targets).any():
     
             
-            actions, values, log_probs, fresh_obs = self.inferFromObservations(env)
+            actions, values, log_probs, obs = self.inferFromObservations(env)
             actions = actions.cpu().numpy()
 
             # Rescale and perform action
@@ -766,6 +795,8 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
                             difficulty=difficulty,
                             lightSetting=light_setting
                         )
+            
+            self._last_obs = observations
 
         assert np.sum(episode_counts) == n_eval_episodes, f"not all episodes were finished, {np.sum(episode_counts)} != {n_eval_episodes}"
         assert finished_episodes == n_eval_episodes, f"not all episodes were finished, {finished_episodes} != {n_eval_episodes}"

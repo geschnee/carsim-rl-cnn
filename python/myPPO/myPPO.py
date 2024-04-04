@@ -104,6 +104,7 @@ class myPPO(MyOnPolicyAlgorithm):
         device: Union[th.device, str] = "auto",
         _init_setup_model: bool = True,
         use_bundled_calls: bool = False,
+        use_fresh_obs: bool = False,
     ):
         super().__init__(
             policy,
@@ -131,6 +132,7 @@ class myPPO(MyOnPolicyAlgorithm):
                 spaces.MultiBinary,
             ),
             use_bundled_calls=use_bundled_calls,
+            use_fresh_obs=use_fresh_obs,
         )
 
         # Sanity check, otherwise it will lead to noisy gradient and NaN

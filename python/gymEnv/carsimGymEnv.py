@@ -180,24 +180,31 @@ class BaseCarsimEnv(gym.Env):
 
     
     def bundledStep(self, step_nrs, left_actions: list[float], right_actions: list[float]) -> list[StepReturnObject]:
-
+        
+        starttime = time.time()
         stepObjList, step_script_realtime_duration = self.unityBundledStep(step_nrs, left_actions, right_actions)
 
         waitTimeStart=time.time()
         waitTime=False
+        waiting = 0
         while not self.allPreviousStepsFinished(stepObjList):
-            print(f'waiting for previous step to finish', flush=True)
             waitTime = time.time() - waitTimeStart
-            stepObjList = self.unityBundledStep(step_nrs, left_actions, right_actions)
+            waiting += 1
+            stepObjList, step_script_realtime_duration = self.unityBundledStep(step_nrs, left_actions, right_actions)
 
         if waitTime:
             self.episodeWaitTime += waitTime
 
-        print(f'time recorded in c# step calls {step_script_realtime_duration}', flush=True)
+        if waiting != 0:
+            print(f'waited {waiting} times for previous step to finish, total step call duration {time.time() -starttime}', flush=True)
+
+
+        print(f'time recorded in c# step calls {step_script_realtime_duration}', flush=True) # with profiling (unityBundledStep) the last print of this can be used to determine the ratio of time between transmission time and c# processing time
 
         return stepObjList
 
     def allPreviousStepsFinished(self, stepObjList):
+        assert len(stepObjList) > 0, f'stepObjList is empty'
         for stepObj in stepObjList:
             if stepObj.previousStepNotFinished:
                 return False
