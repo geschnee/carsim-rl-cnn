@@ -510,7 +510,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
 
 
         callback.on_training_start(locals(), globals())
-
+        learn_starttime = time.time()
 
         total_cr_time, total_train_time, total_eval_time = 0, 0, 0
         self.collected_episodes = 0
@@ -577,14 +577,14 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
 
                 self.logger.record("time/collection_time_seconds", cr_time)
                 self.logger.record("time/iteration", iteration)
-                
+                self.logger.record("time/timesteps_per_hour_realtime", self.num_timesteps / ((time.time()-learn_starttime) / 3600)) # this includes the train and eval time ...
 
                 self.logger.dump(step=self.num_timesteps)
 
             train_time = time.time()
             self.train()
             train_time = time.time() - train_time
-            self.logger.record("time/train_time_seconds", train_time)
+            self.logger.record("time/train_time_minutes", train_time / 60)
             
             self.logger.dump(step=self.num_timesteps)
             total_train_time += train_time

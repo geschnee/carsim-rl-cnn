@@ -1,4 +1,4 @@
-comment: "like 19.02.2024 but no fresh obs"
+comment: "base config for isolated runs"
 # "Trying with fixed light settings and variable timesteps, we want to see learning progress again. Did something break?"
 # we should also try it with the fixed spawn to be closer to the evaluation scenario, maybe the differential can do it 
 
@@ -9,15 +9,13 @@ eval_settings:
   eval_light_settings: True
 
 # reducing n_envs results in higher fps (per env)
-n_envs: 10
+n_envs: 20
 n_epochs: 5 # amount of training passes over the replay buffer per timestep
-
-
 
 
 batch_size: 64
 
-n_steps: 1024 # 64 
+n_steps: 512 # 64 
 # amount of steps to collect per collect_rollouts per environment
 # Tensorboard shows the mean_episode_length is below 3
 # we can reduce the n_steps to make the collection time shorter while still collecting a lot of episodes
@@ -27,7 +25,7 @@ n_steps: 1024 # 64
 copy_model_from: False #models_and_dumps/best_model_episode_70
 # copy_model_from can be False or a string (filename without .zip suffix)
 
-total_timesteps: 2500000
+total_timesteps: 25000000
 
 
 policy: "CnnPolicy"
@@ -59,12 +57,13 @@ env_kwargs:
     # vielleicht eine art Mode variable hier reinpacken contrast increase s equalize
     normalize_images: False
   coefficients:
-    distanceCoefficient: 0.5
+    distanceCoefficient: 1
     orientationCoefficient: 0
     velocityCoefficient: 0
-    eventCoefficient: 1
+    eventCoefficient: 0
   trainingMapType: randomEval
   trainingLightSetting: standard
+  # random, bright, standard, dark
   fixedTimestepsLength: 0.3
   # non fixed with 10 envs takes 0.5 seconds for vecenv_step --> this results in 1 fps (per env)
 
