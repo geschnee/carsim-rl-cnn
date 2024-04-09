@@ -20,6 +20,7 @@ from gymEnv.myEnums import LightSetting
 from gymEnv.myEnums import MapType
 
 import os
+import csv
 
 SelfOnPolicyAlgorithm = TypeVar(
     "SelfOnPolicyAlgorithm", bound="MyOnPolicyAlgorithm")
@@ -116,6 +117,8 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         print(f'use_bundled_calls: {use_bundled_calls}')
         
         self.use_fresh_obs = use_fresh_obs
+
+        self.my_logs = {}
 
         if _init_setup_model:
             self._setup_model()
@@ -449,23 +452,23 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
             rate_third_goal_given_second = third_goals_given_second / successfully_passed_second_goals
         else:
             rate_third_goal_given_second = 0
-        self.logger.record("rollout/rate_second_given_first", rate_second_goal_given_first)
-        self.logger.record("rollout/rate_third_given_second", rate_third_goal_given_second)
+        self.my_record("rollout/rate_second_given_first", rate_second_goal_given_first)
+        self.my_record("rollout/rate_third_given_second", rate_third_goal_given_second)
         
-        self.logger.record("rollout/success_rate", success_rate)
-        self.logger.record("rollout/timeout_rate", timeout_rate)
-        self.logger.record("rollout/goal_completion_rate", goal_completion_rate)
-        self.logger.record("rollout/mean_reward", mean_reward)
-        self.logger.record("rollout/mean_episode_length", mean_episode_length)
-        self.logger.record("rollout/mean_distance_reward", mean_distance_reward)
-        self.logger.record("rollout/mean_velocity_reward", mean_velocity_reward)
-        self.logger.record("rollout/mean_orientation_reward", mean_orientation_reward)
-        self.logger.record("rollout/mean_event_reward", mean_event_reward)
-        self.logger.record("rollout/first_goal_completion_rate", first_goal_completion_rate)
-        self.logger.record("rollout/completed_episodes", completed_episodes)
-        self.logger.record("rollout/step_average_wait_time", step_average_wait_time)
-        self.logger.record("rollout/rate_episodes_with_collisions", rate_episodes_with_collisions)
-        self.logger.record("rollout/avg_step_duration_unity", avg_step_duration_unity_env) # average duration of a step measured in unity episode duration time
+        self.my_record("rollout/success_rate", success_rate)
+        self.my_record("rollout/timeout_rate", timeout_rate)
+        self.my_record("rollout/goal_completion_rate", goal_completion_rate)
+        self.my_record("rollout/mean_reward", mean_reward)
+        self.my_record("rollout/mean_episode_length", mean_episode_length)
+        self.my_record("rollout/mean_distance_reward", mean_distance_reward)
+        self.my_record("rollout/mean_velocity_reward", mean_velocity_reward)
+        self.my_record("rollout/mean_orientation_reward", mean_orientation_reward)
+        self.my_record("rollout/mean_event_reward", mean_event_reward)
+        self.my_record("rollout/first_goal_completion_rate", first_goal_completion_rate)
+        self.my_record("rollout/completed_episodes", completed_episodes)
+        self.my_record("rollout/step_average_wait_time", step_average_wait_time)
+        self.my_record("rollout/rate_episodes_with_collisions", rate_episodes_with_collisions)
+        self.my_record("rollout/avg_step_duration_unity", avg_step_duration_unity_env) # average duration of a step measured in unity episode duration time
 
         cr_time = time.time() - cr_time
         
@@ -473,6 +476,35 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
 
         return True, cr_time
     
+    def my_record(self, key: str, value: float, exclude = None) -> None:
+
+        x = self.num_timesteps
+        if key not in self.my_logs.keys():
+            self.my_logs[key] = {}
+
+        self.my_logs[key][x] = value
+
+        if exclude == None:
+            self.logger.record(key, value)
+        else: 
+            self.logger.record(key, value, exclude=exclude)
+
+    def my_dump(self, step: int) -> None:
+
+        for metric, dictionary in self.my_logs.items():
+
+            prefix = metric.split("/")[0]
+
+            if not os.path.exists(prefix):
+                os.makedirs(prefix)
+
+            file_path = f'{metric}.csv'
+            with open(file_path, 'w', newline='') as file:
+                writer = csv.writer(file)
+                for step, value in dictionary.items():
+                    writer.writerow([step, value])
+
+        self.logger.dump(step=step)
 
     def train(self) -> None:
         """
@@ -558,35 +590,35 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
                 # fps takes the time for the whole training, collect_rollout_fps_per_env only counts collection time
                 collect_rollout_fps_per_env = float(((self.num_timesteps - self._num_timesteps_at_start) / self.n_envs ) / total_collection_time)
 
-                self.logger.record("time/iterations",
+                self.my_record("time/iterations",
                                    iteration, exclude="tensorboard")
                 '''if len(self.ep_info_buffer) > 0 and len(self.ep_info_buffer[0]) > 0:
                     self.logger.record(
                         "rollout/ep_rew_mean", safe_mean([ep_info["r"] for ep_info in self.ep_info_buffer]))
                     self.logger.record(
                         "rollout/ep_len_mean", safe_mean([ep_info["l"] for ep_info in self.ep_info_buffer]))'''
-                self.logger.record("time/fps", fps)
-                self.logger.record("time/fps_per_env", fps_per_env)
-                self.logger.record("time/collect_rollout_fps_per_env", collect_rollout_fps_per_env)
+                self.my_record("time/fps", fps)
+                self.my_record("time/fps_per_env", fps_per_env)
+                self.my_record("time/collect_rollout_fps_per_env", collect_rollout_fps_per_env)
 
-                self.logger.record("time/time_elapsed",
+                self.my_record("time/time_elapsed",
                                    int(time_elapsed), exclude="tensorboard")
-                self.logger.record("time/total_timesteps",
+                self.my_record("time/total_timesteps",
                                    self.num_timesteps, exclude="tensorboard")
-                self.logger.record("rollout/collected_episodes", self.collected_episodes)
+                self.my_record("rollout/collected_episodes", self.collected_episodes)
 
-                self.logger.record("time/collection_time_seconds", cr_time)
-                self.logger.record("time/iteration", iteration)
-                self.logger.record("time/timesteps_per_hour_realtime", self.num_timesteps / ((time.time()-learn_starttime) / 3600)) # this includes the train and eval time ...
+                self.my_record("time/collection_time_seconds", cr_time)
+                self.my_record("time/iteration", iteration)
+                self.my_record("time/timesteps_per_hour_realtime", self.num_timesteps / ((time.time()-learn_starttime) / 3600)) # this includes the train and eval time ...
 
-                self.logger.dump(step=self.num_timesteps)
+                self.my_dump(step=self.num_timesteps)
 
             train_time = time.time()
             self.train()
             train_time = time.time() - train_time
-            self.logger.record("time/train_time_minutes", train_time / 60)
+            self.my_record("time/train_time_minutes", train_time / 60)
             
-            self.logger.dump(step=self.num_timesteps)
+            self.my_dump(step=self.num_timesteps)
             total_train_time += train_time
 
             # model eval 
@@ -597,12 +629,12 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
 
                 
                 eval_time = time.time() - eval_time
-                self.logger.record("time/eval_time_seconds", eval_time)
+                self.my_record("time/eval_time_seconds", eval_time)
 
                 print(f'eval finished minutes: {eval_time / 60}')
                 total_eval_time += eval_time
 
-                self.logger.dump(step=self.num_timesteps)
+                self.my_dump(step=self.num_timesteps)
 
                 print(f'total_cr_time: {total_cr_time}')
                 print(f'total_train_time: {total_train_time}')
@@ -642,18 +674,18 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
             total_success_rate += easy_success_rate + medium_success_rate + hard_success_rate
             light_success_rate = (easy_success_rate + medium_success_rate + hard_success_rate) / 3
             
-            self.logger.record(f"eval/success_easy_light_{light_setting.name}", easy_success_rate)
-            self.logger.record(f"eval/success_medium_light_{light_setting.name}", medium_success_rate)
-            self.logger.record(f"eval/success_hard_light_{light_setting.name}", hard_success_rate)
-            self.logger.record(f"eval/success_light_{light_setting.name}", light_success_rate)
+            self.my_record(f"eval/success_easy_light_{light_setting.name}", easy_success_rate)
+            self.my_record(f"eval/success_medium_light_{light_setting.name}", medium_success_rate)
+            self.my_record(f"eval/success_hard_light_{light_setting.name}", hard_success_rate)
+            self.my_record(f"eval/success_light_{light_setting.name}", light_success_rate)
             avg_easy_success_rate += easy_success_rate
             avg_medium_success_rate += medium_success_rate
             avg_hard_success_rate += hard_success_rate
 
         if eval_light_settings:
-            self.logger.record(f"eval/success_easy_across_light_settings", avg_easy_success_rate / len(light_settings))
-            self.logger.record(f"eval/success_medium_across_light_settings", avg_medium_success_rate / len(light_settings))
-            self.logger.record(f"eval/success_hard_across_light_settings", avg_hard_success_rate / len(light_settings))
+            self.my_record(f"eval/success_easy_across_light_settings", avg_easy_success_rate / len(light_settings))
+            self.my_record(f"eval/success_medium_across_light_settings", avg_medium_success_rate / len(light_settings))
+            self.my_record(f"eval/success_hard_across_light_settings", avg_hard_success_rate / len(light_settings))
 
         total_success_rate = total_success_rate / (3 * len(light_settings))
         if total_success_rate > self.max_total_success_rate:
@@ -661,7 +693,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
             self.save(f"best_model_episode_{iteration}")
 
 
-        self.logger.record("eval/success_rate", total_success_rate)
+        self.my_record("eval/success_rate", total_success_rate)
 
         return total_success_rate
 
@@ -698,7 +730,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
 
 
         # reset environment 0 to record the videos
-        log_indices = [0]
+        log_indices = [0, 1] # these indices will record videos
         for i in log_indices:
             env.env_method(
                 method_name="setVideoFilename",
@@ -822,20 +854,20 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
 
 
 
-        self.logger.record(f'eval_{difficulty}_{light_setting.name}/mean_reward', mean_reward)
+        self.my_record(f'eval_{difficulty}_{light_setting.name}/mean_reward', mean_reward)
         
-        self.logger.record(f'eval_{difficulty}_{light_setting.name}/std_reward', std_reward)
-        self.logger.record(f'eval_{difficulty}_{light_setting.name}/success_rate', success_rate)
-        self.logger.record(f'eval_{difficulty}_{light_setting.name}/rate_passed_goals', rate_of_passed_goals)
-        self.logger.record(f'eval_{difficulty}_{light_setting.name}/rate_first_goal', rate_of_passed_first_goals)
-        self.logger.record(f'eval_{difficulty}_{light_setting.name}/rate_second_goal_given_first', rate_of_second_goal_given_first)
-        self.logger.record(f'eval_{difficulty}_{light_setting.name}/rate_third_goal_given_second', rate_of_third_goal_given_second)
-        self.logger.record(f'eval_{difficulty}_{light_setting.name}/timeout_rate', timeout_rate)
-        self.logger.record(f'eval_{difficulty}_{light_setting.name}/rate_episode_with_collision', collision_episodes / n_eval_episodes)
+        self.my_record(f'eval_{difficulty}_{light_setting.name}/std_reward', std_reward)
+        self.my_record(f'eval_{difficulty}_{light_setting.name}/success_rate', success_rate)
+        self.my_record(f'eval_{difficulty}_{light_setting.name}/rate_passed_goals', rate_of_passed_goals)
+        self.my_record(f'eval_{difficulty}_{light_setting.name}/rate_first_goal', rate_of_passed_first_goals)
+        self.my_record(f'eval_{difficulty}_{light_setting.name}/rate_second_goal_given_first', rate_of_second_goal_given_first)
+        self.my_record(f'eval_{difficulty}_{light_setting.name}/rate_third_goal_given_second', rate_of_third_goal_given_second)
+        self.my_record(f'eval_{difficulty}_{light_setting.name}/timeout_rate', timeout_rate)
+        self.my_record(f'eval_{difficulty}_{light_setting.name}/rate_episode_with_collision', collision_episodes / n_eval_episodes)
 
         step_average_wait_time = wait_time / np.sum(episode_lengths)
-        self.logger.record(f"eval_{difficulty}_{light_setting.name}/step_average_wait_time", step_average_wait_time)
-        self.logger.record(f'eval_{difficulty}_{light_setting.name}/average_episode_length', np.average(episode_lengths))
+        self.my_record(f"eval_{difficulty}_{light_setting.name}/step_average_wait_time", step_average_wait_time)
+        self.my_record(f'eval_{difficulty}_{light_setting.name}/average_episode_length', np.average(episode_lengths))
 
         # set to no video afterwards
         env.env_method(
@@ -876,12 +908,12 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
 
             
             eval_time = time.time() - eval_time
-            self.logger.record("time/eval_time_seconds", eval_time)
+            self.my_record("time/eval_time_seconds", eval_time)
 
             print(f'eval finished minutes: {eval_time / 60}')
             total_eval_time += eval_time
 
-            self.logger.dump(step=i)
+            self.my_dump(step=i)
 
             print(f'total_eval_time: {total_eval_time}', flush=True)
 

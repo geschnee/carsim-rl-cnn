@@ -313,20 +313,20 @@ class myPPO(MyOnPolicyAlgorithm):
         explained_var = explained_variance(self.rollout_buffer.values.flatten(), self.rollout_buffer.returns.flatten())
 
         # Logs
-        self.logger.record("train/entropy_loss", np.mean(entropy_losses))
-        self.logger.record("train/policy_gradient_loss", np.mean(pg_losses))
-        self.logger.record("train/value_loss", np.mean(value_losses))
-        self.logger.record("train/approx_kl", np.mean(approx_kl_divs))
-        self.logger.record("train/clip_fraction", np.mean(clip_fractions))
-        self.logger.record("train/loss", loss.item())
-        self.logger.record("train/explained_variance", explained_var)
+        self.my_record("train/entropy_loss", np.mean(entropy_losses))
+        self.my_record("train/policy_gradient_loss", np.mean(pg_losses))
+        self.my_record("train/value_loss", np.mean(value_losses))
+        self.my_record("train/approx_kl", np.mean(approx_kl_divs))
+        self.my_record("train/clip_fraction", np.mean(clip_fractions))
+        self.my_record("train/loss", loss.item())
+        self.my_record("train/explained_variance", explained_var)
         if hasattr(self.policy, "log_std"):
-            self.logger.record("train/std", th.exp(self.policy.log_std).mean().item())
+            self.my_record("train/std", th.exp(self.policy.log_std).mean().item())
 
-        self.logger.record("train/n_updates", self._n_updates, exclude="tensorboard")
-        self.logger.record("train/clip_range", clip_range)
+        self.my_record("train/n_updates", self._n_updates, exclude="tensorboard")
+        self.my_record("train/clip_range", clip_range)
         if self.clip_range_vf is not None:
-            self.logger.record("train/clip_range_vf", clip_range_vf)
+            self.my_record("train/clip_range_vf", clip_range_vf)
 
     def learn(
         self: SelfPPO,
