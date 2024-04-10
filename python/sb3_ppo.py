@@ -86,7 +86,7 @@ def run_ppo(cfg):
 
 
     model = algo("CnnPolicy", vec_env, verbose=1,
-                tensorboard_log="./tmp", n_epochs=n_epochs, batch_size=batch_size, n_steps=n_steps, policy_kwargs=policy_kwargs, use_bundled_calls=cfg.use_bundled_calls, use_fresh_obs=cfg.use_fresh_obs)
+                tensorboard_log="./tmp", n_epochs=n_epochs, batch_size=batch_size, n_steps=n_steps, policy_kwargs=policy_kwargs, use_bundled_calls=cfg.use_bundled_calls, use_fresh_obs=cfg.use_fresh_obs, print_network_and_loss_structure=cfg.print_network_and_loss_structure)
     # CnnPolicy network architecture can be seen in sb3.common.torch_layers.py
 
     # TODO wo ist epsilon definiert?
@@ -107,6 +107,9 @@ def run_ppo(cfg):
     model.learn(total_timesteps=cfg.total_timesteps, log_interval=cfg.eval_settings.log_interval, num_evals_per_difficulty = cfg.eval_settings.num_evals_per_difficulty, eval_light_settings=cfg.eval_settings.eval_light_settings)
     model.save("finished_ppo")
     print("finished without issues")
+
+    # TODO run more evals here after training completed
+
 
 
 @hydra.main(config_path=".", config_name="cfg/ppo.yaml")

@@ -199,7 +199,7 @@ class BaseCarsimEnv(gym.Env):
             print(f'waited {waiting} times for previous step to finish, total step call duration {time.time() -starttime}', flush=True)
 
 
-        print(f'time recorded in c# step calls {step_script_realtime_duration}', flush=True) # with profiling (unityBundledStep) the last print of this can be used to determine the ratio of time between transmission time and c# processing time
+        # print(f'time recorded in c# step calls {step_script_realtime_duration}', flush=True) # with profiling (unityBundledStep) the last print of this can be used to determine the ratio of time between transmission time and c# processing time
 
         return stepObjList
 

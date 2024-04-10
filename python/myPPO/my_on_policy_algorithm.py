@@ -89,6 +89,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         supported_action_spaces: Optional[Tuple[Type[spaces.Space], ...]] = None,
         use_bundled_calls: bool = False,
         use_fresh_obs: bool = False,
+        print_network_and_loss_structure: bool = False,
     ):
         super().__init__(
             policy=policy,
@@ -117,6 +118,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         print(f'use_bundled_calls: {use_bundled_calls}')
         
         self.use_fresh_obs = use_fresh_obs
+        self.print_network_and_loss_structure = print_network_and_loss_structure
 
         self.my_logs = {}
 
@@ -537,8 +539,8 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         )
 
 
-        
-        self.print_network_structure(self.env)
+        if self.print_network_and_loss_structure:
+            self.print_network_structure(self.env)
 
 
         callback.on_training_start(locals(), globals())
@@ -870,11 +872,12 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         self.my_record(f'eval_{difficulty}_{light_setting.name}/average_episode_length', np.average(episode_lengths))
 
         # set to no video afterwards
-        env.env_method(
-            method_name="setVideoFilename",
-            indices=[0],
-            video_filename = ""
-        )
+        for index in log_indices:
+            env.env_method(
+                method_name="setVideoFilename",
+                indices=[index],
+                video_filename = ""
+            )
 
         return success_rate
     

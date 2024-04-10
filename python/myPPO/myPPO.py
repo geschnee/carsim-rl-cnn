@@ -105,6 +105,7 @@ class myPPO(MyOnPolicyAlgorithm):
         _init_setup_model: bool = True,
         use_bundled_calls: bool = False,
         use_fresh_obs: bool = False,
+        print_network_and_loss_structure: bool = False,
     ):
         super().__init__(
             policy,
@@ -133,6 +134,7 @@ class myPPO(MyOnPolicyAlgorithm):
             ),
             use_bundled_calls=use_bundled_calls,
             use_fresh_obs=use_fresh_obs,
+            print_network_and_loss_structure=print_network_and_loss_structure,
         )
 
         # Sanity check, otherwise it will lead to noisy gradient and NaN
@@ -304,7 +306,8 @@ class myPPO(MyOnPolicyAlgorithm):
                 th.nn.utils.clip_grad_norm_(self.policy.parameters(), self.max_grad_norm)
                 self.policy.optimizer.step()
 
-                self.print_loss_structure(loss)
+                if self.print_network_and_loss_structure:
+                    self.print_loss_structure(loss)
 
             self._n_updates += 1
             if not continue_training:
