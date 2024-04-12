@@ -620,7 +620,6 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
             train_time = time.time() - train_time
             self.my_record("time/train_time_minutes", train_time / 60)
             
-            self.my_dump(step=self.num_timesteps)
             total_train_time += train_time
 
             # model eval 
@@ -636,11 +635,12 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
                 print(f'eval finished minutes: {eval_time / 60}')
                 total_eval_time += eval_time
 
-                self.my_dump(step=self.num_timesteps)
 
                 print(f'total_cr_time: {total_cr_time}')
                 print(f'total_train_time: {total_train_time}')
                 print(f'total_eval_time: {total_eval_time}', flush=True)
+            
+                self.my_dump(step=self.num_timesteps)
             
 
         callback.on_training_end()

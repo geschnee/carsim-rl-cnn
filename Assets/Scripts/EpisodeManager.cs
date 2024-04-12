@@ -44,6 +44,7 @@ public class EpisodeManager : MonoBehaviour
     private Vector3 lastPosition;
 
     private GameObject carBody;
+    public GameObject distanceReference;
 
     public int step;
     private float cumReward;
@@ -292,7 +293,7 @@ public class EpisodeManager : MonoBehaviour
 
 
         Vector3 nextGoal = this.centerIndicators[0].transform.position;
-        Vector3 nextGoalDirection = nextGoal - this.transform.position;
+        Vector3 nextGoalDirection = nextGoal - this.distanceReference.transform.position;
         nextGoalDirection.y = 0;
         // set y difference to zero (we only care about the distance in the xz plane)
         // y is the horizontal difference

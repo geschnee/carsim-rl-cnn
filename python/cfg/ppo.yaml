@@ -1,4 +1,4 @@
-comment: "isolated run: medium standard"
+comment: "distance reward improvement test, does the agent sometimes learn to drive backwards? isolated run: easy standard"
 # "Trying with fixed light settings and variable timesteps, we want to see learning progress again. Did something break?"
 # we should also try it with the fixed spawn to be closer to the evaluation scenario, maybe the differential can do it 
 
@@ -62,7 +62,7 @@ env_kwargs:
     orientationCoefficient: 0
     velocityCoefficient: 0
     eventCoefficient: 0
-  trainingMapType: randomEvalMedium
+  trainingMapType: randomEvalEasy
   trainingLightSetting: standard
   # random, bright, standard, dark
   fixedTimestepsLength: 0.3
