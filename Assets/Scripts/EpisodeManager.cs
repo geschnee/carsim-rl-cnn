@@ -14,7 +14,7 @@ public class EpisodeManager : MonoBehaviour
     public bool stepFinished;
 
     // for debugging its public, then you can lift the TimeLimit in unity
-    private float allowedTimeDefault = 30f; // was 10f
+    private float allowedTimeDefault = 20f; // was 10f
     private float allowedTimePerGoal = 20f; // was 10f
 
     // multiply by some constant, the reward is very small
