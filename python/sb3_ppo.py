@@ -9,6 +9,9 @@ import gymnasium as gym
 from stable_baselines3 import PPO
 from stable_baselines3.common.env_util import make_vec_env
 
+from stable_baselines3.common.utils import set_random_seed
+
+
 from stable_baselines3.common.vec_env import DummyVecEnv
 
 import gymEnv.carsimGymEnv as carsimGymEnv
@@ -29,6 +32,7 @@ from omegaconf import OmegaConf
 
 import logging
 import os
+import random
 
 def run_ppo(cfg):
     logger = SummaryWriter(log_dir="./tmp")
@@ -36,7 +40,20 @@ def run_ppo(cfg):
     os.makedirs(log_dir, exist_ok=True)
 
     logger.add_text("Configs", repr(cfg))
+
+    
+    print(f"Torch Seed before {torch.get_rng_state()}")
+
+    set_random_seed(cfg.seed)
     logger.add_text("Torch Seed", f"{torch.get_rng_state()}")
+
+    print(f'a random torch int {torch.randint(0, 100, (1,))}')
+    print(f'a random torch int2 {torch.randint(0, 100, (1,))}')
+
+    print(f'a random int {random.randint(0, 100)}')
+    print(f'a random int2 {random.randint(0, 100)}')
+    
+    print(f"Torch Seed after {torch.get_rng_state()}")
 
     # we use own replay buffer that saves the observation space as uint8 instead of float32
     # int8 is 8bit, float32 is 32bit
@@ -88,6 +105,9 @@ def run_ppo(cfg):
     model = algo("CnnPolicy", vec_env, verbose=1,
                 tensorboard_log="./tmp", n_epochs=n_epochs, batch_size=batch_size, n_steps=n_steps, policy_kwargs=policy_kwargs, use_bundled_calls=cfg.use_bundled_calls, use_fresh_obs=cfg.use_fresh_obs, print_network_and_loss_structure=cfg.print_network_and_loss_structure)
     # CnnPolicy network architecture can be seen in sb3.common.torch_layers.py
+
+    print(f"model weights for seed verification: {model.policy.value_net.weight[0][0:5]}")
+    # [-0.0591, -0.0703,  0.0513, -0.1466,  0.0055]
 
     # TODO wo ist epsilon definiert?
     # nimmt epsilon mit der Zeit ab?

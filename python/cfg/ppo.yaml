@@ -32,6 +32,8 @@ policy: "CnnPolicy"
 use_bundled_calls: True
 use_fresh_obs: False
 
+seed: 2048
+
 print_network_and_loss_structure: False
 
 net_arch:

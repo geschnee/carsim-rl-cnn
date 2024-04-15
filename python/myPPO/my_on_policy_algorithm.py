@@ -479,7 +479,6 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         return True, cr_time
     
     def my_record(self, key: str, value: float, exclude = None) -> None:
-
         x = self.num_timesteps
         if key not in self.my_logs.keys():
             self.my_logs[key] = {}
@@ -492,7 +491,6 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
             self.logger.record(key, value, exclude=exclude)
 
     def my_dump(self, step: int) -> None:
-
         for metric, dictionary in self.my_logs.items():
 
             prefix = metric.split("/")[0]
@@ -503,10 +501,11 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
             file_path = f'{metric}.csv'
             with open(file_path, 'w', newline='') as file:
                 writer = csv.writer(file)
-                for step, value in dictionary.items():
-                    writer.writerow([step, value])
+                for timestep, value in dictionary.items():
+                    writer.writerow([timestep, value])
 
         self.logger.dump(step=step)
+
 
     def train(self) -> None:
         """
@@ -554,9 +553,10 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
 
         while self.num_timesteps < total_timesteps:
             # collect_rollouts
+            
+            iteration += 1
 
             
-            should_log = log_interval is not None and iteration % log_interval == 0
             continue_training, cr_time = self.collect_rollouts(
                 self.env, callback, self.rollout_buffer, n_rollout_steps=self.n_steps)
             
@@ -567,7 +567,6 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
             if continue_training is False:
                 break
 
-            iteration += 1
             self._update_current_progress_remaining(
                 self.num_timesteps, total_timesteps)
 
@@ -619,6 +618,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
             self.train()
             train_time = time.time() - train_time
             self.my_record("time/train_time_minutes", train_time / 60)
+            self.my_dump(step=self.num_timesteps)
             
             total_train_time += train_time
 
@@ -634,13 +634,14 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
 
                 print(f'eval finished minutes: {eval_time / 60}')
                 total_eval_time += eval_time
-
+                
+                self.my_dump(step=self.num_timesteps)
 
                 print(f'total_cr_time: {total_cr_time}')
                 print(f'total_train_time: {total_train_time}')
                 print(f'total_eval_time: {total_eval_time}', flush=True)
             
-                self.my_dump(step=self.num_timesteps)
+            
             
 
         callback.on_training_end()
