@@ -79,6 +79,14 @@ def run_ppo(cfg):
     # the n_envs can quickly be too much since the replay buffer will grow
     # the observations are quite big (float32)
 
+    
+    vec_env.env_method(
+        method_name="setSeed",
+        indices=0,
+        seed = cfg.seed,
+    )
+
+
     # set one log to true
     # ---> some logging of the stacked frames to see what the memory is like
     # there is some image printing to the imagelog folder

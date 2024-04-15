@@ -89,6 +89,13 @@ public class PeacefulPieCarCommandReceiver : MonoBehaviour
             step_script_realtime_duration = 0.0f;
         }
 
+        [JsonRpcMethod]
+        void setSeed(int seed) {
+            UnityEngine.Random.InitState(seed); // = seed;
+            Debug.Log($"seed set to {seed}");
+            Debug.Log($"Random.value: {UnityEngine.Random.value}");
+            Debug.Log($"Random.value2: {UnityEngine.Random.value}");
+        }
 
         [JsonRpcMethod]
         string reset(int id, string mapType, string spawn, string lightSettingName, string video_filename)

@@ -447,7 +447,8 @@ class BaseCarsimEnv(gym.Env):
 
         return all_obsstrings
         
-
+    def setSeed(self, seed):
+        BaseCarsimEnv.unity_comms.setSeed(seed=seed)
 
     def setLog(self, log):
         self.log = log
