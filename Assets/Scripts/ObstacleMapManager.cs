@@ -461,6 +461,7 @@ public class ObstacleMapManager : MonoBehaviour
         {
             jetBotSpawnRotation = new Quaternion(0, 1, 0, 1);
         }
+        Debug.Log($"JetBot spawn rotation y {jetBotSpawnRotation.eulerAngles.y}");
 
         Goal[] obstacles = new Goal[0];
 

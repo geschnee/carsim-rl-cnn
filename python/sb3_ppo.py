@@ -41,10 +41,12 @@ def run_ppo(cfg):
 
     logger.add_text("Configs", repr(cfg))
 
+    seed = cfg.seed
     
     print(f"Torch Seed before {torch.get_rng_state()}")
 
-    set_random_seed(cfg.seed)
+    set_random_seed(seed)
+    # https://stable-baselines3.readthedocs.io/en/master/guide/algos.html#reproducibility
     logger.add_text("Torch Seed", f"{torch.get_rng_state()}")
 
     print(f'a random torch int {torch.randint(0, 100, (1,))}')
@@ -67,7 +69,7 @@ def run_ppo(cfg):
 
     n_envs = cfg.n_envs
 
-    env_kwargs = cfg.env_kwargs
+    env_kwargs = OmegaConf.to_container(cfg.env_kwargs)
     env_kwargs["trainingMapType"] = MapType[cfg.env_kwargs.trainingMapType]
     env_kwargs["trainingLightSetting"] = LightSetting[cfg.env_kwargs.trainingLightSetting]
     # get proper enum type from string
@@ -81,9 +83,9 @@ def run_ppo(cfg):
 
     
     vec_env.env_method(
-        method_name="setSeed",
+        method_name="setSeedUnity",
         indices=0,
-        seed = cfg.seed,
+        seed = seed,
     )
 
 
@@ -111,7 +113,7 @@ def run_ppo(cfg):
 
 
     model = algo("CnnPolicy", vec_env, verbose=1,
-                tensorboard_log="./tmp", n_epochs=n_epochs, batch_size=batch_size, n_steps=n_steps, policy_kwargs=policy_kwargs, use_bundled_calls=cfg.use_bundled_calls, use_fresh_obs=cfg.use_fresh_obs, print_network_and_loss_structure=cfg.print_network_and_loss_structure)
+                tensorboard_log="./tmp", n_epochs=n_epochs, batch_size=batch_size, n_steps=n_steps, policy_kwargs=policy_kwargs, seed = seed, use_bundled_calls=cfg.use_bundled_calls, use_fresh_obs=cfg.use_fresh_obs, print_network_and_loss_structure=cfg.print_network_and_loss_structure)
     # CnnPolicy network architecture can be seen in sb3.common.torch_layers.py
 
     print(f"model weights for seed verification: {model.policy.value_net.weight[0][0:5]}")

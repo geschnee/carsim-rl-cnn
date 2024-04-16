@@ -51,6 +51,7 @@ class BaseCarsimEnv(gym.Env):
 
     def __init__(self, width=336, height=168, port=9000, log=False, jetbot=None, spawn_point=None, fixedTimestepsLength=None, trainingMapType=MapType.randomEval, trainingLightSetting=LightSetting.random, image_preprocessing={}, frame_stacking=5, coefficients=None):
         # height and width was previous 168, that way we could downsample and reach the same dimensions as the nature paper of 84 x 84
+
         self.instancenumber = BaseCarsimEnv.instancenumber
         assert jetbot is not None
         self.jetbot = jetbot
@@ -279,8 +280,10 @@ class BaseCarsimEnv(gym.Env):
         self.video_filename = video_filename
         #print(f'{self.instancenumber} video filename {self.video_filename}', flush=True)
 
-    def reset(self, seed=None, mapType = None, lightSetting = None):
+    def reset(self, seed = None, mapType = None, lightSetting = None):
         super().reset(seed=seed)  # gynasium migration guide https://gymnasium.farama.org/content/migration-guide/
+
+        print(f'env reset seed {seed}', flush=True)
 
         self.step_nr = -1
         self.step_mistakes = 0
@@ -315,6 +318,7 @@ class BaseCarsimEnv(gym.Env):
         else:
             mp = self.mapType
         mapTypeName = MapType.resolvePseudoEnum(mp).name
+        print(f'mapTypeName {mapTypeName}', flush=True)
         return mapTypeName
     
     def getLightSettingName(self, lightSetting):
@@ -447,7 +451,7 @@ class BaseCarsimEnv(gym.Env):
 
         return all_obsstrings
         
-    def setSeed(self, seed):
+    def setSeedUnity(self, seed):
         BaseCarsimEnv.unity_comms.setSeed(seed=seed)
 
     def setLog(self, log):
