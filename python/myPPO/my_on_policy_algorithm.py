@@ -490,7 +490,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         else: 
             self.logger.record(key, value, exclude=exclude)
 
-    def my_dump(self, step: int) -> None:
+    def my_dump(self, step: int, extralog: bool=False) -> None:
         for metric, dictionary in self.my_logs.items():
 
             prefix = metric.split("/")[0]
@@ -499,10 +499,16 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
                 os.makedirs(prefix)
 
             file_path = f'{metric}.csv'
+            if extralog:
+                print(f'print to {file_path}')
+
             with open(file_path, 'w', newline='') as file:
                 writer = csv.writer(file)
                 for timestep, value in dictionary.items():
                     writer.writerow([timestep, value])
+
+                    if extralog:
+                        print(f'{timestep}: {value}')
 
         self.logger.dump(step=step)
 
@@ -547,7 +553,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
 
         total_cr_time, total_train_time, total_eval_time = 0, 0, 0
         self.collected_episodes = 0
-        self.max_total_success_rate = 0
+        self.max_total_success_rate = -1
 
         total_collection_time = 0
 
@@ -677,10 +683,10 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
             total_success_rate += easy_success_rate + medium_success_rate + hard_success_rate
             light_success_rate = (easy_success_rate + medium_success_rate + hard_success_rate) / 3
             
-            self.my_record(f"eval/success_easy_light_{light_setting.name}", easy_success_rate)
-            self.my_record(f"eval/success_medium_light_{light_setting.name}", medium_success_rate)
-            self.my_record(f"eval/success_hard_light_{light_setting.name}", hard_success_rate)
-            self.my_record(f"eval/success_light_{light_setting.name}", light_success_rate)
+            self.my_record(f"eval/success_easy_{light_setting.name}", easy_success_rate)
+            self.my_record(f"eval/success_medium_{light_setting.name}", medium_success_rate)
+            self.my_record(f"eval/success_hard_{light_setting.name}", hard_success_rate)
+            self.my_record(f"eval/success_{light_setting.name}", light_success_rate)
             avg_easy_success_rate += easy_success_rate
             avg_medium_success_rate += medium_success_rate
             avg_hard_success_rate += hard_success_rate
@@ -693,7 +699,9 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         total_success_rate = total_success_rate / (3 * len(light_settings))
         if total_success_rate > self.max_total_success_rate:
             self.max_total_success_rate = total_success_rate
-            self.save(f"best_model_episode_{iteration}")
+            self.best_model_name = f"best_model_episode_{iteration}"
+            self.save(self.best_model_name)
+            
 
 
         self.my_record("eval/success_rate", total_success_rate)
@@ -895,6 +903,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         progress_bar: bool = False,
         num_evals_per_difficulty: int = 10,
         eval_light_settings: bool = False,
+        offset: int = 0,
     ) -> SelfOnPolicyAlgorithm:
         iteration = 0
 
@@ -907,8 +916,11 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         total_eval_time = 0
 
         for i in range(total_eval_runs):
+            step = offset + i*1000
+            self.num_timesteps = step # for proper logging we need to manipulate this, very dirty!!!
+
             eval_time = time.time()
-            self.eval(iteration=iteration, num_evals_per_difficulty=num_evals_per_difficulty, eval_light_settings=eval_light_settings)
+            self.eval(iteration=step, num_evals_per_difficulty=num_evals_per_difficulty, eval_light_settings=eval_light_settings)
 
             
             eval_time = time.time() - eval_time
@@ -917,7 +929,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
             print(f'eval finished minutes: {eval_time / 60}')
             total_eval_time += eval_time
 
-            self.my_dump(step=i)
+            self.my_dump(step=step, extralog=True)
 
             print(f'total_eval_time: {total_eval_time}', flush=True)
 

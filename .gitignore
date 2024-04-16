@@ -70,6 +70,7 @@ python/tmp
 python/outputs
 python/models_and_dumps
 python/imagelog
+python/isolated_runs_results
 
 *.pyc
 

@@ -363,8 +363,9 @@ class myPPO(MyOnPolicyAlgorithm):
         progress_bar: bool = False,
         num_evals_per_difficulty: int = 10,
         eval_light_settings: bool = False,
+        offset: int = 0,
     ) -> SelfPPO:
-        return super().learn(
+        return super().eval_only(
             total_eval_runs=total_eval_runs,
             callback=callback,
             log_interval=log_interval,
@@ -373,6 +374,7 @@ class myPPO(MyOnPolicyAlgorithm):
             progress_bar=progress_bar,
             num_evals_per_difficulty=num_evals_per_difficulty,
             eval_light_settings=eval_light_settings,
+            offset=offset,
         )
 
     def visualize_sample(self):

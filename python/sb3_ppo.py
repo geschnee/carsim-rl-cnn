@@ -134,16 +134,31 @@ def run_ppo(cfg):
         model = algo.load(string, env=vec_env, tensorboard_log="./tmp",
                         n_epochs=n_epochs, batch_size=batch_size)
 
-    model.learn(total_timesteps=cfg.total_timesteps, log_interval=cfg.eval_settings.log_interval, num_evals_per_difficulty = cfg.eval_settings.num_evals_per_difficulty, eval_light_settings=cfg.eval_settings.eval_light_settings)
-    model.save("finished_ppo")
-    print("finished without issues")
+    if not cfg.eval_only:
+        model.learn(total_timesteps=cfg.total_timesteps, log_interval=cfg.eval_settings.log_interval, num_evals_per_difficulty = cfg.eval_settings.num_evals_per_difficulty, eval_light_settings=cfg.eval_settings.eval_light_settings)
+        model.save("finished_ppo")
+        print("finished learning without issues")
 
-    # TODO run more evals here after training completed
+    
+    # load best model and eval it again
+    if not cfg.eval_only:
+        num_timesteps = model.num_timesteps
+        best_model_name = model.best_model_name
+        print(f'loading best model {best_model_name} after learning')
+        model.load(best_model_name)
+        model.use_bundled_calls = cfg.use_bundled_calls
+        model.use_fresh_obs=cfg.use_fresh_obs
+
+    # run more evals here after training completed or when eval only
+    model.eval_only(total_eval_runs=cfg.number_eval_runs, num_evals_per_difficulty = cfg.eval_settings.num_evals_per_difficulty, eval_light_settings=cfg.eval_settings.eval_light_settings, offset=model.num_timesteps)
 
 
 
 @hydra.main(config_path=".", config_name="cfg/ppo.yaml")
 def main(cfg):
+
+    # run specific config files with:
+    # python sb3_ppo.py --config-name cfg/ppo_isolated_medium_standard.yaml
 
     logging.info(f"cfg {cfg}")
 
