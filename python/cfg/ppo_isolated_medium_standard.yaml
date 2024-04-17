@@ -1,4 +1,4 @@
-comment: "isolated training config medium standard"
+comment: "isolated training config medium standard with velocity reward to encourage forward driving"
 # "Trying with fixed light settings and variable timesteps, we want to see learning progress again. Did something break?"
 # we should also try it with the fixed spawn to be closer to the evaluation scenario, maybe the differential can do it 
 
@@ -64,7 +64,7 @@ env_kwargs:
   coefficients:
     distanceCoefficient: 0.5
     orientationCoefficient: 0
-    velocityCoefficient: 0
+    velocityCoefficient: 1
     eventCoefficient: 1
   trainingMapType: randomEvalMedium
   trainingLightSetting: standard
