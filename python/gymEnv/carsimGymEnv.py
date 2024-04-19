@@ -196,8 +196,8 @@ class BaseCarsimEnv(gym.Env):
         if waitTime:
             self.episodeWaitTime += waitTime
 
-        if waiting != 0:
-            print(f'waited {waiting} times for previous step to finish, total step call duration {time.time() -starttime}', flush=True)
+        #if waiting != 0:
+        #    print(f'waited {waiting} times for previous step to finish, total step call duration {time.time() -starttime}', flush=True)
 
 
         # print(f'time recorded in c# step calls {step_script_realtime_duration}', flush=True) # with profiling (unityBundledStep) the last print of this can be used to determine the ratio of time between transmission time and c# processing time
@@ -318,7 +318,6 @@ class BaseCarsimEnv(gym.Env):
         else:
             mp = self.mapType
         mapTypeName = MapType.resolvePseudoEnum(mp).name
-        print(f'mapTypeName {mapTypeName}', flush=True)
         return mapTypeName
     
     def getLightSettingName(self, lightSetting):
