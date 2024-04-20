@@ -508,7 +508,7 @@ class BaseCarsimEnv(gym.Env):
         if log:
             pixels_downsampled_uint8 = pixels_downsampled.astype(np.uint8)
             self.saveImage(pixels_downsampled_uint8, "imagelog/image_from_unity_downsampled.png")
-            self.saveImage(pixels_downsampled_uint8, "expose_images/agent_downsampled.png")
+            self.saveImage(pixels_downsampled_uint8, "latex_images/agent_downsampled.png")
 
             if type(log) == str:
                 self.saveImage(pixels_downsampled_uint8, f"{log}_downsampled.png")
@@ -522,7 +522,7 @@ class BaseCarsimEnv(gym.Env):
         if log:
             pixels_gray_uint8 = pixels_gray.astype(np.uint8)
             self.saveImageGreyscale(pixels_gray_uint8, "imagelog/image_from_unity_grey.png")
-            self.saveImageGreyscale(pixels_gray_uint8, "expose_images/agent_grey.png")
+            self.saveImageGreyscale(pixels_gray_uint8, "latex_images/agent_grey.png")
 
             if type(log) == str:
                 self.saveImageGreyscale(pixels_gray_uint8, f"{log}_greyscale.png")
@@ -536,7 +536,7 @@ class BaseCarsimEnv(gym.Env):
         if log:
             pixels_equalized_uint8 = pixels_equalized.astype(np.uint8)
             self.saveImageGreyscale(pixels_equalized_uint8, "imagelog/images_from_unity_equalized.png")
-            self.saveImageGreyscale(pixels_equalized_uint8, "expose_images/agent_equalized.png")
+            self.saveImageGreyscale(pixels_equalized_uint8, "latex_images/agent_equalized.png")
 
             if type(log) == str:
                 self.saveImageGreyscale(pixels_equalized_uint8, f"{log}_equalized.png")
@@ -576,11 +576,11 @@ class BaseCarsimEnv(gym.Env):
             print("logging the image")
             if not os.path.exists('imagelog'):
                 os.makedirs('imagelog')
-            if not os.path.exists('expose_images'):
-                os.makedirs('expose_images')
+            if not os.path.exists('latex_images'):
+                os.makedirs('latex_images')
 
             self.saveImage(pixels_rgb, "imagelog/image_from_unity.png")
-            self.saveImage(pixels_rgb, "expose_images/agent_image_from_unity.png")
+            self.saveImage(pixels_rgb, "latex_images/agent_image_from_unity.png")
 
             if type(log) == str:
                 self.saveImage(pixels_rgb, f"{log}_image_from_unity.png")

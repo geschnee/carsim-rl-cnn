@@ -16,10 +16,12 @@ import gymEnv.carsimGymEnv as carsimGymEnv
 
 from myPPO.myPPO import myPPO
 
+import gymEnv.myEnums as myEnums
+
 import os
 
-if not os.path.exists("expose_images"):
-    os.makedirs("expose_images")
+if not os.path.exists("latex_images"):
+    os.makedirs("latex_images")
 
 # we use own replay buffer that saves the observation space as uint8 instead of float32
 # int8 is 8bit, float32 is 32bit
@@ -68,20 +70,20 @@ env.log = False
 env.mapType = carsimGymEnv.MapType.easyBlueFirst
 env.reset()
 time.sleep(1) # wait for the car to spawn
-env.get_arena_screenshot("expose_images/evaluation_easy.png")
+env.get_arena_screenshot("latex_images/evaluation_easy.png")
 
 
 # medium eval parcour
 env.mapType = carsimGymEnv.MapType.mediumBlueFirstLeft
 env.reset()
 time.sleep(1) # wait for the car to spawn
-env.get_arena_screenshot("expose_images/evaluation_medium.png")
+env.get_arena_screenshot("latex_images/evaluation_medium.png")
 
 # hard eval parcour
 env.mapType = carsimGymEnv.MapType.hardBlueFirstLeft
 env.reset()
 time.sleep(1) # wait for the car to spawn
-env.get_arena_screenshot("expose_images/evaluation_hard.png")
+env.get_arena_screenshot("latex_images/evaluation_hard.png")
 
 
 # agent POV screenshots:
@@ -100,11 +102,11 @@ def saveAugmentedImages(env, name):
     obs = env.getObservation()
 
     obs_salt_pepper = da.salt_and_pepper_noise(obs, prob=0.005)
-    obs_to_file(obs_salt_pepper, f"expose_images/light_setting_{name}_pov_augmented_salt_and_pepper.png")
+    obs_to_file(obs_salt_pepper, f"latex_images/light_setting_{name}_pov_augmented_salt_and_pepper.png")
 
     sigma = 5
     obs_gaussian = da.gaussian_noise(obs, mean=0, sigma=sigma)
-    obs_to_file(obs_gaussian, f'expose_images/light_setting_{name}_pov_augmented_gaussian_sigma_{sigma}.png')
+    obs_to_file(obs_gaussian, f'latex_images/light_setting_{name}_pov_augmented_gaussian_sigma_{sigma}.png')
 
 # Lighting
 
@@ -117,36 +119,69 @@ env.mapType = carsimGymEnv.MapType.hardBlueFirstLeft
 # TODO images with and without histogram equalization
 
 # agent vision with standard lighting
-env.reset(lightMultiplier=5.0)
+env.reset(lightSetting=myEnums.LightSetting.standard)
 time.sleep(1) # wait for the car to spawn
 name = "standard"
-obs_to_file(env.getObservation(), f"expose_images/light_setting_pov.png")
-env.saveObservationNoPreprocessing(f"expose_images/light_setting_{name}_pov_no_preprocessing.png")
-env.get_arena_screenshot(f"expose_images/light_setting_{name}_arena.png")
+obs_to_file(env.getObservation(), f"latex_images/light_setting_pov.png")
+env.saveObservationNoPreprocessing(f"latex_images/light_setting_{name}_pov_no_preprocessing.png")
+env.get_arena_screenshot(f"latex_images/light_setting_{name}_arena.png")
 
 saveAugmentedImages(env, name)
 
 
 
 # agent vision with reduced lighting
-lighting = 2.5
-env.reset(lightMultiplier=lighting)
+lighting = myEnums.LightSetting.dark
+env.reset(lightSetting=lighting)
 name= "reduced_lighting"
 time.sleep(1) # wait for the car to spawn
-obs_to_file(env.getObservation(), f"expose_images/light_setting_{name}_pov.png")
-env.saveObservationNoPreprocessing(f"expose_images/light_setting_{name}_pov_no_preprocessing.png")
-env.get_arena_screenshot(f"expose_images/light_setting_{name}_arena.png")
+obs_to_file(env.getObservation(), f"latex_images/light_setting_{name}_pov.png")
+env.saveObservationNoPreprocessing(f"latex_images/light_setting_{name}_pov_no_preprocessing.png")
+env.get_arena_screenshot(f"latex_images/light_setting_{name}_arena.png")
 
 saveAugmentedImages(env, name)
 
 
 # agent vision with increased lighting
-lighting = 7.5
-env.reset(lightMultiplier=lighting)
+lighting = myEnums.LightSetting.bright
+env.reset(lightSetting=lighting)
 name = "increased_lighting"
 time.sleep(1) # wait for the car to spawn
-obs_to_file(env.getObservation(), f"expose_images/light_setting_{name}_pov.png")
-env.saveObservationNoPreprocessing(f"expose_images/light_setting_{name}_pov_no_preprocessing.png")
-env.get_arena_screenshot(f"expose_images/light_setting_{name}_arena.png")
+obs_to_file(env.getObservation(), f"latex_images/light_setting_{name}_pov.png")
+env.saveObservationNoPreprocessing(f"latex_images/light_setting_{name}_pov_no_preprocessing.png")
+env.get_arena_screenshot(f"latex_images/light_setting_{name}_arena.png")
 
 saveAugmentedImages(env, name)
+
+# save images with same spawn pos and map but different lighting including all preprocessing steps
+
+if not os.path.exists('latex_images/preprocessingSteps/'):
+    os.makedirs('latex_images/preprocessingSteps/')
+
+# agent vision with standard lighting
+lighting = myEnums.LightSetting.standard
+mapType=myEnums.MapType.hardBlueFirstLeft
+prefix=f"latex_images/preprocessingSteps/fixedSpawnPoint_hardBlueFirstLeft_standard"
+env.reset(lightSetting=lighting, mapType=mapType)
+time.sleep(1) # wait for the car to spawn
+env.saveObservation(prefix)
+
+# agent vision with reduced lighting
+lighting = myEnums.LightSetting.dark
+prefix=f"latex_images/preprocessingSteps/fixedSpawnPoint_hardBlueFirstLeft_dark"
+env.reset(lightSetting=lighting, mapType=mapType)
+time.sleep(1) # wait for the car to spawn
+env.saveObservation(prefix)
+
+# agent vision with increased lighting
+lighting = myEnums.LightSetting.bright
+prefix=f"latex_images/preprocessingSteps/fixedSpawnPoint_hardBlueFirstLeft_bright"
+env.reset(lightSetting=lighting, mapType=mapType)
+time.sleep(1) # wait for the car to spawn
+env.saveObservation(prefix)
+
+
+
+
+
+

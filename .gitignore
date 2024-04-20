@@ -71,6 +71,9 @@ python/outputs
 python/models_and_dumps
 python/imagelog
 python/isolated_runs_results
+python/latex_images
+python/expose_images
+
 
 *.pyc
 
