@@ -17,19 +17,13 @@ import PIL.Image as Image
 import io
 import base64
 
-from dataclasses import dataclass
 
 from python.gymEnv.carsimGymEnv import BaseCarsimEnv
 
 import numpy as np
 
-@dataclass
-class StepReturnObject:
-    obs: str
-    reward: float
-    done: bool
-    terminated: bool
-    info: dict
+from python.gymEnv.myEnums import MapType
+from python.gymEnv.myEnums import LightSetting
 
 
 def gray(im):
@@ -58,7 +52,11 @@ def run(cfg) -> None:
     starttime = time.time()
     frames = 0
 
-    env = BaseCarsimEnv(frame_stacking=2, asynchronous=False, grayscale=True)
+    env_kwargs = OmegaConf.to_container(cfg.env_kwargs)
+    env_kwargs["trainingMapType"] = MapType[cfg.env_kwargs.trainingMapType]
+    env_kwargs["trainingLightSetting"] = LightSetting[cfg.env_kwargs.trainingLightSetting]
+
+    env = BaseCarsimEnv(**env_kwargs)
     new_obs, info_dict = env.reset()
 
     # creating a running loop
@@ -110,11 +108,19 @@ def run(cfg) -> None:
                 
                 new_obs, reward, terminated, truncated, info_dict  = env.step((float(
                     left_acceleration), float(right_acceleration)))
-                print(
-                    f'stepObj reward {reward} terminated {terminated} info {info_dict}', flush=True)
+                
+                distance_reward = float(info_dict["distanceReward"].replace(",","."))
+                velocity_reward = float(info_dict["velocityReward"].replace(",","."))
+                event_reward = float(info_dict["eventReward"].replace(",","."))
+                orientation_reward = float(info_dict["orientationReward"].replace(",","."))
 
-                if event.key == pygame.K_q or event.key == pygame.K_c:
-                    print("q or c pressed, will quit", flush=True)
+                print(f'distance_reward {distance_reward} velocity_reward {velocity_reward} event_reward {event_reward} orientation_reward {orientation_reward}', flush=True)
+
+                if terminated:
+                    print(f'stepObj reward {reward} terminated {terminated} info {info_dict}', flush=True)
+
+                if event.key == pygame.K_q or event.key == pygame.K_c or terminated:
+                    print("episode terminated or q or c pressed, will quit", flush=True)
                     pygame.quit()
                     sys.exit()
 
