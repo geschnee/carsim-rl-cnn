@@ -283,7 +283,6 @@ class BaseCarsimEnv(gym.Env):
     def reset(self, seed = None, mapType = None, lightSetting = None):
         super().reset(seed=seed)  # gynasium migration guide https://gymnasium.farama.org/content/migration-guide/
 
-        print(f'env reset seed {seed}', flush=True)
 
         self.step_nr = -1
         self.step_mistakes = 0
