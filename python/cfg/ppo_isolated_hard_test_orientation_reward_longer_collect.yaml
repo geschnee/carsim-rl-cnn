@@ -1,4 +1,4 @@
-comment: "isolated training config hard standard testing orientation plus velocity reward"
+comment: "isolated training config hard standard testing orientation plus velocity reward, more timesteps in collect_rollouts"
 # "Trying with fixed light settings and variable timesteps, we want to see learning progress again. Did something break?"
 # we should also try it with the fixed spawn to be closer to the evaluation scenario, maybe the differential can do it 
 
