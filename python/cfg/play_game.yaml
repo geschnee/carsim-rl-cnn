@@ -64,13 +64,13 @@ env_kwargs:
     normalize_images: False
   coefficients:
     distanceCoefficient: 1
-    orientationCoefficient: 0
-    velocityCoefficient: 0
+    orientationCoefficient: 1
+    velocityCoefficient: 1
     eventCoefficient: 1
-  trainingMapType: randomEval
+  trainingMapType: randomEvalHard
   trainingLightSetting: standard
   # random, bright, standard, dark
-  fixedTimestepsLength: 1 #0.3
+  fixedTimestepsLength: 0.3
   # non fixed with 10 envs takes 0.5 seconds for vecenv_step --> this results in 1 fps (per env)
 
   # fixedTimestepsLength can either be False or a number (seconds that each timestep contains)

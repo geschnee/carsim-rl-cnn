@@ -15,7 +15,7 @@ public class EpisodeManager : MonoBehaviour
 
     // for debugging its public, then you can lift the TimeLimit in unity
     private float allowedTimeDefault = 20f; // was 10f
-    private float allowedTimePerGoal = 20f; // was 10f
+    private float allowedTimePerGoal = 40f; // was 10f
 
     // multiply by some constant, the reward is very small
     public float distanceCoefficient;// = 10f;
@@ -76,7 +76,7 @@ public class EpisodeManager : MonoBehaviour
 
     public void IncreaseSteps(int step)
     {
-       
+
 
         // int step from python is not yet incremented
         if (this.step != step)
@@ -85,7 +85,7 @@ public class EpisodeManager : MonoBehaviour
             // There was a timeout in python resulting in a second call to the step function with the same arguments
             return;
         }
-        
+
         this.timeOfLastStepBegin = Time.time;
 
         this.step++;
@@ -157,7 +157,7 @@ public class EpisodeManager : MonoBehaviour
             Debug.LogWarning($"EndEpisode called again {episodeStatus} before {this.episodeStatus}");
         }
         this.episodeStatus = episodeStatus;
-        
+
         arenaRecorder.StopVideo(this.duration);
         jetBotRecorder.StopVideo(this.duration);
 
@@ -321,16 +321,18 @@ public class EpisodeManager : MonoBehaviour
 
         Vector3 agentOrientation = this.transform.forward;
 
-        
+
 
 
         float angleBetween = Vector3.Angle(agentOrientation, nextGoalDirection);
-
+        Debug.Log($"agentOrientation {agentOrientation} nextGoalDirection {nextGoalDirection}");
+        Debug.Log($"angle between {angleBetween}");
 
         float cosine_similarity = GetCosineSimilarityXZPlane(nextGoalDirection, agentOrientation);
-        
 
-        return nextGoalDirection.magnitude;
+        Debug.Log($"cosine_similarity XZ plane {cosine_similarity}");
+
+        return cosine_similarity;
     }
 
     public static float GetCosineSimilarityXZPlane(Vector3 V1, Vector3 V2)
@@ -362,11 +364,11 @@ public class EpisodeManager : MonoBehaviour
 
         if (this.fixedTimesteps && isEpisodeRunning())
         {
-            if (Time.time - this.timeOfLastStepBegin  > this.fixedTimestepsLength)
+            if (Time.time - this.timeOfLastStepBegin > this.fixedTimestepsLength)
             {
                 this.episodeStatus = EpisodeStatus.WaitingForStep;
                 // fixed timesteps and the time of the current step is up
-                
+
                 this.stepFinished = true;
             }
         }
@@ -376,11 +378,11 @@ public class EpisodeManager : MonoBehaviour
             return;
         }
 
-        
-        
+
+
         // count time only when it is running
         this.duration += Time.deltaTime;
-        
+
 
 
         float velo = this.aIEngine.getCarVelocity();
@@ -402,8 +404,8 @@ public class EpisodeManager : MonoBehaviour
         this.lastDistance = GetDistanceToNextGoal();
 
 
-        
-        
+
+
     }
 
     public void AddTime(float time)
@@ -459,9 +461,10 @@ public class EpisodeManager : MonoBehaviour
         }
     }
 
-    
 
-    public void colorGreen(GameObject goal) {
+
+    public void colorGreen(GameObject goal)
+    {
 
         Transform t = goal.transform;
         for (int i = 0; i < t.childCount; i++)
@@ -474,7 +477,8 @@ public class EpisodeManager : MonoBehaviour
         }
     }
 
-    public void colorRed(GameObject goal) {
+    public void colorRed(GameObject goal)
+    {
 
         Transform t = goal.transform;
         for (int i = 0; i < t.childCount; i++)
@@ -502,7 +506,7 @@ public class EpisodeManager : MonoBehaviour
 
     public void goalPassed(GameObject goalMiddle)
     {
-        
+
         IncreasePassedGoals(goalMiddle);
 
         GameObject goal = goalMiddle.transform.parent.gameObject;
@@ -526,7 +530,7 @@ public class EpisodeManager : MonoBehaviour
         AddEventReward(goalMissedReward);
 
         centerIndicators.RemoveAt(0); // remove an indicator
-        
+
 
         this.lastDistance = GetDistanceToNextGoal();
 
@@ -540,7 +544,8 @@ public class EpisodeManager : MonoBehaviour
         collision();
     }
 
-    public void collision() {
+    public void collision()
+    {
         this.obstacleOrWallHit = true;
     }
 
@@ -564,7 +569,8 @@ public class EpisodeManager : MonoBehaviour
         Collision(coll);
     }
 
-    private void Collision(Collider coll){
+    private void Collision(Collider coll)
+    {
         // This is attached to the JetBot
 
         if (!isEpisodeRunning())

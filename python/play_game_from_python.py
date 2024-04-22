@@ -18,12 +18,12 @@ import io
 import base64
 
 
-from python.gymEnv.carsimGymEnv import BaseCarsimEnv
+from gymEnv.carsimGymEnv import BaseCarsimEnv
 
 import numpy as np
 
-from python.gymEnv.myEnums import MapType
-from python.gymEnv.myEnums import LightSetting
+from gymEnv.myEnums import MapType
+from gymEnv.myEnums import LightSetting
 
 
 def gray(im):
@@ -59,6 +59,8 @@ def run(cfg) -> None:
     env = BaseCarsimEnv(**env_kwargs)
     new_obs, info_dict = env.reset()
 
+    full_control_mode = False
+
     # creating a running loop
     while True:
 
@@ -81,11 +83,28 @@ def run(cfg) -> None:
 
                 if event.key == pygame.K_RIGHT:
                     left_acceleration += 0.1
-                    right_acceleration += -0.05
+                    if right_acceleration > 0.05:
+                        right_acceleration -= 0.05
 
                 if event.key == pygame.K_LEFT:
                     right_acceleration += 0.1
-                    left_acceleration += -0.05
+                    if left_acceleration > 0.05:
+                        left_acceleration -= 0.05
+
+                # precise/absolute control
+                if event.key == pygame.K_0:
+                    right_acceleration += 0.1
+                    full_control_mode = True
+                if event.key == pygame.K_9:
+                    right_acceleration -= 0.1
+                    full_control_mode = True
+                if event.key == pygame.K_1:
+                    left_acceleration += 0.1
+                    full_control_mode = True
+                if event.key == pygame.K_2:
+                    left_acceleration -= 0.1
+                    full_control_mode = True
+
                 if event.key == pygame.K_SPACE:
                     right_acceleration = 0
                     left_acceleration = 0
@@ -93,19 +112,24 @@ def run(cfg) -> None:
                 if event.key == pygame.K_r:
                     env.reset()
 
-                if event.key == pygame.K_p:
-                    env.get_arena_screenshot()
-
                 if right_acceleration > 1:
                     right_acceleration = 1
-                if right_acceleration < -0.1:
-                    right_acceleration = -0.1
                 if left_acceleration > 1:
                     left_acceleration = 1
-                if left_acceleration < -0.1:
-                    left_acceleration = -0.1
-
+                if right_acceleration < -1:
+                    right_acceleration = -1
+                if left_acceleration < -1:
+                    left_acceleration = -1
                 
+                if not full_control_mode:
+                    if right_acceleration < -0.5:
+                        right_acceleration = -0.5
+                    if left_acceleration < -0.5:
+                        left_acceleration = -0.5
+                
+
+                print(f'left_acceleration {left_acceleration} right_acceleration {right_acceleration}', flush=True)
+
                 new_obs, reward, terminated, truncated, info_dict  = env.step((float(
                     left_acceleration), float(right_acceleration)))
                 
@@ -131,7 +155,7 @@ def run(cfg) -> None:
             text_surface = my_font.render(f'Input Left: {left_acceleration}\nInput right: {right_acceleration}', False, (0, 0, 0))
             gameDisplay.blit(text_surface, (600,0))
 
-            print(f'new_obs {new_obs.shape}', flush=True)
+            
             if env.grayscale:
                 if len(new_obs.shape) == 3:
                     img_obs = new_obs[:, :, 0:1] # get first frame
@@ -144,6 +168,8 @@ def run(cfg) -> None:
                 #print(f'max and min of img_obs {np.max(img_obs)} {np.min(img_obs)}', flush=True)
                 g = gray(img_obs)
                 #print(f'max and min of g {np.max(g)} {np.min(g)}', flush=True)
+
+                g = np.flipud(g)
                 img = pygame.surfarray.make_surface(g)
             else:
                 img = new_obs[:, :, 0:3]
@@ -152,10 +178,13 @@ def run(cfg) -> None:
             
             #print(f'max and min of img {np.max(img)} {np.min(img)}', flush=True)
             
+            
+
             gameDisplay.blit(img, (0, 0))
 
             arenaImg = env.get_arena_screenshot()
             arenaImg = np.rot90(arenaImg, k=1)
+            arenaImg = np.flipud(arenaImg)
             arenaImg = pygame.surfarray.make_surface(arenaImg)
             gameDisplay.blit(arenaImg, (256, 0))
 
@@ -171,7 +200,7 @@ def run(cfg) -> None:
             # png, (240,240), RGB
 
 
-@hydra.main(config_path=".", config_name="cfg/ppo.yaml")
+@hydra.main(config_path=".", config_name="cfg/play_game.yaml")
 def main(cfg):
 
     run(cfg.cfg)

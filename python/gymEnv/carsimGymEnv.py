@@ -170,7 +170,7 @@ class BaseCarsimEnv(gym.Env):
         waitTimeStart=time.time()
         waitTime=False
         while stepObj.previousStepNotFinished:
-            print(f'waiting for previous step to finish', flush=True)
+            #print(f'waiting for previous step to finish', flush=True)
             waitTime = time.time() - waitTimeStart
             stepObj: StepReturnObject = self.unityImmediateStep(left_acceleration, right_acceleration)
 
