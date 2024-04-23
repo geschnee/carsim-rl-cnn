@@ -89,10 +89,10 @@ public class EpisodeManager : MonoBehaviour
             // this.step != step can happen when there is a timeout in python-unity communication (the message is sent again)
             // it also happens when the bundledSteps are used and some steps were not finished --> leeds to a resend of the step instructions
 
-            if (this.step > step)
+            if (this.step < step)
             {
                 Debug.LogError($"unity step {this.step} > python step {step} for {this.transform.parent.name}");
-                // this should not happen, as python controlls the steps
+                // this should not happen, as python controlls the steps and unity follows behind
             }
 
             return;
@@ -412,10 +412,8 @@ public class EpisodeManager : MonoBehaviour
 
         float velo = this.aIEngine.getCarVelocity();
 
-        if (velo > 0)
-        {
-            AddVelocityReward((velo) * Time.deltaTime);
-        }
+        AddVelocityReward((velo) * Time.deltaTime);
+        
 
         // reward for driving towards the next goal middleIndicator
         float distanceReward = this.lastDistance - GetDistanceToNextGoal();
