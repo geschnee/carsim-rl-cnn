@@ -53,6 +53,10 @@ public class EpisodeManager : MonoBehaviour
     private float orientationReward;
     private float eventReward;
 
+    private float prescaleDistanceReward;
+    private float prescaleVelocityReward;
+    private float prescaleOrientationReward;
+    private float prescaleEventReward;
 
     private float lastDistance;
 
@@ -81,8 +85,16 @@ public class EpisodeManager : MonoBehaviour
         // int step from python is not yet incremented
         if (this.step != step)
         {
-            Debug.LogWarning($"unity step {this.step} != python step {step} for {this.transform.parent.name}");
-            // There was a timeout in python resulting in a second call to the step function with the same arguments
+            // Debug.LogWarning($"unity step {this.step} != python step {step} for {this.transform.parent.name}");
+            // this.step != step can happen when there is a timeout in python-unity communication (the message is sent again)
+            // it also happens when the bundledSteps are used and some steps were not finished --> leeds to a resend of the step instructions
+
+            if (this.step > step)
+            {
+                Debug.LogError($"unity step {this.step} > python step {step} for {this.transform.parent.name}");
+                // this should not happen, as python controlls the steps
+            }
+
             return;
         }
 
@@ -127,6 +139,11 @@ public class EpisodeManager : MonoBehaviour
         this.distanceReward = 0f;
         this.velocityReward = 0f;
         this.eventReward = 0f;
+        this.orientationReward = 0f;
+        this.prescaleDistanceReward = 0f;
+        this.prescaleVelocityReward = 0f;
+        this.prescaleEventReward = 0f;
+        this.prescaleOrientationReward = 0f;
         this.lastPosition = this.transform.position;
         this.step = -1;
         this.allowedTime = this.allowedTimeDefault;
@@ -204,6 +221,10 @@ public class EpisodeManager : MonoBehaviour
         info.Add("orientationReward", this.orientationReward.ToString());
         info.Add("eventReward", this.eventReward.ToString());
         info.Add("velocityReward", this.velocityReward.ToString());
+        info.Add("prescaleDistanceReward", this.prescaleDistanceReward.ToString());
+        info.Add("prescaleOrientationReward", this.prescaleOrientationReward.ToString());
+        info.Add("prescaleEventReward", this.prescaleEventReward.ToString());
+        info.Add("prescaleVelocityReward", this.prescaleVelocityReward.ToString());
         info.Add("step", this.step.ToString());
         info.Add("amount_of_steps", (this.step + 1).ToString());
         info.Add("amount_of_steps_based_on_rewardlist", this.step_rewards.Count.ToString());
@@ -254,6 +275,7 @@ public class EpisodeManager : MonoBehaviour
 
     public void AddEventReward(float reward)
     {
+        this.prescaleEventReward += reward;
         float weightedEventReward = reward * eventCoefficient;
         this.eventReward += weightedEventReward;
         AddReward(weightedEventReward);
@@ -261,6 +283,7 @@ public class EpisodeManager : MonoBehaviour
 
     public void AddDistanceReward(float reward)
     {
+        this.prescaleDistanceReward += reward;
         float weightedDistanceReward = reward * distanceCoefficient;
         this.distanceReward += weightedDistanceReward;
         // Debug.Log($"AddDistanceReward {weightedDistanceReward} {this.distanceReward}");
@@ -269,6 +292,7 @@ public class EpisodeManager : MonoBehaviour
 
     public void AddOrientationReward(float reward)
     {
+        this.prescaleOrientationReward += reward;
         float weightedOrientationReward = reward * orientationCoefficient;
         this.orientationReward += weightedOrientationReward;
         AddReward(weightedOrientationReward);
@@ -276,6 +300,7 @@ public class EpisodeManager : MonoBehaviour
 
     public void AddVelocityReward(float reward)
     {
+        this.prescaleVelocityReward += reward;
         float weightedVelocityReward = reward * velocityCoefficient;
         this.velocityReward += weightedVelocityReward;
         AddReward(weightedVelocityReward);
@@ -325,12 +350,12 @@ public class EpisodeManager : MonoBehaviour
 
 
         float angleBetween = Vector3.Angle(agentOrientation, nextGoalDirection);
-        Debug.Log($"agentOrientation {agentOrientation} nextGoalDirection {nextGoalDirection}");
-        Debug.Log($"angle between {angleBetween}");
+        //Debug.Log($"agentOrientation {agentOrientation} nextGoalDirection {nextGoalDirection}");
+        //Debug.Log($"angle between {angleBetween}");
 
         float cosine_similarity = GetCosineSimilarityXZPlane(nextGoalDirection, agentOrientation);
 
-        Debug.Log($"cosine_similarity XZ plane {cosine_similarity}");
+        //Debug.Log($"cosine_similarity XZ plane {cosine_similarity}");
 
         return cosine_similarity;
     }

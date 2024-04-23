@@ -245,6 +245,8 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         second_goals_given_first, third_goals_given_second, successfully_passed_second_goals = 0, 0, 0
         waitTime = 0
 
+        prescale_distance_reward, prescale_velocity_reward, prescale_event_reward, prescale_orientation_reward = 0, 0, 0, 0
+
         
 
         reward_correction_dict = {}
@@ -337,6 +339,12 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
                     velocity_reward += float(infos[idx]["velocityReward"].replace(",","."))
                     event_reward += float(infos[idx]["eventReward"].replace(",","."))
                     orientation_reward += float(infos[idx]["orientationReward"].replace(",","."))
+
+                    prescale_distance_reward += float(infos[idx]["prescaleDistanceReward"].replace(",","."))
+                    prescale_velocity_reward += float(infos[idx]["prescaleVelocityReward"].replace(",","."))
+                    prescale_event_reward += float(infos[idx]["prescaleEventReward"].replace(",","."))
+                    prescale_orientation_reward += float(infos[idx]["prescaleOrientationReward"].replace(",","."))
+
                     successfully_passed_first_goals += int(infos[idx]["passedFirstGoal"])
 
                     successfully_passed_second_goals += int(infos[idx]["passedSecondGoal"])
@@ -432,11 +440,17 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
             first_goal_completion_rate = successfully_passed_first_goals / completed_episodes
             rate_episodes_with_collisions = collision_episodes / completed_episodes
             avg_step_duration_unity_env = unity_duration / timesteps_of_completed_episodes
+
+            mean_prescale_distance_reward = prescale_distance_reward / completed_episodes
+            mean_prescale_velocity_reward = prescale_velocity_reward / completed_episodes
+            mean_prescale_event_reward = prescale_event_reward / completed_episodes
+            mean_prescale_orientation_reward = prescale_orientation_reward / completed_episodes
         else:
             success_rate, mean_reward, mean_episode_length, mean_distance_reward, mean_velocity_reward, mean_event_reward, mean_orientation_reward, first_goal_completion_rate = 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
             timeout_rate = 0
             rate_episodes_with_collisions = 0
             avg_step_duration_unity_env = 0
+            mean_prescale_distance_reward, mean_prescale_velocity_reward, mean_prescale_event_reward, mean_prescale_orientation_reward = 0, 0, 0, 0
         
         
         step_average_wait_time = waitTime / total_timesteps
@@ -471,6 +485,12 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         self.my_record("rollout/step_average_wait_time", step_average_wait_time)
         self.my_record("rollout/rate_episodes_with_collisions", rate_episodes_with_collisions)
         self.my_record("rollout/avg_step_duration_unity", avg_step_duration_unity_env) # average duration of a step measured in unity episode duration time
+
+        self.my_record("prescalerewards/mean_distance_reward", mean_prescale_distance_reward)
+        self.my_record("prescalerewards/mean_velocity_reward", mean_prescale_velocity_reward)
+        self.my_record("prescalerewards/mean_orientation_reward", mean_prescale_orientation_reward)
+        self.my_record("prescalerewards/mean_event_reward", mean_prescale_event_reward)
+
 
         cr_time = time.time() - cr_time
         

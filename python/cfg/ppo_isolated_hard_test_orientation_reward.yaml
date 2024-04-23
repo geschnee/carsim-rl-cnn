@@ -65,7 +65,7 @@ env_kwargs:
   coefficients:
     distanceCoefficient: 0
     orientationCoefficient: 1
-    velocityCoefficient: 0.5
+    velocityCoefficient: 5
     eventCoefficient: 0
   trainingMapType: randomEvalHard
   trainingLightSetting: standard

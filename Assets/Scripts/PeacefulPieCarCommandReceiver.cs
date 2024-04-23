@@ -94,8 +94,8 @@ public class PeacefulPieCarCommandReceiver : MonoBehaviour
             UnityEngine.Random.InitState(seed); // = seed;
             // https://docs.unity3d.com/530/Documentation/ScriptReference/Random-seed.html
             Debug.Log($"seed set to {seed}");
-            Debug.Log($"Random.value: {UnityEngine.Random.value}");
-            Debug.Log($"Random.value2: {UnityEngine.Random.value}");
+            //Debug.Log($"Random.value: {UnityEngine.Random.value}");
+            //Debug.Log($"Random.value2: {UnityEngine.Random.value}");
         }
 
         [JsonRpcMethod]
