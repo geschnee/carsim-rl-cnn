@@ -275,6 +275,16 @@ public class EpisodeManager : MonoBehaviour
 
     public void AddEventReward(float reward)
     {
+
+        if (reward<0)
+        {
+            Debug.LogError($"negative reward {reward}, will return now");
+            // this is just a test
+            // it could be that the agent never tries to go through goals as the collision risk is too high
+            // a collision might punish too much, as there might be multiple collision triggers in one single timestep/collision
+            return;
+        }
+
         this.prescaleEventReward += reward;
         float weightedEventReward = reward * eventCoefficient;
         this.eventReward += weightedEventReward;
