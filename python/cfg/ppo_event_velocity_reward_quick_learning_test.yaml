@@ -1,10 +1,10 @@
-comment: "event velocity reward test"
+comment: "event velocity reward test, less often eval + more n_steps"
 # "Trying with fixed light settings and variable timesteps, we want to see learning progress again. Did something break?"
 # we should also try it with the fixed spawn to be closer to the evaluation scenario, maybe the differential can do it 
 
 
 eval_settings:
-  log_interval: 5
+  log_interval: 100
   num_evals_per_difficulty: 20
   eval_light_settings: True
 
@@ -15,7 +15,7 @@ n_epochs: 5 # amount of training passes over the replay buffer per timestep
 
 batch_size: 64
 
-n_steps: 256 # 64 
+n_steps: 512 # 64 
 # amount of steps to collect per collect_rollouts per environment
 # Tensorboard shows the mean_episode_length is below 3
 # we can reduce the n_steps to make the collection time shorter while still collecting a lot of episodes

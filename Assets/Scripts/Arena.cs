@@ -52,6 +52,8 @@ public class Arena : MonoBehaviour
     public Material skyboxMaterialDark;
     public Material skyboxMaterialDefault;
 
+    public CollisionMode collisionMode;
+
     void Awake()
     {
         // initialize new arena at the correct position
@@ -67,6 +69,11 @@ public class Arena : MonoBehaviour
         this.instancenumber = instancenumber;
     }
 
+    public void setCollisionMode(CollisionMode collisionMode)
+    {
+        this.collisionMode = collisionMode;
+    }
+
     public void destroyMap()
     {
         if (this.car != null)
@@ -78,7 +85,7 @@ public class Arena : MonoBehaviour
         gameManager.DestroyObstaclesOnMap();
     }
 
-    public string reset(MapType mt, Spawn jetBotSpawn, LightSetting lightSetting, string video_filename)
+    public string reset(MapType mt, Spawn jetBotSpawn, LightSetting lightSetting, bool evalMode, string video_filename)
     {
         if (this.car != null)
         {
@@ -119,11 +126,12 @@ public class Arena : MonoBehaviour
         episodeManager.fixedTimesteps = fixedTimesteps;
         episodeManager.fixedTimestepsLength = fixedTimestepsLength;
 
-        episodeManager.StartEpisode();
+        episodeManager.StartEpisode(evalMode, collisionMode);
         episodeManager.arenaRecorder = arenaRecorder;
 
         VideoRecorder jetBotRecorder = car.GetComponent<VideoRecorder>();
         episodeManager.jetBotRecorder = jetBotRecorder;
+
 
         if (video_filename != "")
         {
@@ -138,6 +146,8 @@ public class Arena : MonoBehaviour
 
         return this.getObservation();
     }
+
+
 
     public void SetLightSetting(LightSetting lightSetting)
     {

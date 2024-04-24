@@ -325,8 +325,11 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
                 
                     if infos[idx]["endEvent"] == "Success":
                         successfully_completed_episodes += 1
-                    if infos[i]["endEvent"] == "OutOfTime":
+                    elif infos[i]["endEvent"] == "OutOfTime":
                         timeouts += 1
+                    else:
+                        print(f'end event is {infos[i]["endEvent"]}')
+                        # FinishMissed
 
                     successfully_passed_goals += int(infos[idx]["passedGoals"])
                     number_of_goals += int(infos[idx]["numberOfGoals"])
@@ -776,6 +779,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
             indices=range(n_envs),
             difficulty=difficulty,
             lightSetting=light_setting,
+            evalMode=True
         )
 
         # switch to eval mode
@@ -856,7 +860,8 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
                             method_name="reset_with_difficulty",
                             indices=[i],
                             difficulty=difficulty,
-                            lightSetting=light_setting
+                            lightSetting=light_setting,
+                            evalMode=True
                         )
             
             self._last_obs = observations

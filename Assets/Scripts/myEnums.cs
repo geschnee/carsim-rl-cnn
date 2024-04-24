@@ -1,4 +1,11 @@
-
+public enum CollisionMode
+{
+    unrestricted = 0,
+    oncePerTimestep = 1,
+    oncePerEpisode = 2,
+    resetUponCollision = 3,
+    ignoreCollisions = 4,
+}
 
 public enum EpisodeStatus
 {
