@@ -1034,36 +1034,38 @@ def step_wrapper(env, clipped_actions, use_bundled_calls):
         # first do the bundled request to unity
 
         # TODO new_obs muss ein Tensor sein, keine liste
-        new_obs = []
+        #new_obs = []
         rewards = []
         dones = []
         truncateds = []
         infos = []
+
+        rtn_new_obs_n = np.zeros((env.num_envs, *env.observation_space.shape))
+        print(f'shape new rtn obs: {rtn_new_obs_n.shape} {type(rtn_new_obs_n)}', flush=True)
         for idx in range(env.num_envs):
             # give the results to the corresponding envs
             # print(f'stepReturnObjects[idx]: {stepReturnObjects[idx]}', flush=True)
 
             new_ob, reward, done, truncated, info = env.envs[idx].processStepReturnObject(stepReturnObjects[idx])
             
+            new_ob_transposed = env.transpose_observations(new_ob)
+            rtn_new_obs_n[idx] = new_ob_transposed
 
-            new_obs.append(new_ob)
+            #new_obs.append(new_ob)
             rewards.append(reward)
             dones.append(done)
             truncateds.append(truncated)
             infos.append(info)
 
-        #rint(f'shape new_ob: {new_ob.shape} {type(new_ob)}', flush=True)
-
-        # observations shape: (10, 84, 250, 30) <class 'numpy.ndarray'>
-        # should be (10, 30, 84, 250)
-
-        rtn_new_obs = np.array(new_obs)
+        #rtn_new_obs = np.array(new_obs)
         #print(f'shape new obs: {rtn_new_obs.shape} {type(rtn_new_obs)}', flush=True)
 
-        transpose_obs = env.transpose_observations(rtn_new_obs)
+        #transpose_obs = env.transpose_observations(rtn_new_obs)
         #print(f'shape transposed obs: {transpose_obs.shape} {type(transpose_obs)}', flush=True)
 
-        return transpose_obs, np.array(rewards), np.array(dones), infos
+        #assert np.array_equal(transpose_obs, rtn_new_obs_n), f'new obs not equal {transpose_obs} {rtn_new_obs_n}'
+
+        return rtn_new_obs_n, np.array(rewards), np.array(dones), infos
     else:
         # old approach
         return env.step(clipped_actions)

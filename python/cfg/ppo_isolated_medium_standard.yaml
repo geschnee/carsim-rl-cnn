@@ -1,4 +1,4 @@
-comment: "isolated training config medium standard with velocity reward to encourage forward, less than befoe, with velocity reward 1 it just drove strait"
+comment: "isolated training config medium standard, event reward change"
 # "Trying with fixed light settings and variable timesteps, we want to see learning progress again. Did something break?"
 # we should also try it with the fixed spawn to be closer to the evaluation scenario, maybe the differential can do it 
 
@@ -66,6 +66,8 @@ env_kwargs:
     orientationCoefficient: 0
     velocityCoefficient: 0.5
     eventCoefficient: 1
+  collisionMode: oncePerTimestep
+  # unrestricted, oncePerTimestep, oncePerEpisode, resetUponCollision, ignoreCollisions
   trainingMapType: randomEvalMedium
   trainingLightSetting: standard
   # random, bright, standard, dark
