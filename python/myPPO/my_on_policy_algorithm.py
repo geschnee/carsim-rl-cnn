@@ -237,6 +237,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
 
         completed_episodes, successfully_completed_episodes, number_of_goals, successfully_passed_goals, total_reward, total_timesteps, distance_reward, velocity_reward, event_reward, orientation_reward, successfully_passed_first_goals = 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
         timesteps_of_completed_episodes, collision_episodes = 0, 0
+        obstacle_collision_episodes, wall_collision_episodes = 0, 0
         unity_duration = 0
 
         # event_reward is the reward that is not distance or velocity reward
@@ -336,7 +337,8 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
                     total_reward += float(infos[idx]["cumreward"].replace(",","."))
                     timesteps_of_completed_episodes += int(infos[idx]["amount_of_steps"])
                     collision_episodes += int(infos[idx]["collision"])
-                    
+                    obstacle_collision_episodes += int(infos[idx]["obstacleCollision"])
+                    wall_collision_episodes += int(infos[idx]["wallCollision"])
 
                     distance_reward += float(infos[idx]["distanceReward"].replace(",","."))
                     velocity_reward += float(infos[idx]["velocityReward"].replace(",","."))
@@ -448,13 +450,18 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
             mean_prescale_velocity_reward = prescale_velocity_reward / completed_episodes
             mean_prescale_event_reward = prescale_event_reward / completed_episodes
             mean_prescale_orientation_reward = prescale_orientation_reward / completed_episodes
+
+            collision_rate = collision_episodes / completed_episodes
+            obstacle_collision_rate = obstacle_collision_episodes / completed_episodes
+            wall_collision_rate = wall_collision_episodes / completed_episodes
         else:
             success_rate, mean_reward, mean_episode_length, mean_distance_reward, mean_velocity_reward, mean_event_reward, mean_orientation_reward, first_goal_completion_rate = 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
             timeout_rate = 0
             rate_episodes_with_collisions = 0
             avg_step_duration_unity_env = 0
             mean_prescale_distance_reward, mean_prescale_velocity_reward, mean_prescale_event_reward, mean_prescale_orientation_reward = 0, 0, 0, 0
-        
+
+            collision_rate, obstacle_collision_rate, wall_collision_rate = 0, 0, 0
         
         step_average_wait_time = waitTime / total_timesteps
 
@@ -494,6 +501,9 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         self.my_record("prescalerewards/mean_orientation_reward", mean_prescale_orientation_reward)
         self.my_record("prescalerewards/mean_event_reward", mean_prescale_event_reward)
 
+        self.my_record("rollout_collisions/collision_rate", collision_rate)
+        self.my_record("rollout_collisions/obstacle_collision_rate", obstacle_collision_rate)
+        self.my_record("rollout_collisions/wall_collision_rate", wall_collision_rate)
 
         cr_time = time.time() - cr_time
         
@@ -695,14 +705,17 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         os.mkdir(f'{os.getcwd()}\\videos_iter_{iteration}')
 
         total_success_rate = 0
+        total_collision_rate = 0
 
         avg_easy_success_rate, avg_medium_success_rate, avg_hard_success_rate = 0, 0, 0
 
+        avg_easy_collision_rate, avg_medium_collision_rate, avg_hard_collision_rate = 0, 0, 0
+
         for light_setting in light_settings:
             
-            easy_success_rate = self.eval_model_track(num_evals_per_difficulty, "easy", iteration, light_setting)
-            medium_success_rate = self.eval_model_track(num_evals_per_difficulty, "medium", iteration, light_setting)
-            hard_success_rate = self.eval_model_track(num_evals_per_difficulty, "hard", iteration, light_setting)
+            easy_success_rate, easy_collision_rate = self.eval_model_track(num_evals_per_difficulty, "easy", iteration, light_setting)
+            medium_success_rate, medium_collision_rate = self.eval_model_track(num_evals_per_difficulty, "medium", iteration, light_setting)
+            hard_success_rate, hard_collision_rate = self.eval_model_track(num_evals_per_difficulty, "hard", iteration, light_setting)
             total_success_rate += easy_success_rate + medium_success_rate + hard_success_rate
             light_success_rate = (easy_success_rate + medium_success_rate + hard_success_rate) / 3
             
@@ -710,24 +723,45 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
             self.my_record(f"eval/success_medium_{light_setting.name}", medium_success_rate)
             self.my_record(f"eval/success_hard_{light_setting.name}", hard_success_rate)
             self.my_record(f"eval/success_{light_setting.name}", light_success_rate)
+
+            total_collision_rate += easy_collision_rate + medium_collision_rate + hard_collision_rate
+            light_collision_rate = (easy_collision_rate + medium_collision_rate + hard_collision_rate) / 3
+            self.my_record(f"eval_collision_rates/collision_rate_easy_{light_setting.name}", easy_collision_rate)
+            self.my_record(f"eval_collision_rates/collision_rate_medium_{light_setting.name}", medium_collision_rate)
+            self.my_record(f"eval_collision_rates/collision_rate_hard_{light_setting.name}", hard_collision_rate)
+            self.my_record(f"eval_collision_rates/collision_rate_{light_setting.name}", light_collision_rate)
+
+
             avg_easy_success_rate += easy_success_rate
             avg_medium_success_rate += medium_success_rate
             avg_hard_success_rate += hard_success_rate
+
+            avg_easy_collision_rate += easy_collision_rate
+            avg_medium_collision_rate += medium_collision_rate
+            avg_hard_collision_rate += hard_collision_rate
 
         if eval_light_settings:
             self.my_record(f"eval/success_easy_across_light_settings", avg_easy_success_rate / len(light_settings))
             self.my_record(f"eval/success_medium_across_light_settings", avg_medium_success_rate / len(light_settings))
             self.my_record(f"eval/success_hard_across_light_settings", avg_hard_success_rate / len(light_settings))
 
+            self.my_record(f"eval_collision_rates/collision_rate_easy_across_light_settings", avg_easy_collision_rate / len(light_settings))
+            self.my_record(f"eval_collision_rates/collision_rate_medium_across_light_settings", avg_medium_collision_rate / len(light_settings))
+            self.my_record(f"eval_collision_rates/collision_rate_hard_across_light_settings", avg_hard_collision_rate / len(light_settings))
+
         total_success_rate = total_success_rate / (3 * len(light_settings))
         if total_success_rate > self.max_total_success_rate:
             self.max_total_success_rate = total_success_rate
             self.best_model_name = f"best_model_episode_{iteration}"
             self.save(self.best_model_name)
-            
+        
+        total_collision_rate = (total_collision_rate) / (3 * len(light_settings))
+        
 
 
         self.my_record("eval/success_rate", total_success_rate)
+        self.my_record("eval/collision_rate", total_collision_rate)
+        self.my_record("eval_collision_rates/collision_rate", total_collision_rate)
 
         return total_success_rate
 
@@ -877,6 +911,8 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         success_rate = success_count / n_eval_episodes
         rate_of_passed_goals = passed_goals / number_of_goals
         rate_of_passed_first_goals = first_goals / n_eval_episodes
+
+        collision_rate = collision_episodes / n_eval_episodes
         if first_goals > 0:
             rate_of_second_goal_given_first = second_goals_given_first / first_goals
         else:
@@ -913,7 +949,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
                 video_filename = ""
             )
 
-        return success_rate
+        return success_rate, collision_rate
     
 
     
@@ -1041,7 +1077,7 @@ def step_wrapper(env, clipped_actions, use_bundled_calls):
         infos = []
 
         rtn_new_obs_n = np.zeros((env.num_envs, *env.observation_space.shape))
-        print(f'shape new rtn obs: {rtn_new_obs_n.shape} {type(rtn_new_obs_n)}', flush=True)
+        #print(f'shape new rtn obs: {rtn_new_obs_n.shape} {type(rtn_new_obs_n)}', flush=True)
         for idx in range(env.num_envs):
             # give the results to the corresponding envs
             # print(f'stepReturnObjects[idx]: {stepReturnObjects[idx]}', flush=True)

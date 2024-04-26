@@ -32,6 +32,8 @@ public class EpisodeManager : MonoBehaviour
     public float duration;
     public float allowedTime;
     public bool obstacleOrWallHit;
+    public bool obstacleHit;
+    public bool wallHit;
 
     private AIEngineBase aIEngine;
     private GameObject finishLine;
@@ -110,22 +112,14 @@ public class EpisodeManager : MonoBehaviour
         // add new entry in the rewards counting list
         // with this added 0 reward there is an entry for every step even if there was no reward signal encountered
 
-
         this.step_rewards.Add(0);
-        if (this.step_rewards.Count != (this.step + 1))
+        
+        
+        if (this.fixedTimesteps && this.episodeStatus == EpisodeStatus.WaitingForStep) // we check for episodeStatus == WaitingForStep because if can be OutOfTime at this point as well
         {
-            Debug.LogError($"count should be one higher than steps: step_rewards.Count {this.step_rewards.Count} step {this.step}");
-
-        }
-
-        if (this.fixedTimesteps && this.episodeStatus == EpisodeStatus.WaitingForStep)
-        {
-            if (!this.fixedTimesteps && this.step != 0)
-            {
-                Debug.LogWarning($"IncreaseSteps called while waiting for step {this.step} {this.episodeStatus} but we do not use fixed timesteps, there must be some implementation error");
-            }
             this.episodeStatus = EpisodeStatus.Running;
             this.stepFinished = false;
+            this.timestepObstacleHit = false;
             
             this.timeOfLastStepBegin = Time.time;
         }
@@ -133,8 +127,8 @@ public class EpisodeManager : MonoBehaviour
         if (this.fixedTimesteps == false)
         {
             this.timeOfLastStepBegin = Time.time;
+            this.timestepObstacleHit = false;
         }
-
     }
 
 
@@ -161,6 +155,8 @@ public class EpisodeManager : MonoBehaviour
         this.step = -1;
         this.allowedTime = this.allowedTimeDefault;
         this.obstacleOrWallHit = false;
+        this.obstacleHit = false;
+        this.wallHit = false;
         this.hitObstacles = new List<GameObject>();
 
         this.timestepObstacleHit = false;
@@ -249,6 +245,8 @@ public class EpisodeManager : MonoBehaviour
         info.Add("amount_of_steps_based_on_rewardlist", this.step_rewards.Count.ToString());
 
         info.Add("collision", this.obstacleOrWallHit ? "1" : "0");
+        info.Add("obstacleCollision", this.obstacleHit ? "1" : "0");
+        info.Add("wallCollision", this.wallHit ? "1" : "0");
 
         return info;
     }
@@ -491,6 +489,7 @@ public class EpisodeManager : MonoBehaviour
 
     public void hitWall(GameObject obstacle)
     {
+        this.wallHit = true;
         handleCollision(obstacle, wallHitReward, EpisodeStatus.WallHit);
     }
 
@@ -642,29 +641,41 @@ public class EpisodeManager : MonoBehaviour
 
     public void redObstacleHit(GameObject obstacle)
     {
+        obstacleHit = true;
         handleCollision(obstacle, obstacleHitReward, EpisodeStatus.RedObstacle);
     }
     
 
     public void blueObstacleHit(GameObject obstacle)
     {
+        obstacleHit = true;
         handleCollision(obstacle, obstacleHitReward, EpisodeStatus.BlueObstacle);
     }
 
     private void OnTriggerStay(Collider coll)
     {
-        Collision(coll);
+        Collision(coll.gameObject);
     }
 
     private void OnTriggerEnter(Collider coll)
     {
-        Collision(coll);
+        Collision(coll.gameObject);
     }
 
-    private void Collision(Collider coll)
+    private void OnCollisionStay(Collision coll)
+    {
+        Collision(coll.gameObject);
+    }
+
+    private void OnCollisionEnter(Collision coll)
+    {
+        Collision(coll.gameObject);
+    }
+
+    private void Collision(GameObject coll)
     {
         // This is attached to the JetBot
-
+        
         if (!isEpisodeRunning())
         {
             //Debug.LogWarning("Episode not running, ignore collision with " + coll.tag);
@@ -672,39 +683,39 @@ public class EpisodeManager : MonoBehaviour
         }
         if (coll.tag == "BlueObstacleTag")
         {
-            blueObstacleHit(coll.gameObject);
+            blueObstacleHit(coll);
             return;
         }
         if (coll.tag == "RedObstacleTag")
         {
-            redObstacleHit(coll.gameObject);
+            redObstacleHit(coll);
             return;
         }
         if (coll.tag == "GoalPassed")
         {
             coll.tag = "Destroyed";
-            goalPassed(coll.gameObject);
+            goalPassed(coll);
             return;
         }
         if (coll.tag == "GoalMissed")
         {
-            goalMissed(coll.gameObject);
+            goalMissed(coll);
             return;
         }
         if (coll.tag == "Wall")
         {
-            hitWall(coll.gameObject);
+            hitWall(coll);
 
             return;
         }
         if (coll.tag == "FinishMissed")
         {
-            finishMissed(coll.gameObject);
+            finishMissed(coll);
             return;
         }
         if (coll.tag == "FinishCheckpoint")
         {
-            finishCheckpoint(coll.gameObject);
+            finishCheckpoint(coll);
             return;
         }
         if (coll.tag == "Destroyed")
@@ -712,6 +723,11 @@ public class EpisodeManager : MonoBehaviour
             // duplicate detection, ignore
             return;
         }
-        Debug.LogError($"unknown tag {coll.tag}");
+        if (coll.tag == "IgnoreCollision")
+        {
+            // ignore collision, e.g. the arena ground
+            return;
+        }
+        Debug.LogError($"unknown tag {coll.tag} {coll.name}");
     }
 }
