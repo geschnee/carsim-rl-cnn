@@ -210,7 +210,7 @@ GameObject:
   - component: {fileID: 4169522506054814336}
   m_Layer: 0
   m_Name: Finishside
-  m_TagString: Untagged
+  m_TagString: IgnoreCollision
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -243,7 +243,7 @@ GameObject:
   - component: {fileID: 8747911028312740470}
   m_Layer: 0
   m_Name: WallLeftSide
-  m_TagString: Wall
+  m_TagString: IgnoreCollision
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -276,7 +276,7 @@ GameObject:
   - component: {fileID: 7993032612906206705}
   m_Layer: 0
   m_Name: WallRightSide
-  m_TagString: Untagged
+  m_TagString: IgnoreCollision
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -309,7 +309,7 @@ GameObject:
   - component: {fileID: 4161458596757387619}
   m_Layer: 0
   m_Name: YellowBorders
-  m_TagString: Untagged
+  m_TagString: IgnoreCollision
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -347,7 +347,7 @@ GameObject:
   - component: {fileID: 1389342911725328584}
   m_Layer: 0
   m_Name: GroundBody
-  m_TagString: Untagged
+  m_TagString: IgnoreCollision
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -826,7 +826,7 @@ GameObject:
   - component: {fileID: 7112425722384962958}
   m_Layer: 0
   m_Name: GroundComponent
-  m_TagString: Untagged
+  m_TagString: IgnoreCollision
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -963,7 +963,7 @@ GameObject:
   - component: {fileID: 4967169831913862266}
   m_Layer: 0
   m_Name: STartside
-  m_TagString: Untagged
+  m_TagString: IgnoreCollision
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -1276,7 +1276,7 @@ GameObject:
   - component: {fileID: 4977489745329020449}
   m_Layer: 0
   m_Name: Body1 29
-  m_TagString: Wall
+  m_TagString: IgnoreCollision
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -1382,7 +1382,7 @@ GameObject:
   - component: {fileID: 8817912701254691047}
   m_Layer: 0
   m_Name: Body1 23
-  m_TagString: Untagged
+  m_TagString: IgnoreCollision
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -1674,7 +1674,7 @@ GameObject:
   - component: {fileID: 990251013573246841}
   m_Layer: 0
   m_Name: Body1 27
-  m_TagString: Untagged
+  m_TagString: IgnoreCollision
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -1840,6 +1840,7 @@ MonoBehaviour:
   skyboxMaterialBright: {fileID: 2100000, guid: febda482812e2b54dae989433c3d16e4, type: 2}
   skyboxMaterialDark: {fileID: 2100000, guid: d442213dcf4a4c348b08978f13676364, type: 2}
   skyboxMaterialDefault: {fileID: 2100000, guid: 467d24dd638ac8b49ac49bfc98045797, type: 2}
+  collisionMode: 0
 --- !u!114 &8721291465432444832
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1872,7 +1873,7 @@ GameObject:
   - component: {fileID: 3510767058110542732}
   m_Layer: 0
   m_Name: Body1 28
-  m_TagString: Untagged
+  m_TagString: IgnoreCollision
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -1978,7 +1979,7 @@ GameObject:
   - component: {fileID: 8762525877857163123}
   m_Layer: 0
   m_Name: Body1 26
-  m_TagString: Wall
+  m_TagString: IgnoreCollision
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -2084,7 +2085,7 @@ GameObject:
   - component: {fileID: 2116278796438891685}
   m_Layer: 0
   m_Name: Body1 25
-  m_TagString: Wall
+  m_TagString: IgnoreCollision
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -2518,7 +2519,7 @@ GameObject:
   - component: {fileID: 4038831885643432856}
   m_Layer: 0
   m_Name: Body1 22
-  m_TagString: Untagged
+  m_TagString: IgnoreCollision
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0

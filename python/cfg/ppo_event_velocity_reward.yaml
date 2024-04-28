@@ -67,6 +67,8 @@ env_kwargs:
     orientationCoefficient: 0
     velocityCoefficient: 1
     eventCoefficient: 10
+  collisionMode: oncePerTimestep
+  # unrestricted, oncePerTimestep, oncePerEpisode, resetUponCollision, ignoreCollisions
   trainingMapType: randomEvalEasy
   trainingLightSetting: standard
   # random, bright, standard, dark

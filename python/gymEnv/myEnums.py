@@ -1,6 +1,14 @@
 import numpy as np
 
 from enum import Enum
+
+class CollisionMode(Enum):
+    unrestricted = 0
+    oncePerTimestep = 1
+    oncePerEpisode = 2
+    resetUponCollision = 3
+    ignoreCollisions = 4
+
 class Spawn(Enum):
     Fixed = 0
     OrientationRandom = 1

@@ -99,7 +99,7 @@ public class PeacefulPieCarCommandReceiver : MonoBehaviour
         }
 
         [JsonRpcMethod]
-        string reset(int id, string mapType, string spawn, string lightSettingName, string video_filename)
+        string reset(int id, string mapType, string spawn, string lightSettingName, bool evalMode, string video_filename)
         {
             //Debug.Log($"reset() called, id: {id}");
             MapType mt = (MapType)Enum.Parse(typeof(MapType), mapType);
@@ -107,7 +107,7 @@ public class PeacefulPieCarCommandReceiver : MonoBehaviour
             LightSetting lightSetting = (LightSetting)Enum.Parse(typeof(LightSetting), lightSettingName);
 
             //Debug.Log($"mt: {mt}");
-            return arenas[id].reset(mt, sp, lightSetting, video_filename);
+            return arenas[id].reset(mt, sp, lightSetting, evalMode, video_filename);
         }
 
         [JsonRpcMethod]
@@ -159,7 +159,7 @@ public class PeacefulPieCarCommandReceiver : MonoBehaviour
         }
 
         [JsonRpcMethod]
-        void startArena(int id, string jetbotName, float distanceCoefficient, float orientationCoefficient, float velocityCoefficient, float eventCoefficient, int resWidth, int resHeight, bool fixedTimesteps, float fixedTimestepsLength)
+        void startArena(int id, string jetbotName, float distanceCoefficient, float orientationCoefficient, float velocityCoefficient, float eventCoefficient, int resWidth, int resHeight, bool fixedTimesteps, float fixedTimestepsLength, string collisionMode)
         {
             // Debug.Log($"startArena() called, id: {id}");
             // spawn a new arena including gameManager and everything
@@ -181,6 +181,10 @@ public class PeacefulPieCarCommandReceiver : MonoBehaviour
             arena.setJetbot(jetbotName);
             arena.fixedTimesteps = fixedTimesteps;
             arena.fixedTimestepsLength = fixedTimestepsLength;
+
+
+            CollisionMode cm = (CollisionMode)Enum.Parse(typeof(CollisionMode), collisionMode);
+            arena.setCollisionMode(cm);
 
             arenas.Add(arena);
 

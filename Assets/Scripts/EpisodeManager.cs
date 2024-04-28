@@ -23,7 +23,7 @@ public class EpisodeManager : MonoBehaviour
     public float orientationCoefficient;// = 0.1f;
     public float eventCoefficient;// = 1f;
 
-    private float finishCheckpointReward = 1f; // = 100f;
+    private float finishCheckpointReward = 100f; // = 100f;
     private float wallHitReward = -1f;
     private float obstacleHitReward = -1f;
     private float timeoutReward = -1f;
@@ -32,6 +32,8 @@ public class EpisodeManager : MonoBehaviour
     public float duration;
     public float allowedTime;
     public bool obstacleOrWallHit;
+    public bool obstacleHit;
+    public bool wallHit;
 
     private AIEngineBase aIEngine;
     private GameObject finishLine;
@@ -40,6 +42,11 @@ public class EpisodeManager : MonoBehaviour
     public int numberOfGoals;
 
     public EpisodeStatus episodeStatus;
+    public CollisionMode collisionMode;
+    public bool evalMode;
+    public bool timestepObstacleHit;
+
+    public List<GameObject> hitObstacles = new List<GameObject>();
 
     private Vector3 lastPosition;
 
@@ -68,6 +75,7 @@ public class EpisodeManager : MonoBehaviour
 
     List<float> step_rewards;
     // the index indicates the step in which the reward was found
+
 
     public void PrepareAgent()
     {
@@ -98,30 +106,29 @@ public class EpisodeManager : MonoBehaviour
             return;
         }
 
-        this.timeOfLastStepBegin = Time.time;
+
 
         this.step++;
         // add new entry in the rewards counting list
         // with this added 0 reward there is an entry for every step even if there was no reward signal encountered
 
-
         this.step_rewards.Add(0);
-        if (this.step_rewards.Count != (this.step + 1))
-        {
-            Debug.LogError($"count should be one higher than steps: step_rewards.Count {this.step_rewards.Count} step {this.step}");
 
-        }
 
-        if (this.episodeStatus == EpisodeStatus.WaitingForStep)
+        if (this.fixedTimesteps && this.episodeStatus == EpisodeStatus.WaitingForStep) // we check for episodeStatus == WaitingForStep because if can be OutOfTime at this point as well
         {
-            if (!this.fixedTimesteps && this.step != 0)
-            {
-                Debug.LogWarning($"IncreaseSteps called while waiting for step {this.step} {this.episodeStatus} but we do not use fixed timesteps, there must be some implementation error");
-            }
             this.episodeStatus = EpisodeStatus.Running;
             this.stepFinished = false;
+            this.timestepObstacleHit = false;
+
+            this.timeOfLastStepBegin = Time.time;
         }
 
+        if (this.fixedTimesteps == false)
+        {
+            this.timeOfLastStepBegin = Time.time;
+            this.timestepObstacleHit = false;
+        }
     }
 
 
@@ -131,7 +138,7 @@ public class EpisodeManager : MonoBehaviour
         this.numberOfGoals = indicators.Count;
     }
 
-    public void StartEpisode()
+    public void StartEpisode(bool evalMode, CollisionMode collisionMode)
     {
         this.duration = 0f;
         this.passedGoals = new List<int>();
@@ -148,6 +155,14 @@ public class EpisodeManager : MonoBehaviour
         this.step = -1;
         this.allowedTime = this.allowedTimeDefault;
         this.obstacleOrWallHit = false;
+        this.obstacleHit = false;
+        this.wallHit = false;
+        this.hitObstacles = new List<GameObject>();
+
+        this.timestepObstacleHit = false;
+
+        this.evalMode = evalMode;
+        this.collisionMode = collisionMode;
 
         initializeStepRewards();
 
@@ -230,6 +245,8 @@ public class EpisodeManager : MonoBehaviour
         info.Add("amount_of_steps_based_on_rewardlist", this.step_rewards.Count.ToString());
 
         info.Add("collision", this.obstacleOrWallHit ? "1" : "0");
+        info.Add("obstacleCollision", this.obstacleHit ? "1" : "0");
+        info.Add("wallCollision", this.wallHit ? "1" : "0");
 
         return info;
     }
@@ -275,15 +292,6 @@ public class EpisodeManager : MonoBehaviour
 
     public void AddEventReward(float reward)
     {
-
-        if (reward < 0)
-        {
-            Debug.LogError($"negative reward {reward}, will return now");
-            // this is just a test
-            // it could be that the agent never tries to go through goals as the collision risk is too high
-            // a collision might punish too much, as there might be multiple collision triggers in one single timestep/collision
-            return;
-        }
 
         this.prescaleEventReward += reward;
         float weightedEventReward = reward * eventCoefficient;
@@ -471,10 +479,10 @@ public class EpisodeManager : MonoBehaviour
         EndEpisode(EpisodeStatus.Success);
     }
 
-    public void hitWall()
+    public void hitWall(GameObject obstacle)
     {
-        AddEventReward(wallHitReward);
-        collision();
+        this.wallHit = true;
+        handleCollision(obstacle, wallHitReward, EpisodeStatus.WallHit);
     }
 
     public void destroyCheckpoint(GameObject goal)
@@ -572,38 +580,99 @@ public class EpisodeManager : MonoBehaviour
         colorRed(goal);
     }
 
-    public void obstacleHit()
+    public void handleCollision(GameObject obstacle, float reward, EpisodeStatus potentialEndReason)
     {
-        AddEventReward(obstacleHitReward);
-        collision();
-    }
+        // returns true if the collision reward should be awarded
 
-    public void collision()
-    {
+
         this.obstacleOrWallHit = true;
+
+        if (this.collisionMode == CollisionMode.oncePerEpisode)
+        {
+            if (this.hitObstacles.Contains(obstacle) == false)
+            {
+                this.hitObstacles.Add(obstacle);
+                AddEventReward(reward);
+            }
+        }
+        else if (this.collisionMode == CollisionMode.oncePerTimestep)
+        {
+            if (this.timestepObstacleHit == false)
+            {
+                this.timestepObstacleHit = true;
+                AddEventReward(reward);
+            }
+            if (this.hitObstacles.Contains(obstacle) == false)
+            {
+                this.hitObstacles.Add(obstacle);
+            }
+        }
+        else if (this.collisionMode == CollisionMode.resetUponCollision)
+        {
+            this.hitObstacles.Add(obstacle);
+
+            AddEventReward(reward);
+            if (this.evalMode == false)
+            {
+                EndEpisode(potentialEndReason);
+            }
+        }
+        else if (this.collisionMode == CollisionMode.unrestricted)
+        {
+            AddEventReward(reward);
+            if (this.hitObstacles.Contains(obstacle) == false)
+            {
+                this.hitObstacles.Add(obstacle);
+            }
+        }
+        else if (this.collisionMode == CollisionMode.ignoreCollisions)
+        {
+            // we do not award the negative reward / penalty
+            if (this.hitObstacles.Contains(obstacle) == false)
+            {
+                this.hitObstacles.Add(obstacle);
+            }
+        }
+        else
+        {
+            Debug.LogError($"unknown collision mode {this.collisionMode}");
+        }
     }
 
-    public void redObstacleHit()
+    public void redObstacleHit(GameObject obstacle)
     {
-        obstacleHit();
+        obstacleHit = true;
+        handleCollision(obstacle, obstacleHitReward, EpisodeStatus.RedObstacle);
     }
 
-    public void blueObstacleHit()
+
+    public void blueObstacleHit(GameObject obstacle)
     {
-        obstacleHit();
+        obstacleHit = true;
+        handleCollision(obstacle, obstacleHitReward, EpisodeStatus.BlueObstacle);
     }
 
     private void OnTriggerStay(Collider coll)
     {
-        Collision(coll);
+        Collision(coll.gameObject);
     }
 
     private void OnTriggerEnter(Collider coll)
     {
-        Collision(coll);
+        Collision(coll.gameObject);
     }
 
-    private void Collision(Collider coll)
+    private void OnCollisionStay(Collision coll)
+    {
+        Collision(coll.gameObject);
+    }
+
+    private void OnCollisionEnter(Collision coll)
+    {
+        Collision(coll.gameObject);
+    }
+
+    private void Collision(GameObject coll)
     {
         // This is attached to the JetBot
 
@@ -614,39 +683,39 @@ public class EpisodeManager : MonoBehaviour
         }
         if (coll.tag == "BlueObstacleTag")
         {
-            blueObstacleHit();
+            blueObstacleHit(coll);
             return;
         }
         if (coll.tag == "RedObstacleTag")
         {
-            redObstacleHit();
+            redObstacleHit(coll);
             return;
         }
         if (coll.tag == "GoalPassed")
         {
             coll.tag = "Destroyed";
-            goalPassed(coll.gameObject);
+            goalPassed(coll);
             return;
         }
         if (coll.tag == "GoalMissed")
         {
-            goalMissed(coll.gameObject);
+            goalMissed(coll);
             return;
         }
         if (coll.tag == "Wall")
         {
-            hitWall();
+            hitWall(coll);
 
             return;
         }
         if (coll.tag == "FinishMissed")
         {
-            finishMissed(coll.gameObject);
+            finishMissed(coll);
             return;
         }
         if (coll.tag == "FinishCheckpoint")
         {
-            finishCheckpoint(coll.gameObject);
+            finishCheckpoint(coll);
             return;
         }
         if (coll.tag == "Destroyed")
@@ -654,6 +723,11 @@ public class EpisodeManager : MonoBehaviour
             // duplicate detection, ignore
             return;
         }
-        Debug.LogError($"unknown tag {coll.tag}");
+        if (coll.tag == "IgnoreCollision")
+        {
+            // ignore collision, e.g. the arena ground
+            return;
+        }
+        Debug.LogError($"unknown tag {coll.tag} {coll.name}");
     }
 }

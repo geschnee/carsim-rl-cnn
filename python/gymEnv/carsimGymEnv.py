@@ -49,7 +49,7 @@ class BaseCarsimEnv(gym.Env):
     unity_comms: UnityComms = None
     instancenumber = 0
 
-    def __init__(self, width=336, height=168, port=9000, log=False, jetbot=None, spawn_point=None, fixedTimestepsLength=None, trainingMapType=MapType.randomEval, trainingLightSetting=LightSetting.random, image_preprocessing={}, frame_stacking=5, coefficients=None):
+    def __init__(self, width=336, height=168, port=9000, log=False, jetbot=None, spawn_point=None, fixedTimestepsLength=None, trainingMapType=MapType.randomEval, trainingLightSetting=LightSetting.random, image_preprocessing={}, frame_stacking=5, coefficients=None, collisionMode=None):
         # height and width was previous 168, that way we could downsample and reach the same dimensions as the nature paper of 84 x 84
 
         self.instancenumber = BaseCarsimEnv.instancenumber
@@ -144,6 +144,8 @@ class BaseCarsimEnv(gym.Env):
             fixedTimesteps = False
             fixedTimestepsLength = 0
         
+
+        self.collisionMode = collisionMode
 
         self.unityStartArena(width, height, jetbot, fixedTimesteps, fixedTimestepsLength)
         BaseCarsimEnv.instancenumber += 1
@@ -249,9 +251,9 @@ class BaseCarsimEnv(gym.Env):
         return BaseCarsimEnv.unity_comms.immediateStep(ResultClass=StepReturnObject, id=self.instancenumber, step=self.step_nr, inputAccelerationLeft=float(
             left_acceleration), inputAccelerationRight=float(right_acceleration))
 
-    def unityReset(self, mp_name, video_filename, lightSettingName):
+    def unityReset(self, mp_name, video_filename, lightSettingName, evalMode):
         return BaseCarsimEnv.unity_comms.reset(mapType=mp_name,
-            id=self.instancenumber, spawn=self.spawn_point, lightSettingName=lightSettingName, video_filename=video_filename) 
+            id=self.instancenumber, spawn=self.spawn_point, lightSettingName=lightSettingName, evalMode=evalMode, video_filename=video_filename) 
 
     def unityGetObservation(self):
         return BaseCarsimEnv.unity_comms.getObservation(id=self.instancenumber)
@@ -268,7 +270,7 @@ class BaseCarsimEnv(gym.Env):
     def unityStartArena(self, width, height, jetbot, fixedTimesteps, fixedTimestepsLength):
 
         return BaseCarsimEnv.unity_comms.startArena(
-            id=self.instancenumber, jetbotName=jetbot, distanceCoefficient=self.distanceCoefficient, orientationCoefficient=self.orientationCoefficient, velocityCoefficient=self.velocityCoefficient, eventCoefficient=self.eventCoefficient, resWidth=width, resHeight=height, fixedTimesteps=fixedTimesteps, fixedTimestepsLength=fixedTimestepsLength)
+            id=self.instancenumber, jetbotName=jetbot, distanceCoefficient=self.distanceCoefficient, orientationCoefficient=self.orientationCoefficient, velocityCoefficient=self.velocityCoefficient, eventCoefficient=self.eventCoefficient, resWidth=width, resHeight=height, fixedTimesteps=fixedTimesteps, fixedTimestepsLength=fixedTimestepsLength, collisionMode=self.collisionMode)
         
     def unityDeleteAllArenas(self):
         BaseCarsimEnv.unity_comms.deleteAllArenas()
@@ -280,7 +282,7 @@ class BaseCarsimEnv(gym.Env):
         self.video_filename = video_filename
         #print(f'{self.instancenumber} video filename {self.video_filename}', flush=True)
 
-    def reset(self, seed = None, mapType = None, lightSetting = None):
+    def reset(self, seed = None, mapType = None, lightSetting = None, evalMode = False):
         super().reset(seed=seed)  # gynasium migration guide https://gymnasium.farama.org/content/migration-guide/
 
 
@@ -296,7 +298,7 @@ class BaseCarsimEnv(gym.Env):
         lightSettingName = self.getLightSettingName(lightSetting)
 
 
-        obsstring = self.unityReset(mp_name, video_filename=self.video_filename, lightSettingName=lightSettingName)
+        obsstring = self.unityReset(mp_name, video_filename=self.video_filename, lightSettingName=lightSettingName, evalMode=evalMode)
 
         
         info = {"mapType": mp_name}
@@ -328,9 +330,9 @@ class BaseCarsimEnv(gym.Env):
         lightSettingName = LightSetting.resolvePseudoEnum(ls).name
         return lightSettingName
     
-    def reset_with_difficulty(self, difficulty, lightSetting = None):
+    def reset_with_difficulty(self, difficulty, lightSetting = None, evalMode=  False):
         mapType = MapType.getMapTypeFromDifficulty(difficulty)
-        return self.reset(mapType=mapType, lightSetting=lightSetting)
+        return self.reset(mapType=mapType, lightSetting=lightSetting, evalMode=evalMode)
 
 
     def rollover_log_before(self, new_obs, channels):
