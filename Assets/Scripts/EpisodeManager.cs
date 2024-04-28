@@ -421,7 +421,8 @@ public class EpisodeManager : MonoBehaviour
             return;
         }
 
-        Debug.Log($"FixedUpdate time check {Time.deltaTime} should be equal to {Time.fixedDeltaTime}");
+        // Debug.Log($"FixedUpdate time check {Time.deltaTime} is equal to {Time.fixedDeltaTime}");
+        // these numbers are the same and should be the same
         // https://docs.unity3d.com/ScriptReference/Time-fixedDeltaTime.html
 
         // count time only when it is running

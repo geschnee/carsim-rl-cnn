@@ -783,6 +783,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         second_goals_given_first, third_goals_given_second = 0, 0
         collision_episodes = 0
 
+
         timeouts = 0
         wait_time = 0
 
@@ -911,6 +912,8 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         success_rate = success_count / n_eval_episodes
         rate_of_passed_goals = passed_goals / number_of_goals
         rate_of_passed_first_goals = first_goals / n_eval_episodes
+        rate_of_passed_second_goals = second_goals / n_eval_episodes
+        rate_of_passed_third_goals = third_goals / n_eval_episodes
 
         collision_rate = collision_episodes / n_eval_episodes
         if first_goals > 0:
@@ -931,11 +934,15 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         self.my_record(f'eval_{difficulty}_{light_setting.name}/std_reward', std_reward)
         self.my_record(f'eval_{difficulty}_{light_setting.name}/success_rate', success_rate)
         self.my_record(f'eval_{difficulty}_{light_setting.name}/rate_passed_goals', rate_of_passed_goals)
-        self.my_record(f'eval_{difficulty}_{light_setting.name}/rate_first_goal', rate_of_passed_first_goals)
-        self.my_record(f'eval_{difficulty}_{light_setting.name}/rate_second_goal_given_first', rate_of_second_goal_given_first)
-        self.my_record(f'eval_{difficulty}_{light_setting.name}/rate_third_goal_given_second', rate_of_third_goal_given_second)
         self.my_record(f'eval_{difficulty}_{light_setting.name}/timeout_rate', timeout_rate)
         self.my_record(f'eval_{difficulty}_{light_setting.name}/rate_episode_with_collision', collision_episodes / n_eval_episodes)
+
+        
+        self.my_record(f'eval_{difficulty}_{light_setting.name}/rate_first_goal', rate_of_passed_first_goals)
+        #self.my_record(f'eval_{difficulty}_{light_setting.name}/rate_second_goal_given_first', rate_of_second_goal_given_first)
+        #self.my_record(f'eval_{difficulty}_{light_setting.name}/rate_third_goal_given_second', rate_of_third_goal_given_second)
+        self.my_record(f'eval_{difficulty}_{light_setting.name}/rate_second_goal', rate_of_passed_second_goals)
+        self.my_record(f'eval_{difficulty}_{light_setting.name}/rate_third_goal', rate_of_passed_third_goals)
 
         step_average_wait_time = wait_time / np.sum(episode_lengths)
         self.my_record(f"eval_{difficulty}_{light_setting.name}/step_average_wait_time", step_average_wait_time)
