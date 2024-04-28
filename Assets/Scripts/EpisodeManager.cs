@@ -276,7 +276,7 @@ public class EpisodeManager : MonoBehaviour
     public void AddEventReward(float reward)
     {
 
-        if (reward<0)
+        if (reward < 0)
         {
             Debug.LogError($"negative reward {reward}, will return now");
             // this is just a test
@@ -413,7 +413,8 @@ public class EpisodeManager : MonoBehaviour
             return;
         }
 
-
+        Debug.Log($"FixedUpdate time check {Time.deltaTime} should be equal to {Time.fixedDeltaTime}");
+        // https://docs.unity3d.com/ScriptReference/Time-fixedDeltaTime.html
 
         // count time only when it is running
         this.duration += Time.deltaTime;
@@ -423,7 +424,7 @@ public class EpisodeManager : MonoBehaviour
         float velo = this.aIEngine.getCarVelocity();
 
         AddVelocityReward((velo) * Time.deltaTime);
-        
+
 
         // reward for driving towards the next goal middleIndicator
         float distanceReward = this.lastDistance - GetDistanceToNextGoal();
