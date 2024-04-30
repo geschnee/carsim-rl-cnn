@@ -30,7 +30,7 @@ total_timesteps: 6500000 # restricted to 650000 due to real time limit (about 5 
 
 policy: "CnnPolicy"
 use_bundled_calls: True
-use_fresh_obs: True
+use_fresh_obs: False
 eval_only: False
 number_eval_runs: 3
 

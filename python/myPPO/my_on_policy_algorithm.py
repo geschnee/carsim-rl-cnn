@@ -841,7 +841,10 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
 
         if not self.use_fresh_obs:
             # get the first observations
-            actions, values, log_probs, obs = self.inferFromObservations(env, deterministic)
+            if self.use_bundled_calls:
+                obs = get_obs_bundled_calls(env)
+            else:
+                obs = get_obs_single_calls(env)
             self._last_obs = obs
 
         while (episode_counts < episode_count_targets).any():
@@ -1057,7 +1060,6 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         # same initialization of envs, does the agent traverse the env in the same way?
 
         # TODO remove unnecessary code in this function
-        print(f'playGamesWithIdenticalStartConditions started difficulty {difficulty}', flush=True)
 
         env = self.env
         n_envs = env.num_envs
@@ -1094,7 +1096,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
             env.env_method(
                 method_name="setVideoFilename",
                 indices=[i],
-                video_filename = f'{os.getcwd()}\\videos_identicalStartConditions_iter_{iteration}\\{difficulty}_{light_setting.name}_env_{i}_video_'
+                video_filename = f'{os.getcwd()}\\videos_identicalStartConditions_iter_{iteration}\\{light_setting.name}_env_{i}_video_'
             )
 
         # reset all envs with one specific map and rotation
@@ -1112,8 +1114,12 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
 
         if not self.use_fresh_obs:
             # get the first observations
-            actions, values, log_probs, obs = self.inferFromObservations(env, deterministic=True)
+            if self.use_bundled_calls:
+                obs = get_obs_bundled_calls(env)
+            else:
+                obs = get_obs_single_calls(env)
             self._last_obs = obs
+
 
         while (episode_counts < episode_count_targets).any():
     
