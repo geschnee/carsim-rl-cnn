@@ -4,7 +4,7 @@ comment: "isolated training config medium standard, distance reward only, bigger
 
 
 eval_settings:
-  log_interval: 100
+  log_interval: 25
   num_evals_per_difficulty: 20
   eval_light_settings: True
 
