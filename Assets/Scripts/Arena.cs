@@ -85,7 +85,7 @@ public class Arena : MonoBehaviour
         gameManager.DestroyObstaclesOnMap();
     }
 
-    public string reset(MapType mt, Spawn jetBotSpawn, LightSetting lightSetting, bool evalMode, string video_filename)
+    public string reset(MapType mt, Spawn jetBotSpawn, float spawn_rot, LightSetting lightSetting, bool evalMode, string video_filename)
     {
         if (this.car != null)
         {
@@ -99,7 +99,7 @@ public class Arena : MonoBehaviour
         gameManager.DestroyObstaclesOnMap();
 
         // spawn new obstacles:
-        MapData md = gameManager.InitializeMapWithObstacles(mt, 0, jetBotSpawn);
+        MapData md = gameManager.InitializeMapWithObstacles(mt, 0, jetBotSpawn, spawn_rot);
 
         GameObject car = gameManager.spawnJetbot(md, this.instancenumber);
 

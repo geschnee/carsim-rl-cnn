@@ -20,6 +20,7 @@ from myPPO.myPPO import myPPO
 
 from gymEnv.myEnums import MapType
 from gymEnv.myEnums import LightSetting
+from gymEnv.myEnums import Spawn
 
 import torch
 from torch.utils.tensorboard import SummaryWriter
@@ -73,6 +74,7 @@ def run_ppo(cfg):
     env_kwargs["trainingMapType"] = MapType[cfg.env_kwargs.trainingMapType]
     env_kwargs["trainingLightSetting"] = LightSetting[cfg.env_kwargs.trainingLightSetting]
     # get proper enum type from string
+    env_kwargs["spawn_point"] = Spawn[cfg.env_kwargs.spawn_point]
 
 
 
@@ -127,6 +129,8 @@ def run_ppo(cfg):
     # increase contrast of images?
     # https://stackoverflow.com/questions/39308030/how-do-i-increase-the-contrast-of-an-image-in-python-opencv
 
+
+
     
     if cfg.copy_model_from:
         string = f"{HydraConfig.get().runtime.cwd}/{cfg.copy_model_from}"
@@ -135,6 +139,12 @@ def run_ppo(cfg):
                         n_epochs=n_epochs, batch_size=batch_size)
 
     if not cfg.eval_only:
+
+        model.invariant_output_test()
+        model.playGamesWithIdenticalStartConditions(n_episodes=10, difficulty="medium", iteration=0, light_setting=LightSetting.standard)
+        model.test_deterministic_improves(10, "medium", 0, LightSetting.standard)
+
+
         model.learn(total_timesteps=cfg.total_timesteps, log_interval=cfg.eval_settings.log_interval, num_evals_per_difficulty = cfg.eval_settings.num_evals_per_difficulty, eval_light_settings=cfg.eval_settings.eval_light_settings)
         model.save("finished_ppo")
         print("finished learning without issues")

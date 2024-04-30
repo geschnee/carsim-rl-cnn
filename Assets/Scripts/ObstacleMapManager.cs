@@ -281,23 +281,26 @@ public class ObstacleMapManager : MonoBehaviour
 
     // TODO was this method used in Maximilian code before?
     // yes, in CarAgent random spawn
-    public Quaternion JetBotRandomRotation(Boolean veryRandom)
+    public Quaternion JetBotRotation(float jetBotSpawnRotationAngle)
     {
+        // previously called JetBotRandomRotation
+        // this method did generate the random angle, python now does that for better/easier control
+
         Quaternion originalQuaternion = new Quaternion(0, 1, 0, 1);
 
         // Convert to Euler angles
         Vector3 currentRotation = originalQuaternion.eulerAngles;
 
-        float randomAngle;
+        /*float randomAngle;
         if (veryRandom) {
             // Generate a random angle between -45 and 45 degrees
             randomAngle = UnityEngine.Random.Range(-45f, 45f);
         } else {
             randomAngle = UnityEngine.Random.Range(-15f, 15f);
-        }
+        }*/
 
         // Add the random angle to the current rotation
-        Vector3 modifiedRotation = currentRotation + new Vector3(0, randomAngle, 0);
+        Vector3 modifiedRotation = currentRotation + new Vector3(0, jetBotSpawnRotationAngle, 0);
 
         // Convert back to quaternion
         Quaternion modifiedQuaternion = Quaternion.Euler(modifiedRotation);
@@ -427,7 +430,7 @@ public class ObstacleMapManager : MonoBehaviour
 
 
     // generate maps with different placement of obstacles
-    public MapData GenerateObstacleMap(MapType mapType, int id, Spawn jetBotSpawn)
+    public MapData GenerateObstacleMap(MapType mapType, int id, Spawn jetBotSpawn, float jetBotSpawnRotationAngle)
     {
 
 
@@ -449,8 +452,8 @@ public class ObstacleMapManager : MonoBehaviour
             jetBotSpawnPosition = this.GetJetBotRandomCoordsEval();
         }
 
-        Quaternion jetBotSpawnRotation;
-        if (jetBotSpawn == Spawn.OrientationVeryRandom | jetBotSpawn == Spawn.FullyRandom)
+        Quaternion jetBotSpawnRotation = this.JetBotRotation(jetBotSpawnRotationAngle);
+        /*if (jetBotSpawn == Spawn.OrientationVeryRandom | jetBotSpawn == Spawn.FullyRandom)
         {
             jetBotSpawnRotation = this.JetBotRandomRotation(true);
         } else if (jetBotSpawn == Spawn.OrientationRandom)
@@ -460,7 +463,7 @@ public class ObstacleMapManager : MonoBehaviour
         else
         {
             jetBotSpawnRotation = new Quaternion(0, 1, 0, 1);
-        }
+        }*/
         //Debug.Log($"JetBot spawn rotation y {jetBotSpawnRotation.eulerAngles.y}");
 
         Goal[] obstacles = new Goal[0];

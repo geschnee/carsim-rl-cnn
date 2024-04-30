@@ -19,6 +19,9 @@ from myPPO.my_buffers import MyRolloutBuffer
 from gymEnv.myEnums import LightSetting
 from gymEnv.myEnums import MapType
 
+from myPPO.game_repr import GameRepresentation
+import collections
+
 import os
 import csv
 
@@ -150,13 +153,14 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         # pytype:enable=not-instantiable
         self.policy = self.policy.to(self.device)
 
-    def inferFromObservations(self, env):
+    def inferFromObservations(self, env, deterministic = False):
         # moved to its own function to be able to profile the forward passes (during rollout collection and evaluation) easily
 
 
         with th.no_grad():
             # Convert to pytorch tensor or to TensorDict
 
+            #print(f'using fresh obs: {self.use_fresh_obs} use_bundled_calls {self.use_bundled_calls}', flush=True)
             
             if self.use_fresh_obs:
 
@@ -174,7 +178,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
                 obs_tensor = obs_as_tensor(self._last_obs, self.device)
                 obs = self._last_obs
 
-            actions, values, log_probs = self.policy(obs_tensor)
+            actions, values, log_probs = self.policy(obs_tensor, deterministic=deterministic)
         
         return actions, values, log_probs, obs
 
@@ -666,7 +670,9 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
                 print(f'Will eval now as after every {log_interval} collect and trains')
                 eval_time = time.time()
                 self.eval(iteration=iteration, num_evals_per_difficulty=num_evals_per_difficulty, eval_light_settings=eval_light_settings)
-
+                most_common_game_result_rate = self.playGamesWithIdenticalStartConditions(n_episodes=10, iteration=iteration, light_setting=LightSetting.standard)
+                self.my_record(f'identicalStartConditions/most_common_game_result_rate', most_common_game_result_rate)
+                self.test_deterministic_improves(n_episodes=10, difficulty="medium", iteration=iteration, light_setting=LightSetting.standard)
                 
                 eval_time = time.time() - eval_time
                 self.my_record("time/eval_time_seconds", eval_time)
@@ -692,10 +698,21 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
 
         return state_dicts, []
     
+    def test_deterministic_improves(self, n_episodes: int = 10, difficulty: str = "easy", iteration: int = 0, light_setting: LightSetting = LightSetting.standard) -> float:
+        deter_success_rate, deter_collision_rate = self.eval_model_track(n_episodes, difficulty, iteration, light_setting, deterministic=True, log=False)
+        nondeter_success_rate, nondeter_collision_rate = self.eval_model_track(n_episodes, difficulty, iteration, light_setting, deterministic=False, log=False)
+
+        print(f'deter success rate: {deter_success_rate} collision rate: {deter_collision_rate}')
+        print(f'nondeter success rate: {nondeter_success_rate} collision rate: {nondeter_collision_rate}')
+        print(f'medium deter better than nondeter: {deter_success_rate > nondeter_success_rate}')
+
+
+
     def eval(self: SelfOnPolicyAlgorithm, iteration: int = 0, num_evals_per_difficulty: int = 20, eval_light_settings: bool = False) -> float:
         print(f'eval started', flush=True)
 
-
+        # TODO evaluate consistency?
+        # playGamesWithIdenticalStartConditions
 
         if eval_light_settings:
             light_settings = [LightSetting.bright, LightSetting.standard, LightSetting.dark]
@@ -771,6 +788,8 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         difficulty: str = "easy",
         iteration: int = 0,
         light_setting: LightSetting = LightSetting.standard,
+        deterministic: bool = False,
+        log=True
     ):
         # spawn position and orientation is defined by the env via cfg.env_kwargs.spawn_point
 
@@ -822,13 +841,13 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
 
         if not self.use_fresh_obs:
             # get the first observations
-            actions, values, log_probs, obs = self.inferFromObservations(env)
+            actions, values, log_probs, obs = self.inferFromObservations(env, deterministic)
             self._last_obs = obs
 
         while (episode_counts < episode_count_targets).any():
     
-            
-            actions, values, log_probs, obs = self.inferFromObservations(env)
+            #assert False, "do we have to use deteministic forward here?"
+            actions, values, log_probs, obs = self.inferFromObservations(env, deterministic)
             actions = actions.cpu().numpy()
 
             # Rescale and perform action
@@ -928,25 +947,25 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         timeout_rate = timeouts/n_eval_episodes
 
 
+        if log: 
+            self.my_record(f'eval_{difficulty}_{light_setting.name}/mean_reward', mean_reward)
+            
+            self.my_record(f'eval_{difficulty}_{light_setting.name}/std_reward', std_reward)
+            self.my_record(f'eval_{difficulty}_{light_setting.name}/success_rate', success_rate)
+            self.my_record(f'eval_{difficulty}_{light_setting.name}/rate_passed_goals', rate_of_passed_goals)
+            self.my_record(f'eval_{difficulty}_{light_setting.name}/timeout_rate', timeout_rate)
+            self.my_record(f'eval_{difficulty}_{light_setting.name}/rate_episode_with_collision', collision_episodes / n_eval_episodes)
 
-        self.my_record(f'eval_{difficulty}_{light_setting.name}/mean_reward', mean_reward)
-        
-        self.my_record(f'eval_{difficulty}_{light_setting.name}/std_reward', std_reward)
-        self.my_record(f'eval_{difficulty}_{light_setting.name}/success_rate', success_rate)
-        self.my_record(f'eval_{difficulty}_{light_setting.name}/rate_passed_goals', rate_of_passed_goals)
-        self.my_record(f'eval_{difficulty}_{light_setting.name}/timeout_rate', timeout_rate)
-        self.my_record(f'eval_{difficulty}_{light_setting.name}/rate_episode_with_collision', collision_episodes / n_eval_episodes)
+            
+            self.my_record(f'eval_{difficulty}_{light_setting.name}/rate_first_goal', rate_of_passed_first_goals)
+            #self.my_record(f'eval_{difficulty}_{light_setting.name}/rate_second_goal_given_first', rate_of_second_goal_given_first)
+            #self.my_record(f'eval_{difficulty}_{light_setting.name}/rate_third_goal_given_second', rate_of_third_goal_given_second)
+            self.my_record(f'eval_{difficulty}_{light_setting.name}/rate_second_goal', rate_of_passed_second_goals)
+            self.my_record(f'eval_{difficulty}_{light_setting.name}/rate_third_goal', rate_of_passed_third_goals)
 
-        
-        self.my_record(f'eval_{difficulty}_{light_setting.name}/rate_first_goal', rate_of_passed_first_goals)
-        #self.my_record(f'eval_{difficulty}_{light_setting.name}/rate_second_goal_given_first', rate_of_second_goal_given_first)
-        #self.my_record(f'eval_{difficulty}_{light_setting.name}/rate_third_goal_given_second', rate_of_third_goal_given_second)
-        self.my_record(f'eval_{difficulty}_{light_setting.name}/rate_second_goal', rate_of_passed_second_goals)
-        self.my_record(f'eval_{difficulty}_{light_setting.name}/rate_third_goal', rate_of_passed_third_goals)
-
-        step_average_wait_time = wait_time / np.sum(episode_lengths)
-        self.my_record(f"eval_{difficulty}_{light_setting.name}/step_average_wait_time", step_average_wait_time)
-        self.my_record(f'eval_{difficulty}_{light_setting.name}/average_episode_length', np.average(episode_lengths))
+            step_average_wait_time = wait_time / np.sum(episode_lengths)
+            self.my_record(f"eval_{difficulty}_{light_setting.name}/step_average_wait_time", step_average_wait_time)
+            self.my_record(f'eval_{difficulty}_{light_setting.name}/average_episode_length', np.average(episode_lengths))
 
         # set to no video afterwards
         for index in log_indices:
@@ -989,7 +1008,8 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
 
             eval_time = time.time()
             self.eval(iteration=step, num_evals_per_difficulty=num_evals_per_difficulty, eval_light_settings=eval_light_settings)
-
+            self.playGamesWithIdenticalStartConditions(n_episodes=10, iteration=step, light_setting=LightSetting.standard)
+            self.test_deterministic_improves(n_episodes=10, difficulty = "medium", iteration=step, light_setting=LightSetting.standard)
             
             eval_time = time.time() - eval_time
             self.my_record("time/eval_time_seconds", eval_time)
@@ -1002,6 +1022,254 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
             print(f'total_eval_time: {total_eval_time}', flush=True)
 
         return self
+    
+    def invariant_output_test(self):
+        env = self.env
+        env.reset()
+
+        #self.policy.set_training_mode(False)
+
+        with th.no_grad():
+            obs = get_obs_bundled_calls(env)
+        
+            obs_tensor = obs_as_tensor(obs, self.device)
+            
+            actions, values, log_probs = self.policy(obs_tensor, deterministic = True)
+            
+            # now we repeat for the first observation alone
+            first_obs = obs[0:1]
+            first_obs_tensor = obs_as_tensor(first_obs, self.device)
+
+
+            first_actions, first_values, first_log_probs = self.policy(first_obs_tensor, deterministic = True)
+
+            assert th.allclose(actions[0:1], first_actions), f'actions are not invariant to the batch size/samples {actions[0:1]} != {first_actions}'
+            print(f'actions are invariant to the batch size/samples')
+
+
+    def playGamesWithIdenticalStartConditions(
+        self: SelfOnPolicyAlgorithm,
+        n_episodes: int = 10,
+        difficulty: str = "easy",
+        iteration: int = 0,
+        light_setting: LightSetting = LightSetting.standard,
+    ):
+        # same initialization of envs, does the agent traverse the env in the same way?
+
+        # TODO remove unnecessary code in this function
+        print(f'playGamesWithIdenticalStartConditions started difficulty {difficulty}', flush=True)
+
+        env = self.env
+        n_envs = env.num_envs
+        episode_rewards = []
+        episode_lengths = []
+        success_count, finished_episodes, passed_goals, number_of_goals = 0, 0, 0, 0
+        first_goals, second_goals, third_goals = 0, 0, 0
+        second_goals_given_first, third_goals_given_second = 0, 0
+        collision_episodes = 0
+
+        # game results are characterized as endEvent, collision, passedFirstGoal, passedSecondGoal, passedThirdGoal
+
+        game_results = []
+
+        timeouts = 0
+        wait_time = 0
+
+
+        episode_counts = np.zeros(n_envs, dtype="int")
+        # Divides episodes among different sub environments in the vector as evenly as possible
+        episode_count_targets = np.array([(n_episodes + i) // n_envs for i in range(n_envs)], dtype="int")
+        # episode_count_targets represents the amount of episodes that have to be played in the corresponding env
+        # the sum of these values is equal to n_eval_episodes
+
+        current_rewards = np.zeros(n_envs)
+        current_lengths = np.zeros(n_envs, dtype="int")
+
+
+        os.mkdir(f'{os.getcwd()}\\videos_identicalStartConditions_iter_{iteration}')
+
+        # reset environment 0 to record the videos
+        log_indices = [0, 1] # these indices will record videos
+        for i in log_indices:
+            env.env_method(
+                method_name="setVideoFilename",
+                indices=[i],
+                video_filename = f'{os.getcwd()}\\videos_identicalStartConditions_iter_{iteration}\\{difficulty}_{light_setting.name}_env_{i}_video_'
+            )
+
+        # reset all envs with one specific map and rotation
+        env.env_method(
+            method_name="reset_with_mapType_spawnrotation",
+            indices=range(n_envs),
+            mapType=MapType.mediumBlueFirstRight,
+            lightSetting=light_setting,
+            evalMode=True,
+            spawnRot=0
+        ) 
+
+        # switch to eval mode
+        self.policy.set_training_mode(False)
+
+        if not self.use_fresh_obs:
+            # get the first observations
+            actions, values, log_probs, obs = self.inferFromObservations(env, deterministic=True)
+            self._last_obs = obs
+
+        while (episode_counts < episode_count_targets).any():
+    
+            actions, values, log_probs, obs = self.inferFromObservations(env, deterministic=True)
+            actions = actions.cpu().numpy()
+
+            # Rescale and perform action
+            clipped_actions = actions
+            # Clip the actions to avoid out of bound error
+            if isinstance(self.action_space, spaces.Box):
+                clipped_actions = np.clip(
+                    actions, self.action_space.low, self.action_space.high)
+            
+            observations, rewards, dones, infos = step_wrapper(env, clipped_actions, self.use_bundled_calls)
+            
+            current_lengths += 1
+            for i in range(n_envs):
+                if episode_counts[i] < episode_count_targets[i]:
+
+                    if dones[i]:
+
+                        episode_rewards.append(float(infos[i]["cumreward"].replace(",",".")))
+                        episode_lengths.append(current_lengths[i])
+                        episode_counts[i] += 1
+                        current_rewards[i] = 0
+                        current_lengths[i] = 0
+                        finished_episodes += 1
+                        passed_goals += int(infos[i]["passedGoals"])
+                        number_of_goals += int(infos[i]["numberOfGoals"])
+
+
+                        #print(f'collision_episodes {collision_episodes} + {int(infos[i]["collision"])}')
+                        collision_episodes += int(infos[i]["collision"])
+
+                        first_goals += int(infos[i]["passedFirstGoal"])
+                        #if int(infos[i]["passedGoals"]) >= 2:
+                        second_goals += int(infos[i]["passedSecondGoal"])
+                        #if int(infos[i]["passedGoals"]) >= 3:
+                        third_goals += int(infos[i]["passedThirdGoal"])
+
+                        wait_time += float(infos[i]["episodeWaitTime"])
+
+                        if int(infos[i]["passedFirstGoal"]) == 1 and int(infos[i]["passedSecondGoal"]) == 1:
+                            second_goals_given_first +=1
+                        if int(infos[i]["passedSecondGoal"]) == 1 and int(infos[i]["passedThirdGoal"]) == 1:
+                            third_goals_given_second +=1
+
+
+                        if infos[i]["endEvent"] == "Success":
+                            success_count += 1
+                        if infos[i]["endEvent"] == "OutOfTime":
+                            timeouts += 1
+
+                        endEvent = infos[i]["endEvent"]
+                        collision = int(infos[i]["collision"]) == 1
+                        passedFirstGoal = int(infos[i]["passedFirstGoal"]) == 1
+                        passedSecondGoal = int(infos[i]["passedSecondGoal"]) == 1
+                        passedThirdGoal = int(infos[i]["passedThirdGoal"]) == 1
+                        game_result = GameRepresentation(endEvent, collision, passedFirstGoal, passedSecondGoal, passedThirdGoal)
+                        game_results.append(game_result)
+
+                        if i in log_indices:
+                            if episode_counts[i] == episode_count_targets[i]-1:
+                                # no more logging needed for this env
+                                env.env_method(
+                                    method_name="setVideoFilename",
+                                    indices=[i],
+                                    video_filename = ""
+                                )
+
+
+                        # due to auto reset we have to reset the env again with the right parameters:
+                        env.env_method(
+                            method_name="reset_with_mapType_spawnrotation",
+                            indices=[i],
+                            mapType=MapType.mediumBlueFirstRight,
+                            lightSetting=light_setting,
+                            evalMode=True,
+                            spawnRot=0
+                        )
+            
+            self._last_obs = observations
+
+        assert np.sum(episode_counts) == n_episodes, f"not all episodes were finished, {np.sum(episode_counts)} != {n_episodes}"
+        assert finished_episodes == n_episodes, f"not all episodes were finished, {finished_episodes} != {n_episodes}"
+        
+
+        #print(f'episode_rewards: {episode_rewards}')
+        mean_reward = np.mean(episode_rewards)
+        std_reward = np.std(episode_rewards)
+        
+        success_rate = success_count / n_episodes
+        rate_of_passed_goals = passed_goals / number_of_goals
+        rate_of_passed_first_goals = first_goals / n_episodes
+        rate_of_passed_second_goals = second_goals / n_episodes
+        rate_of_passed_third_goals = third_goals / n_episodes
+
+        collision_rate = collision_episodes / n_episodes
+        if first_goals > 0:
+            rate_of_second_goal_given_first = second_goals_given_first / first_goals
+        else:
+            rate_of_second_goal_given_first = 0
+        if second_goals > 0:
+            rate_of_third_goal_given_second = third_goals_given_second / second_goals
+        else:
+            rate_of_third_goal_given_second = 0
+
+        timeout_rate = timeouts/n_episodes
+
+        game_results_counter = collections.Counter(game_results)
+
+        most_common_game_result = max(set(game_results), key=game_results.count)
+        print(f'most common game result: {most_common_game_result}')
+        print(f'game results and counts: {collections.Counter(game_results)}')
+
+        print(f'game results and counts: {game_results_counter}')
+
+        most_common_game_result_rate = game_results_counter[most_common_game_result] / n_episodes
+        print(f'rate of most common game result: {most_common_game_result_rate}')
+
+
+        print(game_results)
+
+        '''
+        self.my_record(f'eval_{difficulty}_{light_setting.name}/mean_reward', mean_reward)
+        
+        self.my_record(f'eval_{difficulty}_{light_setting.name}/std_reward', std_reward)
+        self.my_record(f'eval_{difficulty}_{light_setting.name}/success_rate', success_rate)
+        self.my_record(f'eval_{difficulty}_{light_setting.name}/rate_passed_goals', rate_of_passed_goals)
+        self.my_record(f'eval_{difficulty}_{light_setting.name}/timeout_rate', timeout_rate)
+        self.my_record(f'eval_{difficulty}_{light_setting.name}/rate_episode_with_collision', collision_episodes / n_episodes)
+
+        
+        self.my_record(f'eval_{difficulty}_{light_setting.name}/rate_first_goal', rate_of_passed_first_goals)
+        #self.my_record(f'eval_{difficulty}_{light_setting.name}/rate_second_goal_given_first', rate_of_second_goal_given_first)
+        #self.my_record(f'eval_{difficulty}_{light_setting.name}/rate_third_goal_given_second', rate_of_third_goal_given_second)
+        self.my_record(f'eval_{difficulty}_{light_setting.name}/rate_second_goal', rate_of_passed_second_goals)
+        self.my_record(f'eval_{difficulty}_{light_setting.name}/rate_third_goal', rate_of_passed_third_goals)
+
+        step_average_wait_time = wait_time / np.sum(episode_lengths)
+        self.my_record(f"eval_{difficulty}_{light_setting.name}/step_average_wait_time", step_average_wait_time)
+        self.my_record(f'eval_{difficulty}_{light_setting.name}/average_episode_length', np.average(episode_lengths))
+        '''
+        # set to no video afterwards
+        for index in log_indices:
+            env.env_method(
+                method_name="setVideoFilename",
+                indices=[index],
+                video_filename = ""
+            )
+
+        print(f'playGamesWithIdenticalStartConditions finished', flush=True)
+
+        # self.my_record(f'identicalStartConditions/most_common_game_result_rate', most_common_game_result_rate)
+
+        return most_common_game_result_rate
 
 def get_obs_single_calls(env):
     # env is a vectorized BaseCarsimEnv
@@ -1060,6 +1328,7 @@ def get_obs_bundled_calls(env):
     #print(f'get_obs_bundled_calls observations from buf shape: {obs.shape} {type(obs)}')
     rtn_obs = env.transpose_observations(obs)
     
+
     #print(f'get_obs_bundled_calls observations transposed shape: {rtn_obs.shape} {type(rtn_obs)}')
     
     return rtn_obs
@@ -1112,3 +1381,4 @@ def step_wrapper(env, clipped_actions, use_bundled_calls):
     else:
         # old approach
         return env.step(clipped_actions)
+    

@@ -1,4 +1,4 @@
-comment: "isolated training config medium standard, event reward only, with velocity and distance reward it got stuck driving forward without dodging obstacles"
+comment: "isolated training config medium standard, distance reward only, bigger n_steps to test if the training is mores stable then"
 # "Trying with fixed light settings and variable timesteps, we want to see learning progress again. Did something break?"
 # we should also try it with the fixed spawn to be closer to the evaluation scenario, maybe the differential can do it 
 
@@ -15,7 +15,7 @@ n_epochs: 5 # amount of training passes over the replay buffer per timestep
 
 batch_size: 64
 
-n_steps: 256 # 64 
+n_steps: 1024 # 64 
 # amount of steps to collect per collect_rollouts per environment
 # Tensorboard shows the mean_episode_length is below 3
 # we can reduce the n_steps to make the collection time shorter while still collecting a lot of episodes
@@ -30,7 +30,7 @@ total_timesteps: 6500000 # restricted to 650000 due to real time limit (about 5 
 
 policy: "CnnPolicy"
 use_bundled_calls: True
-use_fresh_obs: True
+use_fresh_obs: False
 eval_only: False
 number_eval_runs: 3
 
@@ -62,10 +62,10 @@ env_kwargs:
     # vielleicht eine art Mode variable hier reinpacken contrast increase s equalize
     normalize_images: False
   coefficients:
-    distanceCoefficient: 0
+    distanceCoefficient: 1
     orientationCoefficient: 0
     velocityCoefficient: 0
-    eventCoefficient: 1
+    eventCoefficient: 0
   collisionMode: oncePerTimestep
   # unrestricted, oncePerTimestep, oncePerEpisode, resetUponCollision, ignoreCollisions
   trainingMapType: randomEvalMedium

@@ -224,6 +224,7 @@ class BaseCarsimEnv(gym.Env):
         info_dict = stepObj.info
         info_dict["rewards"] = stepObj.rewards
         info_dict["episodeWaitTime"] = self.episodeWaitTime
+        info_dict["spawnRot"] = self.current_spawn_rot
 
         self.step_nr += 1
         assert self.step_nr == int(info_dict["step"]), f'self.step {self.step_nr} info_dict["step"] {info_dict["step"]} for {self.instancenumber}'
@@ -251,9 +252,12 @@ class BaseCarsimEnv(gym.Env):
         return BaseCarsimEnv.unity_comms.immediateStep(ResultClass=StepReturnObject, id=self.instancenumber, step=self.step_nr, inputAccelerationLeft=float(
             left_acceleration), inputAccelerationRight=float(right_acceleration))
 
-    def unityReset(self, mp_name, video_filename, lightSettingName, evalMode):
+    def unityReset(self, mp_name, spawn_rot, video_filename, lightSettingName, evalMode):
+
+        
+
         return BaseCarsimEnv.unity_comms.reset(mapType=mp_name,
-            id=self.instancenumber, spawn=self.spawn_point, lightSettingName=lightSettingName, evalMode=evalMode, video_filename=video_filename) 
+            id=self.instancenumber, spawn_pos=self.spawn_point.name, spawn_rot=spawn_rot, lightSettingName=lightSettingName, evalMode=evalMode, video_filename=video_filename) 
 
     def unityGetObservation(self):
         return BaseCarsimEnv.unity_comms.getObservation(id=self.instancenumber)
@@ -282,7 +286,7 @@ class BaseCarsimEnv(gym.Env):
         self.video_filename = video_filename
         #print(f'{self.instancenumber} video filename {self.video_filename}', flush=True)
 
-    def reset(self, seed = None, mapType = None, lightSetting = None, evalMode = False):
+    def reset(self, seed = None, mapType = None, lightSetting = None, evalMode = False, spawnRot=None):
         super().reset(seed=seed)  # gynasium migration guide https://gymnasium.farama.org/content/migration-guide/
 
 
@@ -297,11 +301,13 @@ class BaseCarsimEnv(gym.Env):
         mp_name = self.getMapTypeName(mapType=mapType)
         lightSettingName = self.getLightSettingName(lightSetting)
 
+        spawn_rot = self.getSpawnRot(spawnRot)
+        self.current_spawn_rot = spawn_rot
 
-        obsstring = self.unityReset(mp_name, video_filename=self.video_filename, lightSettingName=lightSettingName, evalMode=evalMode)
+        obsstring = self.unityReset(mp_name, spawn_rot, video_filename=self.video_filename, lightSettingName=lightSettingName, evalMode=evalMode)
 
         
-        info = {"mapType": mp_name}
+        info = {"mapType": mp_name, "spawnRot": self.current_spawn_rot}
 
         # do not take the observation from the reset, since the camera needs a frame to get sorted out
         new_obs = self.stringToObservation(self.unityGetObservation())
@@ -330,9 +336,37 @@ class BaseCarsimEnv(gym.Env):
         lightSettingName = LightSetting.resolvePseudoEnum(ls).name
         return lightSettingName
     
-    def reset_with_difficulty(self, difficulty, lightSetting = None, evalMode=  False):
+    def getSpawnRot(self, spawnRot):
+        if spawnRot is None:
+
+            assert type(self.spawn_point) == Spawn, f'spawn point must be set'
+
+            # spawn pos is determined in unity
+            if self.spawn_point == Spawn.Fixed:
+                spawn_rot = 0
+            elif self.spawn_point == Spawn.OrientationRandom:
+                spawn_rot = random.randint(-15, 15)
+            elif self.spawn_point is Spawn.OrientationVeryRandom:
+                spawn_rot = random.randint(-45, 45)
+            elif self.spawn_point is Spawn.FullyRandom:
+                spawn_rot = random.randint(-45, 45)
+            else:
+                assert False, f'unknown spawn point {self.spawn_point} {spawnRot} {type(self.spawn_point)}'
+            return spawn_rot
+        else:
+            assert isinstance(spawnRot, int), f'spawnRot must be int, not {type(spawnRot)}'
+            return spawnRot
+    
+    def reset_with_difficulty(self, difficulty, lightSetting=None, evalMode=False):
         mapType = MapType.getMapTypeFromDifficulty(difficulty)
         return self.reset(mapType=mapType, lightSetting=lightSetting, evalMode=evalMode)
+
+    def reset_with_difficulty_spawnrotation(self, difficulty, lightSetting=None, evalMode=False, spawnRot=None):
+        mapType = MapType.getMapTypeFromDifficulty(difficulty)
+        return self.reset(mapType=mapType, lightSetting=lightSetting, evalMode=evalMode, spawnRot=spawnRot)
+    
+    def reset_with_mapType_spawnrotation(self, mapType, lightSetting=None, evalMode=False, spawnRot=None):
+        return self.reset(mapType=mapType, lightSetting=lightSetting, evalMode=evalMode, spawnRot=spawnRot)
 
 
     def rollover_log_before(self, new_obs, channels):

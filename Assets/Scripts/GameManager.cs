@@ -103,7 +103,7 @@ public class GameManager: MonoBehaviour
 
 	}
 
-	public MapData InitializeMapWithObstacles(MapType currentMapIndex, int idOfCurrentRun, Spawn jetBotSpawn)
+	public MapData InitializeMapWithObstacles(MapType currentMapIndex, int idOfCurrentRun, Spawn jetBotSpawn, float jetBotRotation)
 	{
 		// TODO rewrite to use the passed parameters
 		// I do not want magic in this function/class here
@@ -113,7 +113,7 @@ public class GameManager: MonoBehaviour
 		MapType mapType = currentMapIndex;
 
 		// generate a new map with new obstacle, decide which type of map should be generated
-		mapData = this.obstacleMapManager.GenerateObstacleMap(mapType, this.idOfCurrentRun, jetBotSpawn);
+		mapData = this.obstacleMapManager.GenerateObstacleMap(mapType, this.idOfCurrentRun, jetBotSpawn, jetBotRotation);
 		this.obstacleMapManager.IntantiateObstacles(mapData);
 
 
