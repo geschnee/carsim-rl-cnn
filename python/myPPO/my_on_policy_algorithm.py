@@ -699,6 +699,9 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         return state_dicts, []
     
     def test_deterministic_improves(self, n_episodes: int = 10, difficulty: str = "easy", iteration: int = 0, light_setting: LightSetting = LightSetting.standard) -> float:
+
+        os.mkdir(f'{os.getcwd()}\\videos_iter_{iteration}')
+
         deter_success_rate, deter_collision_rate = self.eval_model_track(n_episodes, difficulty, iteration, light_setting, deterministic=True, log=False)
         nondeter_success_rate, nondeter_collision_rate = self.eval_model_track(n_episodes, difficulty, iteration, light_setting, deterministic=False, log=False)
 
