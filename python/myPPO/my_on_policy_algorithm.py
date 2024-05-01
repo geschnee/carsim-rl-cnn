@@ -330,10 +330,10 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
                 
                     if infos[idx]["endEvent"] == "Success":
                         successfully_completed_episodes += 1
-                    elif infos[i]["endEvent"] == "OutOfTime":
+                    elif infos[idx]["endEvent"] == "OutOfTime":
                         timeouts += 1
                     else:
-                        print(f'end event is {infos[i]["endEvent"]}')
+                        print(f'end event is {infos[idx]["endEvent"]}')
                         # FinishMissed
 
                     successfully_passed_goals += int(infos[idx]["passedGoals"])
