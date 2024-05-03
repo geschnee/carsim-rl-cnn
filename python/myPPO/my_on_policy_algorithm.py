@@ -699,8 +699,9 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         return state_dicts, []
     
     def test_deterministic_improves(self, n_episodes: int = 10, difficulty: str = "easy", iteration: int = 0, light_setting: LightSetting = LightSetting.standard) -> float:
-
-        os.mkdir(f'{os.getcwd()}\\videos_iter_{iteration}')
+        dirpath=f'{os.getcwd()}\\videos_iter_{iteration}'
+        if not os.path.exists(dirpath):
+            os.mkdir(dirpath)
 
         deter_success_rate, deter_collision_rate = self.eval_model_track(n_episodes, difficulty, iteration, light_setting, deterministic=True, log=False)
         nondeter_success_rate, nondeter_collision_rate = self.eval_model_track(n_episodes, difficulty, iteration, light_setting, deterministic=False, log=False)
@@ -708,6 +709,11 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         print(f'deter success rate: {deter_success_rate} collision rate: {deter_collision_rate}')
         print(f'nondeter success rate: {nondeter_success_rate} collision rate: {nondeter_collision_rate}')
         print(f'medium deter better than nondeter: {deter_success_rate > nondeter_success_rate}')
+
+        # TODO if we want a proper test what is better we also need to ensure the same starting positions and tracks are used
+
+        # TODO atari/human_level_control paper uses epsilon greedy during evaluation to avoid overfitting, see paragraph Evaluation procedure. 
+        # it might not be needed for our task, as the spawn positions are random
 
 
 
@@ -722,7 +728,9 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         else: 
             light_settings = [LightSetting.standard]
 
-        os.mkdir(f'{os.getcwd()}\\videos_iter_{iteration}')
+        dirpath = f'{os.getcwd()}\\videos_iter_{iteration}'
+        if not os.path.exists(dirpath):
+            os.mkdir(dirpath)
 
         total_success_rate = 0
         total_collision_rate = 0
@@ -1059,6 +1067,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         difficulty: str = "easy",
         iteration: int = 0,
         light_setting: LightSetting = LightSetting.standard,
+        deterministic: bool = True
     ):
         # same initialization of envs, does the agent traverse the env in the same way?
 
@@ -1090,8 +1099,9 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         current_rewards = np.zeros(n_envs)
         current_lengths = np.zeros(n_envs, dtype="int")
 
-
-        os.mkdir(f'{os.getcwd()}\\videos_identicalStartConditions_iter_{iteration}')
+        dirpath = f'{os.getcwd()}\\videos_identicalStartConditions_iter_{iteration}'
+        if not os.path.exists(dirpath):
+            os.mkdir(dirpath)
 
         # reset environment 0 to record the videos
         log_indices = [0, 1] # these indices will record videos
@@ -1126,7 +1136,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
 
         while (episode_counts < episode_count_targets).any():
     
-            actions, values, log_probs, obs = self.inferFromObservations(env, deterministic=True)
+            actions, values, log_probs, obs = self.inferFromObservations(env, deterministic=deterministic)
             actions = actions.cpu().numpy()
 
             # Rescale and perform action
@@ -1278,7 +1288,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
 
         # self.my_record(f'identicalStartConditions/most_common_game_result_rate', most_common_game_result_rate)
 
-        return most_common_game_result_rate
+        return most_common_game_result_rate, success_rate
 
 def get_obs_single_calls(env):
     # env is a vectorized BaseCarsimEnv
