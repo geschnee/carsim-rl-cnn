@@ -28,7 +28,7 @@ public class EpisodeManager : MonoBehaviour
     private float obstacleHitReward = -1f;
     private float timeoutReward = -1f;
     private float goalMissedReward = -1f;
-    private float goalPassedReward = 1f;
+    private float goalPassedReward = 100f;
     public float duration;
     public float allowedTime;
     public bool obstacleOrWallHit;
@@ -471,6 +471,7 @@ public class EpisodeManager : MonoBehaviour
 
     public void finishCheckpoint(GameObject goal)
     {
+        Debug.Log($"finish checkpoint reached, will award reward {finishCheckpointReward}");
         AddEventReward(finishCheckpointReward);
         IncreasePassedGoals(goal);
 
