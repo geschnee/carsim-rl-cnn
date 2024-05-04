@@ -773,6 +773,10 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
             self.my_record(f"eval/success_medium_across_light_settings", avg_medium_success_rate / len(light_settings))
             self.my_record(f"eval/success_hard_across_light_settings", avg_hard_success_rate / len(light_settings))
 
+            self.my_record(f"eval_important/success_easy_across_light_settings", avg_easy_success_rate / len(light_settings))
+            self.my_record(f"eval_important/success_medium_across_light_settings", avg_medium_success_rate / len(light_settings))
+            self.my_record(f"eval_important/success_hard_across_light_settings", avg_hard_success_rate / len(light_settings))
+
             self.my_record(f"eval_collision_rates/collision_rate_easy_across_light_settings", avg_easy_collision_rate / len(light_settings))
             self.my_record(f"eval_collision_rates/collision_rate_medium_across_light_settings", avg_medium_collision_rate / len(light_settings))
             self.my_record(f"eval_collision_rates/collision_rate_hard_across_light_settings", avg_hard_collision_rate / len(light_settings))
@@ -788,6 +792,8 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
 
 
         self.my_record("eval/success_rate", total_success_rate)
+        self.my_record("eval_important/success_rate", total_success_rate)
+
         self.my_record("eval/collision_rate", total_collision_rate)
         self.my_record("eval_collision_rates/collision_rate", total_collision_rate)
 

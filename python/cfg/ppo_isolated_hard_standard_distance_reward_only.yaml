@@ -1,4 +1,4 @@
-comment: "isolated training config medium standard, resetUponCollision + event-velocity reward, changed Event reward function (higher reward for positive events)"
+comment: "isolated training config hard standard, distance reward only"
 # "Trying with fixed light settings and variable timesteps, we want to see learning progress again. Did something break?"
 # we should also try it with the fixed spawn to be closer to the evaluation scenario, maybe the differential can do it 
 
@@ -62,13 +62,13 @@ env_kwargs:
     # vielleicht eine art Mode variable hier reinpacken contrast increase s equalize
     normalize_images: False
   coefficients:
-    distanceCoefficient: 0
+    distanceCoefficient: 1
     orientationCoefficient: 0
-    velocityCoefficient: 1
-    eventCoefficient: 1
-  collisionMode: resetUponCollision
+    velocityCoefficient: 0
+    eventCoefficient: 0
+  collisionMode: oncePerTimestep
   # unrestricted, oncePerTimestep, oncePerEpisode, resetUponCollision, ignoreCollisions
-  trainingMapType: randomEvalMedium
+  trainingMapType: randomEvalHard
   trainingLightSetting: standard
   # random, bright, standard, dark
   fixedTimestepsLength: 0.3
@@ -80,3 +80,4 @@ env_kwargs:
 
   width: 500 #800 #500 #336
   height: 168
+
