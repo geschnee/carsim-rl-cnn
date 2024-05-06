@@ -4,7 +4,7 @@ comment: "base for isolated training runs"
 
 
 eval_settings:
-  log_interval: 1
+  log_interval: 2
   num_evals_per_difficulty: 20
   eval_light_settings: True
 

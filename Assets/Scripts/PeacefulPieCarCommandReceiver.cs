@@ -90,23 +90,22 @@ public class PeacefulPieCarCommandReceiver : MonoBehaviour
         }
 
         [JsonRpcMethod]
-        void setSeed(int seed) {
-            UnityEngine.Random.InitState(seed); // = seed;
+        void setSeed(int seed)
+        {
+            UnityEngine.Random.InitState(seed);
             // https://docs.unity3d.com/530/Documentation/ScriptReference/Random-seed.html
             Debug.Log($"seed set to {seed}");
-            //Debug.Log($"Random.value: {UnityEngine.Random.value}");
-            //Debug.Log($"Random.value2: {UnityEngine.Random.value}");
+            Debug.Log($"Random.value: {UnityEngine.Random.value}"); //prints 0.8122697
+            // the only random still used in unity are in ObstacleManager for random maps (which we do not really use)
         }
 
         [JsonRpcMethod]
         string reset(int id, string mapType, string spawn_pos, float spawn_rot, string lightSettingName, bool evalMode, string video_filename)
         {
-            //Debug.Log($"reset() called, id: {id}");
             MapType mt = (MapType)Enum.Parse(typeof(MapType), mapType);
             Spawn sp = (Spawn)Enum.Parse(typeof(Spawn), spawn_pos);
             LightSetting lightSetting = (LightSetting)Enum.Parse(typeof(LightSetting), lightSettingName);
 
-            //Debug.Log($"mt: {mt}");
             return arenas[id].reset(mt, sp, spawn_rot, lightSetting, evalMode, video_filename);
         }
 
@@ -161,7 +160,6 @@ public class PeacefulPieCarCommandReceiver : MonoBehaviour
         [JsonRpcMethod]
         void startArena(int id, string jetbotName, float distanceCoefficient, float orientationCoefficient, float velocityCoefficient, float eventCoefficient, int resWidth, int resHeight, bool fixedTimesteps, float fixedTimestepsLength, string collisionMode)
         {
-            // Debug.Log($"startArena() called, id: {id}");
             // spawn a new arena including gameManager and everything
 
             if (id > arenas.Count)
@@ -240,17 +238,5 @@ public class PeacefulPieCarCommandReceiver : MonoBehaviour
         print("rpc started");
         print($"{SystemInfo.processorCount} processors available");
         print($"{Environment.ProcessorCount} processors available");
-    }
-
-    // Start is called before the first frame update
-    void Start()
-    {
-
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-
     }
 }

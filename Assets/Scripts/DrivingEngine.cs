@@ -6,6 +6,9 @@ using UnityEngine;
 public class DrivingEngine
 {
 
+    // TODO is this class somewhere still in use?
+
+
     private float inputAcceleration;
     private float inputSteering;
     private float currentSteerAngle;
@@ -45,7 +48,7 @@ public class DrivingEngine
         this.rearLeftWheelTransform = rearLeftWheelTransform;
         this.rearRightWheelTransform = rearRightWheelTransform;
 
-}
+    }
 
     public void SetInput(List<float> input)
     {

@@ -3,9 +3,8 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class AIEngine : AIEngineBase
+public class AIEngineClassicalSteering : AIEngineBase
 {
-
 
     private float currentSteerAngle;
 
@@ -25,34 +24,21 @@ public class AIEngine : AIEngineBase
 
     public override void HandleMotor()
     {
-
+        // code by maximilian applied different torques to the two wheels based on the (calculated) steering angle
 
         // Calculate steering angle for each wheel based on difference in acceleration
         float accelerationDiff = Math.Abs(this.inputAccelerationRight) - Math.Abs(this.inputAccelerationLeft);
         float steeringAngle = maxSteeringAngle * accelerationDiff;
 
-        // Apply differential torque to the wheels based on steering angle
-        //leftTorque *= 1 - differentialFactor * Mathf.Abs(steeringAngle);
-        //rightTorque *= 1 + differentialFactor * Mathf.Abs(steeringAngle);
-
-        // Apply torque and steering angle to the left wheel
-        // float leftTorque = (inputAccelerationLeft * this.maxTorque);
-        // Maximilan's code applied different torques to the two wheels
 
         float torque = (inputAccelerationLeft + inputAccelerationRight) / 2;
         torque = (torque * this.maxTorque);
 
-        frontLeftWheelCollider.motorTorque = torque; // leftTorque;
+        frontLeftWheelCollider.motorTorque = torque;
         frontLeftWheelCollider.steerAngle = steeringAngle;
 
-        //Debug.Log($"steering angle {steeringAngle} left {frontLeftWheelCollider.steerAngle} right {frontRightWheelCollider.steerAngle}");
-        //Debug.Log($"Motor torque left {frontLeftWheelCollider.motorTorque} right {frontRightWheelCollider.motorTorque}");
-
-        // Apply torque and steering angle to the right wheel
-        // float rightTorque = (inputAccelerationRight * this.maxTorque);
-        frontRightWheelCollider.motorTorque = torque; //rightTorque;
+        frontRightWheelCollider.motorTorque = torque;
         frontRightWheelCollider.steerAngle = steeringAngle;
-
     }
 
     public override void ResetMotor()
@@ -94,30 +80,11 @@ public class AIEngine : AIEngineBase
 
         wheelTransform.rotation = rot;
         wheelTransform.position = pos;
-        // TODO why do the wheels (mesh) rotate when the JetBot is fresh?
-        // there has not been any command issued yet
-
-        // sieht aus wie dieses Tutorial:
-        // https://www.youtube.com/watch?v=rdl66506RY4&list=PL1R2qsKCcUCIdGXBLkZV2Tq_sxa-ADASN
-
     }
 
 
     public override float getCarVelocity()
-    {     
-        /* 
-        // transform objects that velocity on z axis always indicates the direction -> getting the Sign givs the direction
-        float direction = Math.Sign(this.carBody.InverseTransformDirection(this.frontLeftWheelCollider.attachedRigidbody.velocity).z);
-
-
-        // signed speed (foreward and backward speed)
-        float velocity = direction * frontLeftWheelCollider.attachedRigidbody.velocity.magnitude;
-
-        if (this.gameObject.transform.name == $"JetBot 0")
-        {
-            Vector3 plainVelocity = this.carBody.InverseTransformDirection(this.frontLeftWheelCollider.attachedRigidbody.velocity);
-            Debug.Log($"getCarVelocity: left {inputAccelerationLeft} right {inputAccelerationRight} direction {direction} velocity {velocity} plainVelocity {plainVelocity} for JetBot 0");
-        }*/
+    {
 
         Vector3 plainVelocity = this.carBody.InverseTransformDirection(this.frontLeftWheelCollider.attachedRigidbody.velocity);
 

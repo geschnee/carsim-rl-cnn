@@ -9,7 +9,6 @@ using System.Linq;
 
 public class Arena : MonoBehaviour
 {
-    // TODO in theory this class could replace the GameManager class in it's responsibilities
 
     EpisodeManager episodeManager;
 
@@ -135,7 +134,6 @@ public class Arena : MonoBehaviour
 
         if (video_filename != "")
         {
-            //Debug.Log($"start video recording");
             arenaRecorder.episodeManager = episodeManager;
             arenaRecorder.StartVideo(video_filename);
 
@@ -143,11 +141,8 @@ public class Arena : MonoBehaviour
             jetBotRecorder.StartVideo(video_filename + "_jetbot");
         }
 
-
         return this.getObservation();
     }
-
-
 
     public void SetLightSetting(LightSetting lightSetting)
     {
@@ -195,10 +190,7 @@ public class Arena : MonoBehaviour
 
     public void forwardInputsToCar(float inputAccelerationLeft, float inputAccelerationRight)
     {
-        //Debug.Log($"forward left {inputAccelerationLeft} right {inputAccelerationRight}");
-
         aIEngine.SetInput(inputAccelerationLeft, inputAccelerationRight);
-
     }
 
     public EpisodeManager getEpisodeManager()
@@ -237,7 +229,6 @@ public class Arena : MonoBehaviour
 
     public void setJetbot(string jetbotName)
     {
-        //Debug.Log($"setJetbot {jetbotName}");
         gameManager.setJetbot(jetbotName);
     }
 

@@ -63,37 +63,10 @@ public class AIEngineDifferentialsteering : AIEngineBase
 
         wheelTransform.rotation = rot;
         wheelTransform.position = pos;
-        // TODO why do the wheels (mesh) rotate when the JetBot is fresh?
-        // there has not been any command issued yet
-
-        // sieht aus wie dieses Tutorial:
-        // https://www.youtube.com/watch?v=rdl66506RY4&list=PL1R2qsKCcUCIdGXBLkZV2Tq_sxa-ADASN
-
     }
-
-
-    /*public override float getSteeringAngle()
-    {
-        Debug.LogError("getSteeringAngle was called for differential steering");
-        return this.carBody.eulerAngles.y;
-    }*/
 
     public override float getCarVelocity()
     {
-        
-        /* 
-        // transform objects that velocity on z axis always indicates the direction -> getting the Sign givs the direction
-        float direction = Math.Sign(this.carBody.InverseTransformDirection(this.frontLeftWheelCollider.attachedRigidbody.velocity).z);
-
-
-        // signed speed (foreward and backward speed)
-        float velocity = direction * frontLeftWheelCollider.attachedRigidbody.velocity.magnitude;
-
-        if (this.gameObject.transform.name == $"JetBot 0")
-        {
-            Vector3 plainVelocity = this.carBody.InverseTransformDirection(this.frontLeftWheelCollider.attachedRigidbody.velocity);
-            Debug.Log($"getCarVelocity: left {inputAccelerationLeft} right {inputAccelerationRight} direction {direction} velocity {velocity} plainVelocity {plainVelocity} for JetBot 0");
-        }*/
 
         Vector3 plainVelocity = this.carBody.InverseTransformDirection(this.frontLeftWheelCollider.attachedRigidbody.velocity);
 

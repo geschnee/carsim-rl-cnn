@@ -147,7 +147,7 @@ public class MapData
     // there should be no collisions with the last obstacle after the last goal is completed
 
 
-    public int listId;
+
     public Goal[] goals;
 
     public Vector3 jetBotSpawnPosition;
@@ -247,14 +247,6 @@ public class ObstacleMapManager : MonoBehaviour
         float zRandomCoord = (float)rnd.NextDouble() * (zRightMax - zLeftMax) + zLeftMax;
         float xRandomCoord = (float)rnd.NextDouble() * (maxXLocal - minXLocal) + minXLocal;
         Vector3 spawnPoint = new(xRandomCoord, Constants.JETBOT_SPAWN_Y, zRandomCoord);
-        //this.JetBotXSpawn = xRandomCoord;
-
-
-        //Debug.Log($"JetBot spawn range x {minXLocal} - {maxXLocal} z {zLeftMax} - {zRightMax}");
-
-        // TODO vielleicht muss die X Position angepasst werden, da die eigene Position des JetBots nun der Position des coarBodys entspricht
-        // das war zuvor nicht der Fall und hat zu stark unterschiedlichen Positionen bei Rotation gefuehrt
-        // PythonJetbot centered prefab
 
         return spawnPoint;
     }
@@ -273,8 +265,8 @@ public class ObstacleMapManager : MonoBehaviour
         float zRandomCoord = (float)rnd.NextDouble() * (zRightMax - zLeftMax) + zLeftMax;
         Vector3 spawnPoint = new(minXLocal, Constants.JETBOT_SPAWN_Y, zRandomCoord);
 
+        Debug.LogError($"GetJetBotRandomCoordsEval called");
 
-        //Debug.LogWarning($"Eval JetBot spawn x {minXLocal} - range z {zLeftMax} - {zRightMax}");
 
         return spawnPoint;
     }
@@ -284,20 +276,12 @@ public class ObstacleMapManager : MonoBehaviour
     public Quaternion JetBotRotation(float jetBotSpawnRotationAngle)
     {
         // previously called JetBotRandomRotation
-        // this method did generate the random angle, python now does that for better/easier control
+        // this method did generate the random angle, python-gymEnv now does that for better/easier control
 
         Quaternion originalQuaternion = new Quaternion(0, 1, 0, 1);
 
         // Convert to Euler angles
         Vector3 currentRotation = originalQuaternion.eulerAngles;
-
-        /*float randomAngle;
-        if (veryRandom) {
-            // Generate a random angle between -45 and 45 degrees
-            randomAngle = UnityEngine.Random.Range(-45f, 45f);
-        } else {
-            randomAngle = UnityEngine.Random.Range(-15f, 15f);
-        }*/
 
         // Add the random angle to the current rotation
         Vector3 modifiedRotation = currentRotation + new Vector3(0, jetBotSpawnRotationAngle, 0);
@@ -314,8 +298,6 @@ public class ObstacleMapManager : MonoBehaviour
         this.allGoals = new GameObject(name: "AllGoals");
         allGoals.transform.SetParent(this.gameManagerTransform.parent); // set goals to be child of TrainArena
 
-        // TODO the finish line is always placed directly on the last goal
-        // maybe the finish line should be a bit behind it.
 
         // instantiate all goals except the last one
         for (int i = 0; i < goalList.goals.Length - 1; i++)
@@ -323,7 +305,7 @@ public class ObstacleMapManager : MonoBehaviour
 
             Goal goal = goalList.goals[i];
             GameObject goalInstantiatedGameObject;
-            
+
 
             goalInstantiatedGameObject = goal.InstantiateGoal(this.goalPassedGameOjbect, this.goalMissedGameObject, this.goalMiddleIndicator, this.gameManagerPosition, this.goalBall);
             goalInstantiatedGameObject.transform.SetParent(allGoals.transform);
@@ -341,15 +323,12 @@ public class ObstacleMapManager : MonoBehaviour
 
 
         this.centerIndicators = new List<GameObject>();
-        //Debug.Log($"allGoals {allGoals}");
-        //Debug.Log($"allGoals child amount {allGoals.transform.childCount}");
 
         this.centerIndicators = new List<GameObject>();
 
         for (int i = 0; i < allGoals.transform.childCount; i++)
         {
             GameObject goal = allGoals.transform.GetChild(i).gameObject;
-            //Debug.Log($"goal {goal}");
 
             if (i == allGoals.transform.childCount - 1)
             {
@@ -402,7 +381,7 @@ public class ObstacleMapManager : MonoBehaviour
                 return t.GetChild(i).gameObject;
             }
         }
-        //Debug.LogWarning($"no child with tag {tag} found");
+
         return null;
     }
 
@@ -421,13 +400,6 @@ public class ObstacleMapManager : MonoBehaviour
                 "File not found.");
     }
 
-    public void SaveObstacleMap(string filepath, float id, MapData mapData)
-    {
-        string fullPath = filepath + id.ToString() + ".json";
-        string json = JsonUtility.ToJson(mapData);
-        File.WriteAllText(fullPath, json);
-    }
-
 
     // generate maps with different placement of obstacles
     public MapData GenerateObstacleMap(MapType mapType, int id, Spawn jetBotSpawn, float jetBotSpawnRotationAngle)
@@ -435,7 +407,7 @@ public class ObstacleMapManager : MonoBehaviour
 
 
         Vector3 jetBotSpawnPosition;
-        if (jetBotSpawn == Spawn.Fixed || jetBotSpawn == Spawn.OrientationRandom || jetBotSpawn == Spawn.OrientationVeryRandom)
+        if (jetBotSpawn != Spawn.FullyRandom)
         {
             jetBotSpawnPosition = this.GetJetBotSpawnCoords();
 
@@ -443,7 +415,6 @@ public class ObstacleMapManager : MonoBehaviour
         else if (mapType == MapType.random)
         {
             jetBotSpawnPosition = this.GetJetBotRandomCoords();
-            //Debug.Log($"Random JetBot spawn position {jetBotSpawnPosition}");
         }
         else
         {
@@ -453,18 +424,7 @@ public class ObstacleMapManager : MonoBehaviour
         }
 
         Quaternion jetBotSpawnRotation = this.JetBotRotation(jetBotSpawnRotationAngle);
-        /*if (jetBotSpawn == Spawn.OrientationVeryRandom | jetBotSpawn == Spawn.FullyRandom)
-        {
-            jetBotSpawnRotation = this.JetBotRandomRotation(true);
-        } else if (jetBotSpawn == Spawn.OrientationRandom)
-        {
-            jetBotSpawnRotation = this.JetBotRandomRotation(false);
-        }
-        else
-        {
-            jetBotSpawnRotation = new Quaternion(0, 1, 0, 1);
-        }*/
-        //Debug.Log($"JetBot spawn rotation y {jetBotSpawnRotation.eulerAngles.y}");
+
 
         Goal[] obstacles = new Goal[0];
 
@@ -472,53 +432,43 @@ public class ObstacleMapManager : MonoBehaviour
         {
             case MapType.random:
                 obstacles = this.GenerateRandomObstacleMap(jetBotSpawn, jetBotSpawnPosition);
-                //Debug.Log("Random Map generated");
+                Debug.LogWarning("Random Map generated! This is not intended in the master's thesis");
                 break;
             case MapType.easyBlueFirst:
                 obstacles = this.GenerateEasyGoalLaneMiddleMap(true);
-                //Debug.Log("Easy middle lane with blue obstacles first map generated");
                 break;
             case MapType.easyRedFirst:
                 obstacles = this.GenerateEasyGoalLaneMiddleMap(false);
-                //Debug.Log("Easy middle lane with red obstacles first map generated");
                 break;
             case MapType.mediumBlueFirstLeft:
                 obstacles = this.GenerateTwoGoalLanesMapMedium(true, true);
-                //Debug.Log("Two lanes map with blue obstacles first generated");
                 break;
             case MapType.mediumBlueFirstRight:
                 obstacles = this.GenerateTwoGoalLanesMapMedium(true, false);
-                //Debug.Log("Two lanes map with blue obstacles first generated");
                 break;
             case MapType.mediumRedFirstLeft:
                 obstacles = this.GenerateTwoGoalLanesMapMedium(false, true);
-                //Debug.Log("Two lanes map with red obstacles first generated");
                 break;
             case MapType.mediumRedFirstRight:
                 obstacles = this.GenerateTwoGoalLanesMapMedium(false, false);
-                //Debug.Log("Two lanes map with red obstacles first generated");
                 break;
 
 
             case MapType.hardBlueFirstLeft:
                 obstacles = this.GenerateTwoGoalLanesMapHard(true, true);
-                //Debug.Log("Two lanes map with blue obstacles first generated");
                 break;
             case MapType.hardBlueFirstRight:
                 obstacles = this.GenerateTwoGoalLanesMapHard(true, false);
-                //Debug.Log("Two lanes map with blue obstacles first generated");
                 break;
             case MapType.hardRedFirstLeft:
                 obstacles = this.GenerateTwoGoalLanesMapHard(false, true);
-                //Debug.Log("Two lanes map with red obstacles first generated");
                 break;
             case MapType.hardRedFirstRight:
                 obstacles = this.GenerateTwoGoalLanesMapHard(false, false);
-                //Debug.Log("Two lanes map with red obstacles first generated");
                 break;
         }
 
-        MapData mapData = new MapData { listId = id, goals = obstacles, jetBotSpawnPosition = jetBotSpawnPosition, jetBotSpawnRotation = jetBotSpawnRotation };
+        MapData mapData = new MapData { goals = obstacles, jetBotSpawnPosition = jetBotSpawnPosition, jetBotSpawnRotation = jetBotSpawnRotation };
 
         return mapData;
 

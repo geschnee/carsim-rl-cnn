@@ -13,7 +13,6 @@ public class EpisodeManager : MonoBehaviour
     public float fixedTimestepsLength;
     public bool stepFinished;
 
-    // for debugging its public, then you can lift the TimeLimit in unity
     private float allowedTimeDefault = 20f; // was 10f
     private float allowedTimePerGoal = 40f; // was 10f
 
@@ -83,17 +82,13 @@ public class EpisodeManager : MonoBehaviour
 
         gameManager = this.transform.parent.Find("GameManager").GetComponent<GameManager>();
         carBody = this.transform.Find("carBody").gameObject;
-
     }
 
     public void IncreaseSteps(int step)
     {
-
-
         // int step from python is not yet incremented
         if (this.step != step)
         {
-            // Debug.LogWarning($"unity step {this.step} != python step {step} for {this.transform.parent.name}");
             // this.step != step can happen when there is a timeout in python-unity communication (the message is sent again)
             // it also happens when the bundledSteps are used and some steps were not finished --> leeds to a resend of the step instructions
 
@@ -109,13 +104,14 @@ public class EpisodeManager : MonoBehaviour
 
 
         this.step++;
+
+        this.step_rewards.Add(0);
         // add new entry in the rewards counting list
         // with this added 0 reward there is an entry for every step even if there was no reward signal encountered
 
-        this.step_rewards.Add(0);
 
 
-        if (this.fixedTimesteps && this.episodeStatus == EpisodeStatus.WaitingForStep) // we check for episodeStatus == WaitingForStep because if can be OutOfTime at this point as well
+        if (this.fixedTimesteps && this.episodeStatus == EpisodeStatus.WaitingForStep)
         {
             this.episodeStatus = EpisodeStatus.Running;
             this.stepFinished = false;
@@ -253,15 +249,6 @@ public class EpisodeManager : MonoBehaviour
 
     public List<float> GetRewards()
     {
-        /*List<float> rewards = new List<float>();
-
-        int amount_of_steps = this.step + 1;
-        for (int i = 0; i < amount_of_steps; i++)
-        {
-            float reward = this.step_rewards[i];
-            rewards.Add(reward);
-        }
-        return rewards;*/
 
         return this.step_rewards;
     }
@@ -274,7 +261,7 @@ public class EpisodeManager : MonoBehaviour
 
     public void AddReward(float reward)
     {
-        if (!isEpisodeRunning()) // reward that is obtained before a step is performed is given to the first step
+        if (!isEpisodeRunning())
         {
             Debug.LogError($"Adding reward while episode is not running {this.step}, {this.episodeStatus}");
             return;
@@ -292,7 +279,6 @@ public class EpisodeManager : MonoBehaviour
 
     public void AddEventReward(float reward)
     {
-
         this.prescaleEventReward += reward;
         float weightedEventReward = reward * eventCoefficient;
         this.eventReward += weightedEventReward;
@@ -304,7 +290,6 @@ public class EpisodeManager : MonoBehaviour
         this.prescaleDistanceReward += reward;
         float weightedDistanceReward = reward * distanceCoefficient;
         this.distanceReward += weightedDistanceReward;
-        // Debug.Log($"AddDistanceReward {weightedDistanceReward} {this.distanceReward}");
         AddReward(weightedDistanceReward);
     }
 
@@ -347,9 +332,6 @@ public class EpisodeManager : MonoBehaviour
 
     public float GetCosineSimilarityToNextGoal()
     {
-
-
-
         if (this.centerIndicators.Count < 1)
         {
             Debug.LogError($"there are no more centerIndicators {this.gameObject.name}");
@@ -364,16 +346,9 @@ public class EpisodeManager : MonoBehaviour
 
         Vector3 agentOrientation = this.transform.forward;
 
-
-
-
         float angleBetween = Vector3.Angle(agentOrientation, nextGoalDirection);
-        //Debug.Log($"agentOrientation {agentOrientation} nextGoalDirection {nextGoalDirection}");
-        //Debug.Log($"angle between {angleBetween}");
 
         float cosine_similarity = GetCosineSimilarityXZPlane(nextGoalDirection, agentOrientation);
-
-        //Debug.Log($"cosine_similarity XZ plane {cosine_similarity}");
 
         return cosine_similarity;
     }
@@ -385,14 +360,14 @@ public class EpisodeManager : MonoBehaviour
                     Math.Sqrt(Math.Pow(V2.x, 2) + Math.Pow(V2.z, 2))
                 ));
 
-        if (result > 1)
+        /*if (result > 1)
         {
             Debug.LogError("cosine sim too big");
         }
         if (result < -1)
         {
             Debug.LogError("cosine sim too small");
-        }
+        }*/
         return result;
     }
 
@@ -421,10 +396,6 @@ public class EpisodeManager : MonoBehaviour
             return;
         }
 
-        // Debug.Log($"FixedUpdate time check {Time.deltaTime} is equal to {Time.fixedDeltaTime}");
-        // these numbers are the same and should be the same
-        // https://docs.unity3d.com/ScriptReference/Time-fixedDeltaTime.html
-
         // count time only when it is running
         this.duration += Time.deltaTime;
 
@@ -445,9 +416,6 @@ public class EpisodeManager : MonoBehaviour
         AddOrientationReward(orientationReward);
 
         this.lastDistance = GetDistanceToNextGoal();
-
-
-
 
     }
 
@@ -471,7 +439,7 @@ public class EpisodeManager : MonoBehaviour
 
     public void finishCheckpoint(GameObject goal)
     {
-        Debug.Log($"finish checkpoint reached, will award reward {finishCheckpointReward}");
+
         AddEventReward(finishCheckpointReward);
         IncreasePassedGoals(goal);
 
@@ -505,11 +473,8 @@ public class EpisodeManager : MonoBehaviour
         }
     }
 
-
-
     public void colorGreen(GameObject goal)
     {
-
         Transform t = goal.transform;
         for (int i = 0; i < t.childCount; i++)
         {
@@ -523,7 +488,6 @@ public class EpisodeManager : MonoBehaviour
 
     public void colorRed(GameObject goal)
     {
-
         Transform t = goal.transform;
         for (int i = 0; i < t.childCount; i++)
         {
@@ -586,7 +550,6 @@ public class EpisodeManager : MonoBehaviour
     {
         // returns true if the collision reward should be awarded
 
-
         this.obstacleOrWallHit = true;
 
         if (this.collisionMode == CollisionMode.oncePerEpisode)
@@ -646,7 +609,6 @@ public class EpisodeManager : MonoBehaviour
         obstacleHit = true;
         handleCollision(obstacle, obstacleHitReward, EpisodeStatus.RedObstacle);
     }
-
 
     public void blueObstacleHit(GameObject obstacle)
     {

@@ -1854,7 +1854,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   episodeManager: {fileID: 0}
-  camera: {fileID: 420009083408027165}
+  cam: {fileID: 420009083408027165}
   video_filename: 
   fileCounter: 0
   isRecording: 0

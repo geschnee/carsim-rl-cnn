@@ -2,6 +2,8 @@
 
 class DefaultImage
 {
+    // this class was used to develop the image conversion for communication between unity and python
+
     public static System.Byte[] getDefaultImageBytes()
     {
         return System.Convert.FromBase64String(getDefaultImage());
