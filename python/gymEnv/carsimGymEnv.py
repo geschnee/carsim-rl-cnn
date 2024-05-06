@@ -341,21 +341,15 @@ class BaseCarsimEnv(gym.Env):
 
             assert type(self.spawn_point) == Spawn, f'spawn point must be set'
 
-            # spawn pos is determined in unity
-            if self.spawn_point == Spawn.Fixed:
-                spawn_rot = 0
-            elif self.spawn_point == Spawn.OrientationRandom:
-                spawn_rot = random.randint(-15, 15)
-            elif self.spawn_point is Spawn.OrientationVeryRandom:
-                spawn_rot = random.randint(-45, 45)
-            elif self.spawn_point is Spawn.FullyRandom:
-                spawn_rot = random.randint(-45, 45)
-            else:
-                assert False, f'unknown spawn point {self.spawn_point} {spawnRot} {type(self.spawn_point)}'
+            interval_min, interval_max = Spawn.getOrientationRange(self.spawn_point)
+            spawn_rot = random.randint(interval_min, interval_max)
             return spawn_rot
         else:
             assert isinstance(spawnRot, int), f'spawnRot must be int, not {type(spawnRot)}'
             return spawnRot
+    
+    def getSpawnMode(self):
+        return self.spawn_point
     
     def reset_with_difficulty(self, difficulty, lightSetting=None, evalMode=False):
         mapType = MapType.getMapTypeFromDifficulty(difficulty)

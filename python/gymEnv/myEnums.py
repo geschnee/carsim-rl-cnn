@@ -15,6 +15,20 @@ class Spawn(Enum):
     OrientationVeryRandom = 2
     FullyRandom = 3
 
+    @classmethod
+    def getOrientationRange(myEnum, spawnEnum):
+        # returns the interval of spawn rotations corresponding to the Spawn method
+        if spawnEnum.value == 0:
+            return 0, 0
+        elif spawnEnum.value == 1:
+            return -15, 15
+        elif spawnEnum.value == 2:
+            return -45, 45
+        elif spawnEnum.value == 3:
+            return -45, 45
+        else:
+            assert False, f'unknown spawnEnum {spawnEnum}'
+
 class LightSetting(Enum):
     random = 0
     bright = 1
@@ -72,6 +86,18 @@ class MapType(Enum):
             # pseudoEnum is not a pseudo enum (it is real enum)
             return pseudoEnum
 
+    
+    @classmethod
+    def getAllTracksnumbersOfDifficulty(myEnum, difficulty):
+        if difficulty == "easy":
+            return [1,2]
+        elif difficulty == "medium":
+            return [3,4,5,6]
+        elif difficulty == "hard":
+            return [7,8,9,10]
+        else:
+            assert False, f'unknown difficulty {difficulty}'
+
     @classmethod
     def getRandomEasy(myEnum):
         return MapType(np.random.choice([1,2]))
@@ -112,6 +138,7 @@ class MapType(Enum):
             return myEnum.getRandomMedium()
         elif difficulty == 2:
             return myEnum.getRandomHard()
+
         
     
 

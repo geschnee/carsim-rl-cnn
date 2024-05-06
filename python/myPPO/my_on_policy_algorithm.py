@@ -18,6 +18,7 @@ from myPPO.my_buffers import MyRolloutBuffer
 
 from gymEnv.myEnums import LightSetting
 from gymEnv.myEnums import MapType
+from gymEnv.myEnums import Spawn
 
 from myPPO.game_repr import GameRepresentation
 import collections
@@ -570,6 +571,9 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
     ) -> SelfOnPolicyAlgorithm:
         iteration = 0
         
+
+        print(f'num_evals_per_difficulty {num_evals_per_difficulty} eval_light_settings {eval_light_settings}')
+
         assert self.env is not None
 
         total_timesteps, callback = self._setup_learn(
@@ -741,9 +745,9 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
 
         for light_setting in light_settings:
             
-            easy_success_rate, easy_collision_rate = self.eval_model_track(num_evals_per_difficulty, "easy", iteration, light_setting)
-            medium_success_rate, medium_collision_rate = self.eval_model_track(num_evals_per_difficulty, "medium", iteration, light_setting)
-            hard_success_rate, hard_collision_rate = self.eval_model_track(num_evals_per_difficulty, "hard", iteration, light_setting)
+            easy_success_rate, easy_collision_rate = self.eval_model_track(n_eval_episodes = num_evals_per_difficulty, difficulty ="easy", iteration=iteration, light_setting=light_setting)
+            medium_success_rate, medium_collision_rate = self.eval_model_track(n_eval_episodes =num_evals_per_difficulty, difficulty="medium", iteration=iteration, light_setting=light_setting)
+            hard_success_rate, hard_collision_rate = self.eval_model_track(n_eval_episodes =num_evals_per_difficulty, difficulty="hard", iteration=iteration, light_setting=light_setting)
             total_success_rate += easy_success_rate + medium_success_rate + hard_success_rate
             light_success_rate = (easy_success_rate + medium_success_rate + hard_success_rate) / 3
             
@@ -798,6 +802,37 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         self.my_record("eval_collision_rates/collision_rate", total_collision_rate)
 
         return total_success_rate
+    
+    def generate_map_and_rotations(self, difficulty: str, n_eval_episodes: int, env: VecEnv) -> List[Tuple[str, List[int]]]:
+        
+        rotationMode = env.env_method(
+            method_name="getSpawnMode",
+            indices=[0]
+        )[0]
+        print(f'rotation mode: {rotationMode}')
+
+        rotation_range_min, rotation_range_max = Spawn.getOrientationRange(rotationMode)
+        print(f'rotation range: {rotation_range_min} {rotation_range_max}')
+
+        range_width = rotation_range_max - rotation_range_min
+        step = range_width / (n_eval_episodes-1)
+
+        rotations = [rotation_range_min + i * step for i in range(n_eval_episodes)]
+        print(f'rotations float: {rotations}')
+        rotations = [int(rotation) for rotation in rotations]
+        print(f'rotations: {rotations}')
+
+        track_numbers = MapType.getAllTracksnumbersOfDifficulty(difficulty)
+        print(f'track numbers: {track_numbers}')
+
+        tracks = []
+        for i in range(n_eval_episodes):
+            track = track_numbers[i % len(track_numbers)]
+            tracks.append(MapType(track))
+
+        print(f'tracks: {tracks}')
+
+        return list(zip(tracks, rotations))
 
     def eval_model_track(
         self: SelfOnPolicyAlgorithm,
@@ -808,7 +843,15 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         deterministic: bool = False,
         log=True
     ):
-        # spawn position and orientation is defined by the env via cfg.env_kwargs.spawn_point
+        # all maps from the difficulty setting are selected with the same proportion
+        # the JetBot spawn rotation depends on the spawn_pos in the config, e.g. OrientationRandom
+        # the spawn rotation interval is divided into equal parts, these different values are used to spawn the jetbot
+
+        # this results in identical spawn positions/rotations and maps for a particular set of function parameters
+
+        map_and_rotations = self.generate_map_and_rotations(difficulty, n_eval_episodes, self.env)
+        map_and_rotations_counter = 0
+        print(f'map_and_rotations: {map_and_rotations}', flush=True)
 
         env = self.env
         n_envs = env.num_envs
@@ -844,14 +887,18 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
             )
         
 
+        amount_of_envs_first_run = min(n_envs, n_eval_episodes)
+        for i in range(amount_of_envs_first_run):
+            env.env_method(
+                method_name="reset",
+                indices=[i],
+                mapType=map_and_rotations[map_and_rotations_counter][0],
+                lightSetting=light_setting,
+                evalMode=True,
+                spawnRot = map_and_rotations[map_and_rotations_counter][1],
+            )
+            map_and_rotations_counter += 1
 
-        env.env_method(
-            method_name="reset_with_difficulty",
-            indices=range(n_envs),
-            difficulty=difficulty,
-            lightSetting=light_setting,
-            evalMode=True
-        )
 
         # switch to eval mode
         self.policy.set_training_mode(False)
@@ -929,20 +976,28 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
                                 )
 
 
-                        # due to auto reset we have to reset the env again with the right parameters:
-                        env.env_method(
-                            method_name="reset_with_difficulty",
-                            indices=[i],
-                            difficulty=difficulty,
-                            lightSetting=light_setting,
-                            evalMode=True
-                        )
+                        # reset the map with the next parameters
+                        if map_and_rotations_counter == n_eval_episodes:
+                            # we have used all maps
+                            print(f'we have used all maps')
+
+                        # reset if we still need more runs for that environment
+                        if episode_counts[i] < episode_count_targets[i]:
+                            env.env_method(
+                                method_name="reset",
+                                indices=[i],
+                                mapType=map_and_rotations[map_and_rotations_counter][0],
+                                lightSetting=light_setting,
+                                evalMode=True,
+                                spawnRot = map_and_rotations[map_and_rotations_counter][1],
+                            )
+                            map_and_rotations_counter += 1
             
             self._last_obs = observations
 
         assert np.sum(episode_counts) == n_eval_episodes, f"not all episodes were finished, {np.sum(episode_counts)} != {n_eval_episodes}"
         assert finished_episodes == n_eval_episodes, f"not all episodes were finished, {finished_episodes} != {n_eval_episodes}"
-        
+        assert map_and_rotations_counter == n_eval_episodes, f"not all maps were used, {map_and_rotations_counter} != {len(map_and_rotations)}"
 
         #print(f'episode_rewards: {episode_rewards}')
         mean_reward = np.mean(episode_rewards)
