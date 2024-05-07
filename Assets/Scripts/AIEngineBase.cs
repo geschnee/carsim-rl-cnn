@@ -39,14 +39,7 @@ public abstract class AIEngineBase : MonoBehaviour
 
     public abstract void ResetMotor();
 
-    public virtual void UpdateWheels()
-    {
-        Debug.LogError($"UpdateWheels of AIEngineBase called");
-    }
+    public abstract void UpdateWheels();
 
-    public virtual float getCarVelocity()
-    {
-        Debug.LogError($"getCarVelocity of AIEngineBase called");
-        return 0;
-    }
+    public abstract float getCarVelocity();
 }
