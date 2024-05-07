@@ -821,28 +821,22 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
             method_name="getSpawnMode",
             indices=[0]
         )[0]
-        print(f'rotation mode: {rotationMode}')
 
         rotation_range_min, rotation_range_max = Spawn.getOrientationRange(rotationMode)
-        print(f'rotation range: {rotation_range_min} {rotation_range_max}')
 
         range_width = rotation_range_max - rotation_range_min
         step = range_width / (n_eval_episodes-1)
 
         rotations = [rotation_range_min + i * step for i in range(n_eval_episodes)]
-        print(f'rotations float: {rotations}')
         rotations = [int(rotation) for rotation in rotations]
-        print(f'rotations: {rotations}')
 
         track_numbers = MapType.getAllTracksnumbersOfDifficulty(difficulty)
-        print(f'track numbers: {track_numbers}')
 
         tracks = []
         for i in range(n_eval_episodes):
             track = track_numbers[i % len(track_numbers)]
             tracks.append(MapType(track))
 
-        print(f'tracks: {tracks}')
 
         return list(zip(tracks, rotations))
 
@@ -986,12 +980,6 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
                                     indices=[i],
                                     video_filename = ""
                                 )
-
-
-                        # reset the map with the next parameters
-                        if map_and_rotations_counter == n_eval_episodes:
-                            # we have used all maps
-                            print(f'we have used all maps')
 
                         # reset if we still need more runs for that environment
                         if episode_counts[i] < episode_count_targets[i]:
