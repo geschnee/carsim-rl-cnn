@@ -17,7 +17,7 @@ public class AIEngineClassicalSteering : AIEngineBase
     public WheelCollider rearRightWheelCollider;
 
     public Transform frontLeftWheelTransform;
-    public Transform frontRightWheeTransform;
+    public Transform frontRightWheelTransform;
     public Transform rearLeftWheelTransform;
     public Transform rearRightWheelTransform;
 
@@ -27,8 +27,14 @@ public class AIEngineClassicalSteering : AIEngineBase
         // code by maximilian applied different torques to the two wheels based on the (calculated) steering angle
 
         // Calculate steering angle for each wheel based on difference in acceleration
-        float accelerationDiff = Math.Abs(this.inputAccelerationRight) - Math.Abs(this.inputAccelerationLeft);
+        float accelerationDiff = Math.Abs(this.inputAccelerationLeft) - Math.Abs(this.inputAccelerationRight);
+        // was abs(rightAcceleration) - abs(leftAcceleration) before
+        // this was switched to be more intuitive
+        // higher inputLeftAcceleration means more steering to the left
+
         float steeringAngle = maxSteeringAngle * accelerationDiff;
+
+        Debug.Log($"right {this.inputAccelerationRight} left {this.inputAccelerationLeft} Steering angle: " + steeringAngle);
 
 
         float torque = (inputAccelerationLeft + inputAccelerationRight) / 2;
@@ -65,7 +71,7 @@ public class AIEngineClassicalSteering : AIEngineBase
     public override void UpdateWheels()
     {
         UpdateSingleWheel(frontLeftWheelCollider, frontLeftWheelTransform);
-        UpdateSingleWheel(frontRightWheelCollider, frontRightWheeTransform);
+        UpdateSingleWheel(frontRightWheelCollider, frontRightWheelTransform);
         UpdateSingleWheel(rearRightWheelCollider, rearRightWheelTransform);
         UpdateSingleWheel(rearLeftWheelCollider, rearLeftWheelTransform);
 

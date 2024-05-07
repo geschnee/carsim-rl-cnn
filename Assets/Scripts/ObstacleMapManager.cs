@@ -219,7 +219,6 @@ public class ObstacleMapManager : MonoBehaviour
 
         jb.GetComponent<EpisodeManager>().setCenterIndicators(this.centerIndicators);
 
-        //Debug.Log($"Jetbot spawn rotation y {jb.transform.rotation.y}");
         return jb;
     }
     private Vector3 GetJetBotSpawnCoords()

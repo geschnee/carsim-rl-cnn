@@ -8,8 +8,6 @@ public abstract class AIEngineBase : MonoBehaviour
     public float inputAccelerationLeft = 0;
     public float inputAccelerationRight = 0;
 
-    
-
     public Transform carBody;
 
     EpisodeManager episodeManager;
@@ -35,18 +33,11 @@ public abstract class AIEngineBase : MonoBehaviour
         // normal input
         this.inputAccelerationLeft = inputAccelerationLeft;
         this.inputAccelerationRight = inputAccelerationRight;
-        
     }
 
-    public virtual void HandleMotor()
-    {
-        Debug.LogError($"HandleMotor of AIEngineBase called");
-    }
+    public abstract void HandleMotor();
 
-    public virtual void ResetMotor()
-    {
-        Debug.LogError($"ResetMotor of AIEngineBase called");
-    }
+    public abstract void ResetMotor();
 
     public virtual void UpdateWheels()
     {

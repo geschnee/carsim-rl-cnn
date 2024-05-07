@@ -1,21 +1,11 @@
-import argparse
-
-from peaceful_pie.unity_comms import UnityComms
-
 import time
 
 import pygame
 import sys
 
-
-
 import hydra
-from hydra.core.hydra_config import HydraConfig
 from omegaconf import OmegaConf
 
-import PIL.Image as Image
-import io
-import base64
 
 
 from gymEnv.carsimGymEnv import BaseCarsimEnv
@@ -148,7 +138,7 @@ def run(cfg) -> None:
 
                 if terminated:
                     print(f'stepObj reward {reward} terminated {terminated} info {info_dict}', flush=True)
-
+                    print(f'endStatus {info_dict["endEvent"]}', flush=True)
                 if event.key == pygame.K_q or event.key == pygame.K_c or terminated:
                     print("episode terminated or q or c pressed, will quit", flush=True)
                     pygame.quit()
@@ -210,7 +200,6 @@ def run(cfg) -> None:
 def main(cfg):
 
     run(cfg.cfg)
-    #run_ppo(cfg.cfg)
 
 if __name__ == "__main__":
     main()

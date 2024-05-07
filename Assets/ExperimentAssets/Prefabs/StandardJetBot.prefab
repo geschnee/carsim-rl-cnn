@@ -10,9 +10,9 @@ GameObject:
   m_Component:
   - component: {fileID: 4509422449848867367}
   - component: {fileID: 8374566411005743182}
-  - component: {fileID: 5808399798246360065}
   - component: {fileID: 2926713500848659217}
   - component: {fileID: 1495485468968361062}
+  - component: {fileID: 8088950759316295360}
   m_Layer: 6
   m_Name: StandardJetBot
   m_TagString: Untagged
@@ -68,29 +68,6 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 0
   m_CollisionDetection: 0
---- !u!114 &5808399798246360065
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 157310755166477506}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: eb828afde3bb540709e3a2c81dba42a0, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  inputAccelerationLeft: 0
-  inputAccelerationRight: 0
-  carBody: {fileID: 144286601695018148}
-  frontLeftWheelCollider: {fileID: 2555060398321077506}
-  frontRightWheelCollider: {fileID: 3298807448374130550}
-  rearLeftWheelCollider: {fileID: 5598936257683454341}
-  rearRightWheelCollider: {fileID: 6450352088393438953}
-  frontLeftWheelTransform: {fileID: 785220003840488692}
-  frontRightWheeTransform: {fileID: 5328559696594334273}
-  rearLeftWheelTransform: {fileID: 2651409481796157633}
-  rearRightWheelTransform: {fileID: 1994899570087111783}
 --- !u!114 &2926713500848659217
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -113,9 +90,15 @@ MonoBehaviour:
   duration: 0
   allowedTime: 20
   obstacleOrWallHit: 0
+  obstacleHit: 0
+  wallHit: 0
   passedGoals: 
   numberOfGoals: 0
   episodeStatus: 0
+  collisionMode: 0
+  evalMode: 0
+  timestepObstacleHit: 0
+  hitObstacles: []
   distanceReference: {fileID: 2936096280192708101}
   step: 0
   centerIndicators: []
@@ -134,11 +117,34 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   episodeManager: {fileID: 0}
-  camera: {fileID: 5665677670532686738}
+  cam: {fileID: 0}
   video_filename: 
   fileCounter: 0
   isRecording: 0
   renderTexture: {fileID: 0}
+--- !u!114 &8088950759316295360
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 157310755166477506}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5dd26a7b3bd311044bd643e43b6afb73, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  inputAccelerationLeft: 0
+  inputAccelerationRight: 0
+  carBody: {fileID: 144286601695018148}
+  frontLeftWheelCollider: {fileID: 2555060398321077506}
+  frontRightWheelCollider: {fileID: 3298807448374130550}
+  rearLeftWheelCollider: {fileID: 5598936257683454341}
+  rearRightWheelCollider: {fileID: 6450352088393438953}
+  frontLeftWheelTransform: {fileID: 785220003840488692}
+  frontRightWheelTransform: {fileID: 5328559696594334273}
+  rearLeftWheelTransform: {fileID: 2651409481796157633}
+  rearRightWheelTransform: {fileID: 1994899570087111783}
 --- !u!1 &685241405481594876
 GameObject:
   m_ObjectHideFlags: 0
@@ -254,7 +260,6 @@ GameObject:
   m_Component:
   - component: {fileID: 3539638070068219462}
   - component: {fileID: 5665677670532686738}
-  - component: {fileID: 590805239827199682}
   - component: {fileID: 3549865002707843763}
   m_Layer: 6
   m_Name: Camera
@@ -272,7 +277,7 @@ Transform:
   m_GameObject: {fileID: 1468078331221567074}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: -1, z: 3}
+  m_LocalPosition: {x: 0, y: -1, z: 2.4}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -329,19 +334,6 @@ Camera:
   m_OcclusionCulling: 1
   m_StereoConvergence: 10
   m_StereoSeparation: 0.022
---- !u!114 &590805239827199682
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1468078331221567074}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e39a13b12af486f4eab94bd9b169dd54, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  cameraPositionRelativeToCar: {x: 0, y: 0, z: 0}
 --- !u!45 &3549865002707843763
 Skybox:
   m_ObjectHideFlags: 0

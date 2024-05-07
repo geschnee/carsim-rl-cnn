@@ -59,12 +59,8 @@ public class GameManager : MonoBehaviour
 	}
 
 
-	public MapData InitializeMapWithObstacles(MapType currentMapIndex, int idOfCurrentRun, Spawn jetBotSpawn, float jetBotRotation)
+	public MapData InitializeMapWithObstacles(MapType mapType, int idOfCurrentRun, Spawn jetBotSpawn, float jetBotRotation)
 	{
-
-		//Debug.Log($"InitializeMapWithObstacles() called, currentMapIndex: {currentMapIndex}, idOfCurrentRun: {idOfCurrentRun}");
-
-		MapType mapType = currentMapIndex;
 
 		// generate a new map with new obstacle, decide which type of map should be generated
 		mapData = this.obstacleMapManager.GenerateObstacleMap(mapType, this.idOfCurrentRun, jetBotSpawn, jetBotRotation);

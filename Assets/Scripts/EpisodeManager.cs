@@ -13,7 +13,7 @@ public class EpisodeManager : MonoBehaviour
     public float fixedTimestepsLength;
     public bool stepFinished;
 
-    private float allowedTimeDefault = 20f; // was 10f
+    private float allowedTimeDefault = 25f; // was 10f
     private float allowedTimePerGoal = 40f; // was 10f
 
     // multiply by some constant, the reward is very small
@@ -360,14 +360,7 @@ public class EpisodeManager : MonoBehaviour
                     Math.Sqrt(Math.Pow(V2.x, 2) + Math.Pow(V2.z, 2))
                 ));
 
-        /*if (result > 1)
-        {
-            Debug.LogError("cosine sim too big");
-        }
-        if (result < -1)
-        {
-            Debug.LogError("cosine sim too small");
-        }*/
+
         return result;
     }
 
