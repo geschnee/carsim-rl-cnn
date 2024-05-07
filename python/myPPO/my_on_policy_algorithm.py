@@ -517,7 +517,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         if success_rate >= self.rollout_best_success_rate:
             self.rollout_best_success_rate = success_rate
             if self.rollout_best_model_name != "":
-                os.remove(self.rollout_best_model_name)
+                os.remove(f'{self.rollout_best_model_name}.zip')
             self.rollout_best_model_name = f'rollout_model_{int(success_rate*100)}-sr_{self.num_timesteps}-steps'
             self.save(self.rollout_best_model_name)
 
