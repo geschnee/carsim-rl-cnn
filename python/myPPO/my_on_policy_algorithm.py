@@ -514,6 +514,15 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         
         print(f'collect rollouts finished with {completed_episodes} episodes in {cr_time} seconds', flush=True)
 
+        if success_rate >= self.rollout_best_success_rate:
+            self.rollout_best_success_rate = success_rate
+            if self.rollout_best_model_name != "":
+                os.remove(self.rollout_best_model_name)
+            self.rollout_best_model_name = f'rollout_model_{int(success_rate*100)}-sr_{self.num_timesteps}-steps'
+            self.save(self.rollout_best_model_name)
+
+
+
         return True, cr_time
     
     def my_record(self, key: str, value: float, exclude = None) -> None:
@@ -595,6 +604,9 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         total_cr_time, total_train_time, total_eval_time = 0, 0, 0
         self.collected_episodes = 0
         self.max_total_success_rate = -1
+
+        self.rollout_best_success_rate = 0
+        self.rollout_best_model_name = ""
 
         total_collection_time = 0
 
