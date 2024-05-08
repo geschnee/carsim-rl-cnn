@@ -1,4 +1,4 @@
-comment: "isolated training config medium standard, distance reward only, resetUponCollision"
+comment: "isolated training config hard standard, distance reward only, evalOnly"
 # "Trying with fixed light settings and variable timesteps, we want to see learning progress again. Did something break?"
 # we should also try it with the fixed spawn to be closer to the evaluation scenario, maybe the differential can do it 
 
@@ -22,7 +22,7 @@ n_steps: 256 # 64
 # n_steps * fixedTimestepsLength = the amount of seconds required for the collection
 
 
-copy_model_from: False #models_and_dumps/best_model_episode_70
+copy_model_from: models_and_dumps/best_model_episode_2200_hard_standard
 # copy_model_from can be False or a string (filename without .zip suffix)
 
 total_timesteps: 6500000 # restricted to 650000 due to real time limit (about 5 hours per training)
@@ -31,8 +31,8 @@ total_timesteps: 6500000 # restricted to 650000 due to real time limit (about 5 
 policy: "CnnPolicy"
 use_bundled_calls: True
 use_fresh_obs: False
-eval_only: False
-number_eval_runs: 10
+eval_only: True
+number_eval_runs: 5
 
 seed: 2048
 
@@ -66,9 +66,9 @@ env_kwargs:
     orientationCoefficient: 0
     velocityCoefficient: 0
     eventCoefficient: 0
-  collisionMode: resetUponCollision
+  collisionMode: oncePerTimestep
   # unrestricted, oncePerTimestep, oncePerEpisode, resetUponCollision, ignoreCollisions
-  trainingMapType: randomEvalMedium
+  trainingMapType: randomEvalHard
   trainingLightSetting: standard
   # random, bright, standard, dark
   fixedTimestepsLength: 0.3

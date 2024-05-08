@@ -141,7 +141,7 @@ def run_ppo(cfg):
     if not cfg.eval_only:
 
         model.invariant_output_test()
-        model.playGamesWithIdenticalStartConditions(n_episodes=10, difficulty="medium", iteration=0, light_setting=LightSetting.standard)
+        model.playGamesWithIdenticalStartConditions(n_episodes=10, iteration=0, light_setting=LightSetting.standard)
         model.test_deterministic_improves(10, "medium", 0, LightSetting.standard)
 
 
