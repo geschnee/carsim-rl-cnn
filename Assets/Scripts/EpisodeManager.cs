@@ -22,7 +22,7 @@ public class EpisodeManager : MonoBehaviour
     public float orientationCoefficient;// = 0.1f;
     public float eventCoefficient;// = 1f;
 
-    private float finishCheckpointReward = 100f; // = 100f;
+    private float finishLineReward = 100f; // = 100f;
     private float wallHitReward = -1f;
     private float obstacleHitReward = -1f;
     private float timeoutReward = -1f;
@@ -430,16 +430,18 @@ public class EpisodeManager : MonoBehaviour
     }
 
 
-    public void finishCheckpoint(GameObject goal)
+    public void finishLineHit(GameObject goal)
     {
+        if (this.passedGoals.Count == this.numberOfGoals)
+        {
+            AddEventReward(finishLineReward);
+            EndEpisode(EpisodeStatus.Success);
 
-        AddEventReward(finishCheckpointReward);
-        IncreasePassedGoals(goal);
-
-        GameObject goal2 = goal.transform.parent.gameObject;
-        colorGreen(goal2);
-
-        EndEpisode(EpisodeStatus.Success);
+        } else {
+            AddEventReward(goalMissedReward);
+            EndEpisode(EpisodeStatus.FinishWithoutAllGoals);
+        }
+        
     }
 
     public void hitWall(GameObject obstacle)
@@ -492,18 +494,6 @@ public class EpisodeManager : MonoBehaviour
         }
     }
 
-    public void finishMissed(GameObject border)
-    {
-        GameObject goal = border.transform.parent.gameObject;
-        destroyCheckpoint(goal);
-        AddEventReward(goalMissedReward);
-
-        centerIndicators.RemoveAt(0); // remove an indicator
-
-        colorRed(goal);
-
-        EndEpisode(EpisodeStatus.FinishMissed);
-    }
 
     public void goalPassed(GameObject goalMiddle)
     {
@@ -667,12 +657,12 @@ public class EpisodeManager : MonoBehaviour
         }
         if (coll.tag == "FinishMissed")
         {
-            finishMissed(coll);
+            Debug.LogError($"deprecated TODO remove the object + tag");
             return;
         }
-        if (coll.tag == "FinishCheckpoint")
+        if (coll.tag == "FinishLine")
         {
-            finishCheckpoint(coll);
+            finishLineHit(coll);
             return;
         }
         if (coll.tag == "Destroyed")

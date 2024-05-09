@@ -106,6 +106,15 @@ public class VideoRecorder : MonoBehaviour
         Destroy(image);
     }
 
+    void OnApplicationQuit()
+    {
+        if (this.isRecording)
+        {
+            Debug.Log("Application quit while recording video. Stopping video recording.");
+            StopVideo(this.episodeManager.duration);
+        }
+    }
+
     public void StopVideo(float gameDuration)
     {
         if (!this.isRecording)

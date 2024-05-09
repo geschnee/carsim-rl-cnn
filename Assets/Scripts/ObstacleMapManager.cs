@@ -161,14 +161,13 @@ public class ObstacleMapManager : MonoBehaviour
 {
     public List<UnityEngine.Object> obstacles = new List<UnityEngine.Object>();
 
-    private Boolean isFinishLineLastGoal;
 
 
     public Transform gameManagerTransform;
     public Vector3 gameManagerPosition;
     public GameObject obstacleBlue;
     public GameObject obstacleRed;
-    public GameObject goalPassedGameOjbect;
+    public GameObject goalPassedGameObject;
     public GameObject goalMissedGameObject;
     public GameObject finishlineCheckpoint;
     public GameObject goalBall;
@@ -194,16 +193,14 @@ public class ObstacleMapManager : MonoBehaviour
         this.gameManagerPosition = gameManagerTransform.position;
         this.obstacleBlue = obstacleBlue;
         this.obstacleRed = obstacleRed;
-        this.goalPassedGameOjbect = goalPassedGameObject;
+        this.goalPassedGameObject = goalPassedGameObject;
         this.goalMissedGameObject = goalMissedGameObject;
         this.finishlineCheckpoint = finishlineCheckpoint;
         this.finishMissedGameObject = FinishLineMissedCheckpoint;
         this.goalMiddleIndicator = goalMiddleIndicator;
         this.goalBall = goalBall;
 
-        this.isFinishLineLastGoal = isFinishLine;
         this.JetBot = JetBot;
-
     }
 
     public GameObject SpawnJetBot(MapData mapData, int instanceNumber)
@@ -306,7 +303,7 @@ public class ObstacleMapManager : MonoBehaviour
             GameObject goalInstantiatedGameObject;
 
 
-            goalInstantiatedGameObject = goal.InstantiateGoal(this.goalPassedGameOjbect, this.goalMissedGameObject, this.goalMiddleIndicator, this.gameManagerPosition, this.goalBall);
+            goalInstantiatedGameObject = goal.InstantiateGoal(this.goalPassedGameObject, this.goalMissedGameObject, this.goalMiddleIndicator, this.gameManagerPosition, this.goalBall);
             goalInstantiatedGameObject.transform.SetParent(allGoals.transform);
 
             goalInstantiatedGameObject.name = "Goal" + i.ToString();
@@ -316,12 +313,15 @@ public class ObstacleMapManager : MonoBehaviour
         // initialize last goal with finish line checkpoint
         int lastGoalIndex = goalList.goals.Length - 1;
         Goal goalLast = goalList.goals[lastGoalIndex];
-        GameObject goalInstantiatedGameObjectLast = goalLast.InstantiateGoal(this.finishlineCheckpoint, this.finishMissedGameObject, this.goalMiddleIndicator, this.gameManagerPosition, this.goalBall);
+        GameObject goalInstantiatedGameObjectLast = goalLast.InstantiateGoal(this.goalPassedGameObject, this.goalMissedGameObject, this.goalMiddleIndicator, this.gameManagerPosition, this.goalBall);
         goalInstantiatedGameObjectLast.transform.SetParent(allGoals.transform);
         goalInstantiatedGameObjectLast.name = "Goal" + lastGoalIndex.ToString();
 
 
-        this.centerIndicators = new List<GameObject>();
+        // add finishLine after the last goal
+        GameObject finishLine = InstantiateFinishLine();
+        finishLine.transform.SetParent(this.gameManagerTransform.parent);
+
 
         this.centerIndicators = new List<GameObject>();
 
@@ -329,24 +329,14 @@ public class ObstacleMapManager : MonoBehaviour
         {
             GameObject goal = allGoals.transform.GetChild(i).gameObject;
 
-            if (i == allGoals.transform.childCount - 1)
+            
+            GameObject middle = FindChildWithTag(goal, "CenterIndicator");
+            this.centerIndicators.Add(middle);
+            if (middle == null)
             {
-                GameObject middleFinished = FindChildWithTag(goal, "FinishCheckpoint");
-                this.centerIndicators.Add(middleFinished);
-                if (middleFinished == null)
-                {
-                    Debug.LogWarning($"no child with tag FinishCheckpoint found, big error");
-                }
+                Debug.LogWarning($"no child with tag CenterIndicator found, big error");
             }
-            else
-            {
-                GameObject middle = FindChildWithTag(goal, "GoalPassed");
-                this.centerIndicators.Add(middle);
-                if (middle == null)
-                {
-                    Debug.LogWarning($"no child with tag GoalPassed found, big error");
-                }
-            }
+            
 
         }
         if (this.centerIndicators.Count != goalList.goals.Length)
@@ -354,6 +344,29 @@ public class ObstacleMapManager : MonoBehaviour
             Debug.LogWarning($"only {this.centerIndicators.Count} center indicators found but there are {goalList.goals.Length} goals");
         }
 
+        // finish after goal
+        GameObject middleFinished = FindChildWithTag(finishLine, "CenterIndicator");
+        this.centerIndicators.Add(middleFinished);
+        if (middleFinished == null)
+        {
+            Debug.LogWarning($"no child with tag CenterIndicator found, big error");
+        }
+
+    }
+
+    public GameObject InstantiateFinishLine(){
+        GameObject finishParentGameObject = new(name: "FinishLine");
+        
+        Quaternion goalRotationQuaternion = new Quaternion(0, 0, 0, 0);
+
+        Vector3 finishLinePosition = new Vector3(Constants.MAX_X + this.gameManagerPosition.x, Constants.SPAWNHEIGHT_Y, this.gameManagerPosition.z + Constants.Z_WIDTH / 2);
+
+        GameObject finish = GameObject.Instantiate(this.finishlineCheckpoint, finishLinePosition, goalRotationQuaternion, finishParentGameObject.transform);
+
+        
+        GameObject.Instantiate(this.goalMiddleIndicator, finishLinePosition, goalRotationQuaternion, finishParentGameObject.transform);
+
+        return finishParentGameObject;
     }
 
 
@@ -382,21 +395,6 @@ public class ObstacleMapManager : MonoBehaviour
         }
 
         return null;
-    }
-
-    public MapData LoadObstacleMap(string filepath, float id)
-    {
-        string fullPath = filepath + id.ToString() + ".json";
-        if (File.Exists(fullPath))
-        {
-            string content = File.ReadAllText(fullPath);
-            MapData mapData = JsonUtility.FromJson<MapData>(content);
-            return mapData;
-
-        }
-        else
-            throw new FileNotFoundException(
-                "File not found.");
     }
 
 

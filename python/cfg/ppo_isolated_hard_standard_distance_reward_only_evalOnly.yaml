@@ -5,7 +5,7 @@ comment: "isolated training config hard standard, distance reward only, evalOnly
 
 eval_settings:
   log_interval: 100
-  num_evals_per_difficulty: 20
+  num_evals_per_difficulty: 100
   eval_light_settings: True
 
 # reducing n_envs results in higher fps (per env)
@@ -32,7 +32,7 @@ policy: "CnnPolicy"
 use_bundled_calls: True
 use_fresh_obs: False
 eval_only: True
-number_eval_runs: 5
+number_eval_runs: 2
 
 seed: 2048
 

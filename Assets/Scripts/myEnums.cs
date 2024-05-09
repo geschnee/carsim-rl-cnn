@@ -16,7 +16,7 @@ public enum EpisodeStatus
     GoalMissed = 4,
     RedObstacle = 5,
     BlueObstacle = 6,
-    FinishMissed = 7,
+    FinishWithoutAllGoals = 7,
     WaitingForStep = 8,
 }
 

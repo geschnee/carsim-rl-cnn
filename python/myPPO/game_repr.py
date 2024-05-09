@@ -15,5 +15,3 @@ class GameRepresentation:
         self.passedFirstGoal = int(info["passedFirstGoal"]) == 1
         self.passedSecondGoal = int(info["passedSecondGoal"]) == 1
         self.passedThirdGoal = int(info["passedThirdGoal"]) == 1
-
-        # TODO check if the hash is computed correctly (for the counter)

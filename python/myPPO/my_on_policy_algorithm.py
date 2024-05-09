@@ -594,9 +594,9 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
                 print(f'Will eval now as after every {log_interval} collect and trains')
                 eval_time = time.time()
                 self.eval(iteration=iteration, num_evals_per_difficulty=num_evals_per_difficulty, eval_light_settings=eval_light_settings)
-                self.playGamesWithIdenticalStartConditions(n_episodes=10, iteration=iteration, light_setting=LightSetting.standard, log=True)
-                self.test_deterministic_improves(n_episodes=10, difficulty="medium", iteration=iteration, light_setting=LightSetting.standard, log=True)
-                self.test_fresh_obs_improves(n_episodes=10, difficulty = "medium", iteration=iteration, light_setting=LightSetting.standard, log=True)
+                self.playGamesWithIdenticalStartConditions(n_episodes=num_evals_per_difficulty, iteration=iteration, light_setting=LightSetting.standard, log=True)
+                self.test_deterministic_improves(n_episodes=num_evals_per_difficulty, difficulty="medium", iteration=iteration, light_setting=LightSetting.standard, log=True)
+                self.test_fresh_obs_improves(n_episodes=num_evals_per_difficulty, difficulty = "medium", iteration=iteration, light_setting=LightSetting.standard, log=True)
 
 
                 eval_time = time.time() - eval_time
@@ -970,9 +970,9 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
 
             eval_time = time.time()
             self.eval(iteration=step, num_evals_per_difficulty=num_evals_per_difficulty, eval_light_settings=eval_light_settings)
-            self.playGamesWithIdenticalStartConditions(n_episodes=10, iteration=step, light_setting=LightSetting.standard, deterministic=True, log=True)
-            self.test_deterministic_improves(n_episodes=10, difficulty = "medium", iteration=step, light_setting=LightSetting.standard, log=True)
-            self.test_fresh_obs_improves(n_episodes=10, difficulty = "medium", iteration=step, light_setting=LightSetting.standard, log=True)
+            self.playGamesWithIdenticalStartConditions(n_episodes=num_evals_per_difficulty, iteration=step, light_setting=LightSetting.standard, deterministic=True, log=True)
+            self.test_deterministic_improves(n_episodes=num_evals_per_difficulty, difficulty = "medium", iteration=step, light_setting=LightSetting.standard, log=True)
+            self.test_fresh_obs_improves(n_episodes=num_evals_per_difficulty, difficulty = "medium", iteration=step, light_setting=LightSetting.standard, log=True)
 
 
             eval_time = time.time() - eval_time

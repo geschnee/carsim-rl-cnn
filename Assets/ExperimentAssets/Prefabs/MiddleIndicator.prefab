@@ -13,7 +13,7 @@ GameObject:
   - component: {fileID: 2870515903495724124}
   m_Layer: 3
   m_Name: MiddleIndicator
-  m_TagString: Untagged
+  m_TagString: CenterIndicator
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
