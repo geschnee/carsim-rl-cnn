@@ -125,6 +125,8 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         self.use_fresh_obs = use_fresh_obs
         self.print_network_and_loss_structure = print_network_and_loss_structure
 
+        self.max_total_success_rate = -1
+
         self.my_logs = {}
 
         if _init_setup_model:
@@ -963,6 +965,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         assert self.env is not None
 
         total_eval_time = 0
+        
 
         for i in range(total_eval_runs):
             step = offset + i*1000

@@ -100,22 +100,17 @@ def run_ppo(cfg):
         log=False,
     )
 
-    n_epochs, batch_size = cfg.n_epochs, cfg.batch_size
-    n_steps = cfg.n_steps # amount of steps to collect per collect_rollouts per environment
+    algo = myPPO
 
-    algo = myPPO # or myPPO (handles the ansynchronicity of the envs)
-
-
-    print(f'using {algo} with {n_epochs} epochs, {batch_size} batch size and {n_steps} steps per epoch')
-    policy_kwargs = {"normalize_images": cfg.env_kwargs.image_preprocessing.normalize_images, "net_arch": OmegaConf.to_container(cfg.net_arch)}
+    policy_kwargs = {"normalize_images": cfg.env_kwargs.image_preprocessing.normalize_images, "net_arch": OmegaConf.to_container(cfg.algo_settings.net_arch)}
 
     # normalize_imagess=True scales the images to 0-1 range
     # requires dtype float32
     # kwarg to both the env (ObsSpace) and the policy
 
 
-    model = algo("CnnPolicy", vec_env, verbose=1,
-                tensorboard_log="./tmp", n_epochs=n_epochs, batch_size=batch_size, n_steps=n_steps, policy_kwargs=policy_kwargs, seed = seed, use_bundled_calls=cfg.use_bundled_calls, use_fresh_obs=cfg.use_fresh_obs, print_network_and_loss_structure=cfg.print_network_and_loss_structure)
+    model = algo(cfg.algo_settings.policy, vec_env, verbose=1,
+                tensorboard_log="./tmp", n_epochs=cfg.algo_settings.n_epochs, batch_size=cfg.algo_settings.batch_size, n_steps=cfg.algo_settings.n_steps, policy_kwargs=policy_kwargs, seed = seed, use_bundled_calls=cfg.algo_settings.use_bundled_calls, use_fresh_obs=cfg.algo_settings.use_fresh_obs, print_network_and_loss_structure=cfg.algo_settings.print_network_and_loss_structure)
     # CnnPolicy network architecture can be seen in sb3.common.torch_layers.py
 
     print(f"model weights for seed verification: {model.policy.value_net.weight[0][0:5]}")
@@ -136,22 +131,22 @@ def run_ppo(cfg):
         string = f"{HydraConfig.get().runtime.cwd}/{cfg.copy_model_from}"
         print(f'loading model from {string} before learning')
         model = algo.load(string, env=vec_env, tensorboard_log="./tmp",
-                        n_epochs=n_epochs, batch_size=batch_size)
+                        n_epochs=cfg.algo_settings.n_epochs, batch_size=cfg.algo_settings.batch_size)
 
-    if not cfg.eval_only:
+    if not cfg.eval_settings.eval_only:
 
         model.invariant_output_test()
         model.playGamesWithIdenticalStartConditions(n_episodes=10, iteration=0, light_setting=LightSetting.standard)
         model.test_deterministic_improves(10, "medium", 0, LightSetting.standard)
 
 
-        model.learn(total_timesteps=cfg.total_timesteps, log_interval=cfg.eval_settings.log_interval, num_evals_per_difficulty = cfg.eval_settings.num_evals_per_difficulty, eval_light_settings=cfg.eval_settings.eval_light_settings)
+        model.learn(total_timesteps=cfg.total_timesteps, log_interval=cfg.eval_settings.interval_during_learn, num_evals_per_difficulty = cfg.eval_settings.num_evals_per_difficulty, eval_light_settings=cfg.eval_settings.eval_light_settings)
         model.save("finished_ppo")
         print("finished learning without issues")
 
     
     # load best model and eval it again
-    if not cfg.eval_only:
+    if not cfg.eval_settings.eval_only:
         num_timesteps = model.num_timesteps
         best_model_name = model.best_model_name
         print(f'loading best model {best_model_name} after learning')
@@ -160,7 +155,7 @@ def run_ppo(cfg):
         model.use_fresh_obs=cfg.use_fresh_obs
 
     # run more evals here after training completed or when eval only
-    model.eval_only(total_eval_runs=cfg.number_eval_runs, num_evals_per_difficulty = cfg.eval_settings.num_evals_per_difficulty, eval_light_settings=cfg.eval_settings.eval_light_settings, offset=model.num_timesteps)
+    model.eval_only(total_eval_runs=cfg.eval_settings.number_eval_runs, num_evals_per_difficulty = cfg.eval_settings.num_evals_per_difficulty, eval_light_settings=cfg.eval_settings.eval_light_settings, offset=model.num_timesteps)
 
 
 

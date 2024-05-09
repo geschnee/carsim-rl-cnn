@@ -131,7 +131,8 @@ public class EpisodeManager : MonoBehaviour
     public void setCenterIndicators(List<GameObject> indicators)
     {
         this.centerIndicators = indicators;
-        this.numberOfGoals = indicators.Count;
+        this.numberOfGoals = indicators.Count - 1;
+        // there is a center indicator for the finishLine we thus need to substract one
     }
 
     public void StartEpisode(bool evalMode, CollisionMode collisionMode)
@@ -432,6 +433,7 @@ public class EpisodeManager : MonoBehaviour
 
     public void finishLineHit(GameObject goal)
     {
+       
         if (this.passedGoals.Count == this.numberOfGoals)
         {
             AddEventReward(finishLineReward);
