@@ -12,20 +12,14 @@ copy_model_from: models_and_dumps/best_model_episode_2200_hard_standard
 total_timesteps: 6500000 # restricted to 650000 due to real time limit (about 5 hours per training)
 
 
-
-
 seed: 2048
 
 eval_settings:
-  log_interval: 100
+  interval_during_learn: 100
   num_evals_per_difficulty: 100
   eval_light_settings: True
   eval_only: True
   number_eval_runs: 2
-
-
-
-
 
 
 algo_settings:

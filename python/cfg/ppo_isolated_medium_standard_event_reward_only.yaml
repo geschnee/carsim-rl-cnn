@@ -1,52 +1,53 @@
-comment: "isolated training config medium standard, event reward only, with velocity and distance reward it got stuck driving forward without dodging obstacles"
-# "Trying with fixed light settings and variable timesteps, we want to see learning progress again. Did something break?"
-# we should also try it with the fixed spawn to be closer to the evaluation scenario, maybe the differential can do it 
+comment: "isolated training config hard standard, event reward only"
 
-
-eval_settings:
-  log_interval: 100
-  num_evals_per_difficulty: 20
-  eval_light_settings: True
-
-# reducing n_envs results in higher fps (per env)
 n_envs: 10
-n_epochs: 5 # amount of training passes over the replay buffer per timestep
 
-
-batch_size: 64
-
-n_steps: 256 # 64 
-# amount of steps to collect per collect_rollouts per environment
-# Tensorboard shows the mean_episode_length is below 3
-# we can reduce the n_steps to make the collection time shorter while still collecting a lot of episodes
-# n_steps * fixedTimestepsLength = the amount of seconds required for the collection
-
-
-copy_model_from: False #models_and_dumps/best_model_episode_70
+copy_model_from: models_and_dumps/best_model_episode_2200_hard_standard
 # copy_model_from can be False or a string (filename without .zip suffix)
 
 total_timesteps: 6500000 # restricted to 650000 due to real time limit (about 5 hours per training)
 
 
-policy: "CnnPolicy"
-use_bundled_calls: True
-use_fresh_obs: False
-eval_only: False
-number_eval_runs: 3
-
 seed: 2048
 
-print_network_and_loss_structure: False
+eval_settings:
+  interval_during_learn: 100
+  num_evals_per_difficulty: 100
+  eval_light_settings: True
+  eval_only: False
+  number_eval_runs: 2
 
-net_arch:
-  pi: []
-  vf: []
-# set pi and vf to [] to use the default CNN policy without fully connected layers
 
-# since we use the CNN Policy the extractor consists of the nature CNN
-# if we do not define pi and vf, there are no layers after the (cnn) extractor
-# https://github.com/DLR-RM/stable-baselines3/blob/8b3723c6d8420bb978f4d68409ff5189f87fe107/stable_baselines3/common/policies.py#L496-L502
-# we cannot define the cnn structure ourselves if we use the NatureCnn class
+algo_settings:
+  n_epochs: 5 # amount of training passes over the replay buffer per timestep
+
+  batch_size: 64
+
+  n_steps: 256 # 64 
+# amount of steps to collect per collect_rollouts per environment
+# Tensorboard shows the mean_episode_length is below 3
+# we can reduce the n_steps to make the collection time shorter while still collecting a lot of episodes
+# n_steps * fixedTimestepsLength = the amount of seconds required for the collection
+
+  policy: "CnnPolicy"
+  use_bundled_calls: True
+  use_fresh_obs: False
+
+  print_network_and_loss_structure: False
+
+  net_arch:
+    pi: []
+    vf: []
+  # set pi and vf to [] to use the default CNN policy without fully connected layers
+
+  # since we use the CNN Policy the extractor consists of the nature CNN
+  # if we do not define pi and vf, there are no layers after the (cnn) extractor
+  # https://github.com/DLR-RM/stable-baselines3/blob/8b3723c6d8420bb978f4d68409ff5189f87fe107/stable_baselines3/common/policies.py#L496-L502
+  # we cannot define the cnn structure ourselves if we use the NatureCnn class
+
+
+
+
 
 
 env_kwargs:
