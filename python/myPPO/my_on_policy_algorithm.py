@@ -185,6 +185,25 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
             actions, values, log_probs = self.policy(obs_tensor, deterministic=deterministic)
         
         return actions, values, log_probs, obs
+    
+    def inferFromObservationsForRecording(self, env, deterministic = False):
+
+        with th.no_grad():
+            # Convert to pytorch tensor or to TensorDict
+
+            obs, all_obsstrings = get_obs_bundled_calls(env, return_all_obsstrings=True)
+        
+            #print(f'fresh_obs shape: {fresh_obs.shape}', flush=True)
+            obs_tensor = obs_as_tensor(obs, self.device)
+            if self.first_obs is None:
+                self.first_obs = obs_tensor[0]
+            
+            print(f'obs_tensor shape: {obs_tensor.shape}', flush=True)
+
+            actions, values, log_probs = self.policy(obs_tensor, deterministic=deterministic)
+        
+        return actions, values, log_probs, obs, all_obsstrings
+
 
     def print_network_structure(self, env):
         if self.network_printed:
@@ -764,10 +783,14 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         rotation_range_min, rotation_range_max = Spawn.getOrientationRange(rotationMode)
 
         range_width = rotation_range_max - rotation_range_min
-        step = range_width / (n_eval_episodes-1)
 
-        rotations = [rotation_range_min + i * step for i in range(n_eval_episodes)]
-        rotations = [int(rotation) for rotation in rotations]
+        if n_eval_episodes == 1:
+            rotations = [int(rotation_range_min + range_width / 2)]
+        else:
+            step = range_width / (n_eval_episodes-1)
+
+            rotations = [rotation_range_min + i * step for i in range(n_eval_episodes)]
+            rotations = [int(rotation) for rotation in rotations]
 
         track_numbers = MapType.getAllTracksnumbersOfDifficulty(difficulty)
 
@@ -1165,6 +1188,326 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
             self.my_record(f'identicalStartConditions/most_common_game_result_rate', most_common_game_result_rate)
 
         return most_common_game_result_rate, success_rate
+    
+    def record_games(self, game_record_settings, seed):
+        n_games = game_record_settings.n_games_per_setting
+
+        from stable_baselines3.common.utils import set_random_seed
+
+
+        game_recordings_path = f'{os.getcwd()}\\game_recordings'
+        os.mkdir(game_recordings_path)
+        self.save(f'{game_recordings_path}\\model')
+
+        total_number_games, succesful_games = 0, 0
+
+        difficulties = ["easy", "medium", "hard"]
+        difficulties = ["easy"]
+        light_settings = [LightSetting.bright, LightSetting.standard, LightSetting.dark]
+        light_settings = [LightSetting.standard]
+        for difficulty in difficulties:
+            for light_setting in light_settings:
+                settings_path = f'{game_recordings_path}\\{difficulty}_{light_setting.name}'
+                os.mkdir(settings_path)
+
+                map_and_rotations = self.generate_map_and_rotations(difficulty, n_games, self.env)
+
+                for idx, map_and_rotation in enumerate(map_and_rotations):
+                    game_path = f'{settings_path}\\game_{idx}'
+                    os.mkdir(game_path)
+                    
+                    set_random_seed(seed)
+                    success = self.record_game(light_setting, game_path, map_and_rotation, deterministic=game_record_settings.deterministic_sampling)
+                    total_number_games += 1
+                    succesful_games += success
+                 
+        print(f'total_number_games: {total_number_games} succesful_games: {succesful_games}')
+
+    def record_game(self, light_setting, game_path, map_and_rotation, deterministic):
+        env = self.env
+
+        # this uses the first environment exclusively
+
+        # reset environment 0 to record the videos
+        env.env_method(
+            method_name="setVideoFilename",
+            indices=[0],
+            video_filename = f'{game_path}\\video_'
+        )
+
+        # reset to initialize all envs (required for bundled calls)
+        env.reset()
+
+        # reset envs with specific map and rotation
+        env.env_method(
+            method_name="reset_with_mapType_spawnrotation",
+            indices=[0],
+            mapType=map_and_rotation[0],
+            lightSetting=light_setting,
+            evalMode=True,
+            spawnRot=map_and_rotation[1]
+        )
+
+        # reset memory of environment (we do that so creating and using a replay is easier)
+        env.envs[0].resetMemory()
+
+        # switch to eval mode
+        self.policy.set_training_mode(False)
+
+        # we always use fresh obs for recorded games, easier to implement and more reliable
+
+        infer_obsstrings, step_obstrings = [], []
+
+        sampled_actions = []
+        obtained_values = []
+        obtained_log_probs = []
+
+        # TODO set the seed again to have reproducable sampling in the recording?
+
+
+        done, success = False, False
+
+        self.first_obs = None
+        while not done:
+    
+            actions, values, log_probs, obs, all_obsstrings = self.inferFromObservationsForRecording(env, deterministic=deterministic)
+            actions = actions.cpu().numpy()
+
+            
+
+            # Rescale and perform action
+            clipped_actions = actions
+            # Clip the actions to avoid out of bound error
+            if isinstance(self.action_space, spaces.Box):
+                clipped_actions = np.clip(
+                    actions, self.action_space.low, self.action_space.high)
+            
+            observations, _, dones, infos, stepReturnObjects = step_wrapper(env, clipped_actions, self.use_bundled_calls, return_step_return_objects=True)
+            
+            infer_obsstrings.append(all_obsstrings[0])
+            step_obstrings.append(stepReturnObjects[0].observation)
+            sampled_actions.append(actions[0])
+            obtained_values.append(values[0])
+            obtained_log_probs.append(log_probs[0])
+
+
+            if dones[0]:
+                done = True
+                game_repr = GameRepresentation(infos[0])
+
+                print(f'record game end status: {game_repr.endEvent}', flush=True)
+
+                if game_repr.endEvent == "Success":
+                    success=True
+
+            
+            
+            self._last_obs = observations
+
+        # TODO save observations and actions to file
+        # observations (from unity) are in the step return objects
+
+        print(f'shape of an observation {observations[0].shape}', flush=True)
+
+        # save first image to file
+
+        def saveImg(string, filename):
+            im = env.env_method(
+                method_name="stringToImg",
+                indices=[0],
+                string=string
+            )[0]
+            pixels_rgb = np.array(im, dtype=np.uint8)
+            env.env_method(
+                method_name="saveImage",
+                indices=[0],
+                array = pixels_rgb,
+                filename = filename
+            )
+
+
+
+        for i in range(len(step_obstrings)):
+            saveImg(step_obstrings[i], f'{game_path}\\step_image_{i}.png')
+            # images from step are also needed to reproduce the observations (since there is a memory_rolloer in processStepReturnObject)
+            
+        for i in range(len(infer_obsstrings)):
+            saveImg(infer_obsstrings[i], f'{game_path}\\infer_image_{i}.png')
+
+        for i in range(len(sampled_actions)):
+            np.save(f'{game_path}\\sampled_action_{i}.npy', sampled_actions[i])
+
+        for i in range(len(obtained_values)):
+            np.save(f'{game_path}\\obtained_value_{i}.npy', obtained_values[i])
+
+        for i in range(len(obtained_log_probs)):
+            np.save(f'{game_path}\\obtained_log_prob_{i}.npy', obtained_log_probs[i])
+
+        # save game length
+        np.save(f'{game_path}\\game_length.npy', len(infer_obsstrings))
+        
+        # set to no video afterwards
+        env.env_method(
+            method_name="setVideoFilename",
+            indices=[0],
+            video_filename = ""
+        )
+
+        print(f'record game finished with params {light_setting}, {map_and_rotation}, {success}', flush=True)
+
+
+        if success:
+            return 1
+        else:
+            return 0
+
+    def replay_games(self, game_replay_settings, seed):
+        n_games = game_replay_settings.n_games_per_setting
+
+        from stable_baselines3.common.utils import set_random_seed
+
+        game_replay_path = f'{os.getcwd()}\\game_recordings'
+        
+        # find model
+        model_path = f'{os.getcwd()}\\game_recordings\\model.zip'
+        self.load(model_path)
+        
+        difficulties = ["easy", "medium", "hard"]
+        difficulties = ["easy"]
+        light_settings = [LightSetting.bright, LightSetting.standard, LightSetting.dark]
+        light_settings = [LightSetting.standard]
+        for difficulty in difficulties:
+            for light_setting in light_settings:
+                settings_path = f'{game_replay_path}\\{difficulty}_{light_setting.name}'
+
+                for idx in range(n_games):
+                    game_path = f'{settings_path}\\game_{idx}'
+                    
+                    set_random_seed(seed)
+                    self.replay_game(light_setting, game_path, deterministic=game_replay_settings.deterministic_sampling)
+
+    def replay_game(self, light_setting, game_path, deterministic):
+        env = self.env
+
+        # this uses the first environment exclusively
+
+        # reset to initialize all envs (required for bundled calls)
+        env.reset()
+
+        
+        env.envs[0].resetMemory()
+
+        # switch to eval mode
+        self.policy.set_training_mode(False)
+
+        # we always use fresh obs for recorded games, easier to implement and more reliable
+
+
+
+        infer_obs_unity_images, step_obs_unity_images = [], []
+        recorded_actions = []
+        recorded_values = []
+        recorded_log_probs = []
+
+        
+        import PIL.Image as Image
+        def loadImage(filename):
+            im = Image.open(filename)
+            pixels_rgb = np.array(im, dtype=np.uint8)
+            return pixels_rgb
+
+        recorded_game_length = np.load(f'{game_path}\\game_length.npy')
+        for i in range(recorded_game_length):
+            recorded_actions.append(np.load(f'{game_path}\\sampled_action_{i}.npy'))
+            recorded_values.append(np.load(f'{game_path}\\obtained_value_{i}.npy'))
+            recorded_log_probs.append(np.load(f'{game_path}\\obtained_log_prob_{i}.npy'))
+
+            infer_obs_unity_images.append(loadImage(f'{game_path}\\infer_image_{i}.png'))
+            step_obs_unity_images.append(loadImage(f'{game_path}\\step_image_{i}.png'))
+
+        print(f'type of infer_obs_unity_images[0]: {type(infer_obs_unity_images[0])}')
+        print(f'shape of infer_obs_unity_images[0]: {infer_obs_unity_images[0].shape}')
+        print(f'actions[0]: {recorded_actions[0]}')
+        print(f'values[0]: {recorded_values[0]}')
+        print(f'log_probs[0]: {recorded_log_probs[0]}')
+
+
+        reproduced_actions = []
+        reproduced_values = []
+        reproduced_log_probs = []
+
+        def take_image(env, image):
+            new_obs = env.envs[0].preprocessing(image)
+
+            if env.envs[0].frame_stacking > 1:
+                new_obs = env.envs[0].memory_rolloverStep(new_obs)
+
+            for idx in range(env.num_envs):
+                env._save_obs(idx, new_obs)
+
+            obs = env._obs_from_buf()
+
+            rtn_obs = env.transpose_observations(obs)
+
+            return rtn_obs
+
+
+        for i in range(recorded_game_length):
+
+            with th.no_grad():
+                obs = take_image(env, infer_obs_unity_images[0])
+
+                obs_tensor = obs_as_tensor(obs, self.device)
+
+                # obs_tensor should have shape ([10, 10, 84, 250])
+                print(f'obs_tensor shape replay: {obs_tensor.shape}')
+
+                if i == 0:
+                    first_obs_tensor = obs_tensor[0]
+                
+                actions, values, log_probs = self.policy(obs_tensor, deterministic=deterministic)
+    
+            actions = actions.cpu().numpy()
+
+            # Rescale and perform action
+            clipped_actions = actions
+            # Clip the actions to avoid out of bound error
+            if isinstance(self.action_space, spaces.Box):
+                clipped_actions = np.clip(
+                    actions, self.action_space.low, self.action_space.high)
+            
+
+            take_image(env, step_obs_unity_images[0])
+            
+            reproduced_actions.append(actions[0])
+            reproduced_values.append(values[0])
+            reproduced_log_probs.append(log_probs[0])
+
+        assert th.equal(self.first_obs, first_obs_tensor), f'first obs is not the same {self.first_obs} != {first_obs_tensor}'
+        # the input has to be the same
+
+        for i in range(recorded_game_length):
+            print(f'i = {i}', flush=True)
+            # TODO first one passed thorugh, the second is not equal anymore
+
+            # is the second observation different?
+            # or is it another reason?
+
+            assert np.allclose(recorded_values[i], reproduced_values[i]), f'values are not the same {recorded_values[i]} != {reproduced_values[i]}'
+            assert np.allclose(recorded_log_probs[i], reproduced_log_probs[i]), f'log_probs are not the same {recorded_log_probs[i]} != {reproduced_log_probs[i]}'
+            assert np.allclose(recorded_actions[i], reproduced_actions[i]), f'actions are not the same {recorded_actions[i]} != {reproduced_actions[i]}'
+            
+
+        # save first image to file
+
+        print(f'replay game finished', flush=True)
+
+        # TODO reproduction in time?
+
+
+
+
+
 
 def get_obs_single_calls(env):
     # env is a vectorized BaseCarsimEnv
@@ -1185,7 +1528,7 @@ def get_obs_single_calls(env):
     obs = env._obs_from_buf()
     return env.transpose_observations(obs)
 
-def get_obs_bundled_calls(env):
+def get_obs_bundled_calls(env, return_all_obsstrings=False):
     # env is a vectorized BaseCarsimEnv
     # it is wrapped in a vec_transpose env for the CNN
 
@@ -1225,10 +1568,11 @@ def get_obs_bundled_calls(env):
     
 
     #print(f'get_obs_bundled_calls observations transposed shape: {rtn_obs.shape} {type(rtn_obs)}')
-    
+    if return_all_obsstrings:
+        return rtn_obs, all_obsstrings
     return rtn_obs
 
-def step_wrapper(env, clipped_actions, use_bundled_calls):
+def step_wrapper(env, clipped_actions, use_bundled_calls, return_step_return_objects=False):
 
     if use_bundled_calls:
         #print(f'step with single request started', flush=True)
@@ -1272,7 +1616,10 @@ def step_wrapper(env, clipped_actions, use_bundled_calls):
 
         #assert np.array_equal(transpose_obs, rtn_new_obs_n), f'new obs not equal {transpose_obs} {rtn_new_obs_n}'
 
-        return rtn_new_obs_n, np.array(rewards), np.array(dones), infos
+        if return_step_return_objects:
+            return rtn_new_obs_n, np.array(rewards), np.array(dones), infos, stepReturnObjects
+        else:
+            return rtn_new_obs_n, np.array(rewards), np.array(dones), infos
     else:
         # old approach
         return env.step(clipped_actions)

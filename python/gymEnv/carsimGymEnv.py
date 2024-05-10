@@ -318,6 +318,9 @@ class BaseCarsimEnv(gym.Env):
 
         return new_obs, info
     
+    def resetMemory(self):
+        self.memory = np.zeros((self.height, self.width, self.channels_total), dtype=self.obs_dtype)
+    
     def getMapTypeName(self, mapType):
         if mapType is not None:
             mp = mapType
@@ -508,6 +511,7 @@ class BaseCarsimEnv(gym.Env):
         img = Image.fromarray(array, 'RGB')
         img.save(filename)
 
+
     def saveImageGreyscale(self, array, filename):
         img = Image.fromarray(array, 'L')
         img.save(filename)
@@ -656,6 +660,7 @@ class BaseCarsimEnv(gym.Env):
 
         return im
     
+    '''
     def byteArrayToImg(self, message_bytes):
         print(f'type {type(message_bytes)}', flush=True)
         print(f'length {len(message_bytes)}', flush=True)
@@ -663,7 +668,7 @@ class BaseCarsimEnv(gym.Env):
 
         im = Image.open(io.BytesIO(message_bytes))
 
-        return im
+        return im'''
 
     def get_arena_screenshot(self, savepath="arena_screenshot.png"):
         screenshot = self.unityGetArenaScreenshot()
