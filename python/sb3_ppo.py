@@ -155,7 +155,8 @@ def run_ppo(cfg):
         model.use_fresh_obs=cfg.use_fresh_obs
 
     model.record_games(cfg.game_record_settings, seed)
-    model.replay_games(cfg.game_record_settings, seed)
+    model.replay_games(cfg.game_record_settings, seed, cfg.env_kwargs.fixedTimestepsLength)
+    assert False, "replay finished"
 
     # run more evals here after training completed or when eval only
     model.eval_only(total_eval_runs=cfg.eval_settings.number_eval_runs, num_evals_per_difficulty = cfg.eval_settings.num_evals_per_difficulty, eval_light_settings=cfg.eval_settings.eval_light_settings, offset=model.num_timesteps)

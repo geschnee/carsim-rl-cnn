@@ -195,10 +195,15 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         
             #print(f'fresh_obs shape: {fresh_obs.shape}', flush=True)
             obs_tensor = obs_as_tensor(obs, self.device)
+
+            if self.second_obs is None and self.first_obs is not None:
+                self.second_obs = obs_tensor[0]
+
             if self.first_obs is None:
                 self.first_obs = obs_tensor[0]
             
-            print(f'obs_tensor shape: {obs_tensor.shape}', flush=True)
+            
+            #print(f'obs_tensor shape: {obs_tensor.shape}', flush=True)
 
             actions, values, log_probs = self.policy(obs_tensor, deterministic=deterministic)
         
@@ -1268,6 +1273,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         done, success = False, False
 
         self.first_obs = None
+        self.second_obs = None
         while not done:
     
             actions, values, log_probs, obs, all_obsstrings = self.inferFromObservationsForRecording(env, deterministic=deterministic)
@@ -1361,7 +1367,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         else:
             return 0
 
-    def replay_games(self, game_replay_settings, seed):
+    def replay_games(self, game_replay_settings, seed, time_for_step):
         n_games = game_replay_settings.n_games_per_setting
 
         from stable_baselines3.common.utils import set_random_seed
@@ -1376,6 +1382,10 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         difficulties = ["easy"]
         light_settings = [LightSetting.bright, LightSetting.standard, LightSetting.dark]
         light_settings = [LightSetting.standard]
+
+        n_successfully_reproduced = 0
+        n_replays = 0
+
         for difficulty in difficulties:
             for light_setting in light_settings:
                 settings_path = f'{game_replay_path}\\{difficulty}_{light_setting.name}'
@@ -1384,9 +1394,15 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
                     game_path = f'{settings_path}\\game_{idx}'
                     
                     set_random_seed(seed)
-                    self.replay_game(light_setting, game_path, deterministic=game_replay_settings.deterministic_sampling)
+                    successfully_reproduced = self.replay_game(light_setting, game_path, deterministic=game_replay_settings.deterministic_sampling, time_for_step=time_for_step)
+                    n_successfully_reproduced += successfully_reproduced
 
-    def replay_game(self, light_setting, game_path, deterministic):
+                    n_replays += 1
+        
+        success_rate = n_successfully_reproduced / n_replays
+        print(f'rate of successful replays with timestepLength {time_for_step}: {success_rate}')
+
+    def replay_game(self, light_setting, game_path, deterministic, time_for_step):
         env = self.env
 
         # this uses the first environment exclusively
@@ -1425,16 +1441,12 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
             infer_obs_unity_images.append(loadImage(f'{game_path}\\infer_image_{i}.png'))
             step_obs_unity_images.append(loadImage(f'{game_path}\\step_image_{i}.png'))
 
-        print(f'type of infer_obs_unity_images[0]: {type(infer_obs_unity_images[0])}')
-        print(f'shape of infer_obs_unity_images[0]: {infer_obs_unity_images[0].shape}')
-        print(f'actions[0]: {recorded_actions[0]}')
-        print(f'values[0]: {recorded_values[0]}')
-        print(f'log_probs[0]: {recorded_log_probs[0]}')
-
 
         reproduced_actions = []
         reproduced_values = []
         reproduced_log_probs = []
+
+        reproduce_times = []
 
         def take_image(env, image):
             new_obs = env.envs[0].preprocessing(image)
@@ -1451,41 +1463,37 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
 
             return rtn_obs
 
+        replay_time_start = time.time()
 
         for i in range(recorded_game_length):
 
             with th.no_grad():
-                obs = take_image(env, infer_obs_unity_images[0])
+                obs = take_image(env, infer_obs_unity_images[i])
 
                 obs_tensor = obs_as_tensor(obs, self.device)
 
                 # obs_tensor should have shape ([10, 10, 84, 250])
-                print(f'obs_tensor shape replay: {obs_tensor.shape}')
 
                 if i == 0:
                     first_obs_tensor = obs_tensor[0]
+                if i ==1:
+                    second_obs_tensor = obs_tensor[0]
                 
                 actions, values, log_probs = self.policy(obs_tensor, deterministic=deterministic)
-    
             actions = actions.cpu().numpy()
 
-            # Rescale and perform action
-            clipped_actions = actions
-            # Clip the actions to avoid out of bound error
-            if isinstance(self.action_space, spaces.Box):
-                clipped_actions = np.clip(
-                    actions, self.action_space.low, self.action_space.high)
-            
+            reproduce_times.append(time.time() - replay_time_start)
+            replay_time_start = time.time()            
 
-            take_image(env, step_obs_unity_images[0])
+            take_image(env, step_obs_unity_images[i])
             
             reproduced_actions.append(actions[0])
             reproduced_values.append(values[0])
             reproduced_log_probs.append(log_probs[0])
 
-        assert th.equal(self.first_obs, first_obs_tensor), f'first obs is not the same {self.first_obs} != {first_obs_tensor}'
+        #assert th.equal(self.first_obs, first_obs_tensor), f'first obs is not the same {self.first_obs} != {first_obs_tensor}'
         # the input has to be the same
-
+        
         for i in range(recorded_game_length):
             print(f'i = {i}', flush=True)
             # TODO first one passed thorugh, the second is not equal anymore
@@ -1493,14 +1501,30 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
             # is the second observation different?
             # or is it another reason?
 
-            assert np.allclose(recorded_values[i], reproduced_values[i]), f'values are not the same {recorded_values[i]} != {reproduced_values[i]}'
+            if False: #i == 1:
+                print(f'self.first_obs: {self.first_obs}', flush=True)
+                print(f'self.second_obs: {self.second_obs}', flush=True)
+                print(f'second_obs_tensor: {second_obs_tensor}', flush=True)
+
+                assert th.equal(self.second_obs, second_obs_tensor), f'second obs is not the same {self.second_obs} != {second_obs_tensor}'
+
+            print(f'recorded actions {recorded_actions[i]} reproduced actions {reproduced_actions[i]}', flush=True)
+            assert np.array_equal(recorded_values[i], reproduced_values[i]), f'values are not the same {recorded_values[i]} != {reproduced_values[i]}'
             assert np.allclose(recorded_log_probs[i], reproduced_log_probs[i]), f'log_probs are not the same {recorded_log_probs[i]} != {reproduced_log_probs[i]}'
             assert np.allclose(recorded_actions[i], reproduced_actions[i]), f'actions are not the same {recorded_actions[i]} != {reproduced_actions[i]}'
             
 
         # save first image to file
 
-        print(f'replay game finished', flush=True)
+        print(f'replay game finished, deterministic={deterministic}', flush=True)
+
+        print(f'reproduce times avg length: {np.mean(reproduce_times)}')
+        print(f'reproduce times max length: {np.max(reproduce_times)}')
+
+        if np.max(reproduce_times) < time_for_step:
+            return 1
+        else:
+            return 0
 
         # TODO reproduction in time?
 
