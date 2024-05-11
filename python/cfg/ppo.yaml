@@ -18,9 +18,13 @@ eval_settings:
   eval_only: True
   number_eval_runs: 3
 
-game_record_settings:
+game_record_replay_settings:
   n_games_per_setting: 2
   deterministic_sampling: False
+  replay_folder: False
+  # replay_folder can be False to replay the previously recorded games
+
+
 
 algo_settings:
   n_epochs: 5 # amount of training passes over the replay buffer per timestep

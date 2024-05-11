@@ -24,6 +24,10 @@ from myPPO.game_repr import GameRepresentation
 from myPPO.games_results import GamesResults
 import collections
 
+import PIL.Image as Image
+
+from hydra.core.hydra_config import HydraConfig
+
 import os
 import csv
 
@@ -120,7 +124,6 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         self.max_grad_norm = max_grad_norm
 
         self.use_bundled_calls = use_bundled_calls
-        print(f'use_bundled_calls: {use_bundled_calls}')
         
         self.use_fresh_obs = use_fresh_obs
         self.print_network_and_loss_structure = print_network_and_loss_structure
@@ -148,7 +151,6 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
             gae_lambda=self.gae_lambda,
             n_envs=self.n_envs,
         )
-        print(f'policy class: {self.policy_class}')
 
         # pytype:disable=not-instantiable
         self.policy = self.policy_class(  # type: ignore[assignment]
@@ -1207,7 +1209,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         total_number_games, succesful_games = 0, 0
 
         difficulties = ["easy", "medium", "hard"]
-        difficulties = ["easy"]
+        #difficulties = ["easy"]
         light_settings = [LightSetting.bright, LightSetting.standard, LightSetting.dark]
         light_settings = [LightSetting.standard]
         for difficulty in difficulties:
@@ -1226,7 +1228,8 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
                     total_number_games += 1
                     succesful_games += success
                  
-        print(f'total_number_games: {total_number_games} succesful_games: {succesful_games}')
+        
+        print(f'recorded games:\ntotal_number_games: {total_number_games} succesful_games: {succesful_games}')
 
     def record_game(self, light_setting, game_path, map_and_rotation, deterministic):
         env = self.env
@@ -1267,8 +1270,6 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         obtained_values = []
         obtained_log_probs = []
 
-        # TODO set the seed again to have reproducable sampling in the recording?
-
 
         done, success = False, False
 
@@ -1301,21 +1302,12 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
                 done = True
                 game_repr = GameRepresentation(infos[0])
 
-                print(f'record game end status: {game_repr.endEvent}', flush=True)
+                #print(f'record game end status: {game_repr.endEvent}', flush=True)
 
                 if game_repr.endEvent == "Success":
                     success=True
 
             
-            
-            self._last_obs = observations
-
-        # TODO save observations and actions to file
-        # observations (from unity) are in the step return objects
-
-        print(f'shape of an observation {observations[0].shape}', flush=True)
-
-        # save first image to file
 
         def saveImg(string, filename):
             im = env.env_method(
@@ -1359,7 +1351,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
             video_filename = ""
         )
 
-        print(f'record game finished with params {light_setting}, {map_and_rotation}, {success}', flush=True)
+        #print(f'record game finished with params {light_setting}, {map_and_rotation}, {success}', flush=True)
 
 
         if success:
@@ -1367,24 +1359,29 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         else:
             return 0
 
-    def replay_games(self, game_replay_settings, seed, time_for_step):
+    def replay_games(self, game_replay_settings, seed, timestepLength):
         n_games = game_replay_settings.n_games_per_setting
 
         from stable_baselines3.common.utils import set_random_seed
 
-        game_replay_path = f'{os.getcwd()}\\game_recordings'
+        if game_replay_settings.replay_folder:
+            game_replay_path = f'{HydraConfig.get().runtime.cwd}/{game_replay_settings.replay_folder}'
+        else:
+            # replay the ones that were previously recorded in this same run
+            game_replay_path = f'{os.getcwd()}\\game_recordings'
         
         # find model
         model_path = f'{os.getcwd()}\\game_recordings\\model.zip'
         self.load(model_path)
         
         difficulties = ["easy", "medium", "hard"]
-        difficulties = ["easy"]
+        #difficulties = ["easy"]
         light_settings = [LightSetting.bright, LightSetting.standard, LightSetting.dark]
         light_settings = [LightSetting.standard]
 
-        n_successfully_reproduced = 0
-        n_replays = 0
+        
+
+        preprocessing_plus_infer_times = []
 
         for difficulty in difficulties:
             for light_setting in light_settings:
@@ -1394,15 +1391,36 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
                     game_path = f'{settings_path}\\game_{idx}'
                     
                     set_random_seed(seed)
-                    successfully_reproduced = self.replay_game(light_setting, game_path, deterministic=game_replay_settings.deterministic_sampling, time_for_step=time_for_step)
-                    n_successfully_reproduced += successfully_reproduced
-
-                    n_replays += 1
+                    times = self.replay_game(game_path, deterministic=game_replay_settings.deterministic_sampling)
+                    
+                    preprocessing_plus_infer_times.extend(times)
         
-        success_rate = n_successfully_reproduced / n_replays
-        print(f'rate of successful replays with timestepLength {time_for_step}: {success_rate}')
+        max_prepro_infer_time = np.max(preprocessing_plus_infer_times)
 
-    def replay_game(self, light_setting, game_path, deterministic, time_for_step):
+        print(f'replay game results:')
+        print(f'avg time for preprocessing and infer: {np.mean(preprocessing_plus_infer_times)}')
+        print(f'max time for preprocessing and infer: {max_prepro_infer_time}')
+
+        np.save(f'{os.getcwd()}\\game_recordings\\preprocessing_plus_infer_times.npy', preprocessing_plus_infer_times)
+
+        if timestepLength:
+            
+            if max_prepro_infer_time > timestepLength:
+                print(f'preprocessing and infer times on this device take longer than the predefined timestep length, this device is not able to drive in real time')
+            
+                print(f'percentage of timesteps that are longer than the timestep length: {np.sum(np.array(preprocessing_plus_infer_times) > timestepLength) / len(preprocessing_plus_infer_times)}')
+            else:
+                print(f'preprocessing and infer times (maximum {max_prepro_infer_time}) are below the timestep length of {timestepLength} seconds')
+                print(f'this would leave at least {timestepLength - max_prepro_infer_time} seconds for the camera to take an image and send it to python')
+        else:
+            # timestepLength can also be false (unrestricted)
+            # not sure what to log for that case
+            pass
+
+
+    
+
+    def replay_game(self, game_path, deterministic):
         env = self.env
 
         # this uses the first environment exclusively
@@ -1421,12 +1439,10 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
 
 
         infer_obs_unity_images, step_obs_unity_images = [], []
-        recorded_actions = []
-        recorded_values = []
-        recorded_log_probs = []
+
+        recorded_actions, recorded_values, recorded_log_probs = [], [], []
 
         
-        import PIL.Image as Image
         def loadImage(filename):
             im = Image.open(filename)
             pixels_rgb = np.array(im, dtype=np.uint8)
@@ -1442,11 +1458,10 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
             step_obs_unity_images.append(loadImage(f'{game_path}\\step_image_{i}.png'))
 
 
-        reproduced_actions = []
-        reproduced_values = []
-        reproduced_log_probs = []
+        reproduced_actions, reproduced_values, reproduced_log_probs = [], [], []
 
         reproduce_times = []
+
 
         def take_image(env, image):
             new_obs = env.envs[0].preprocessing(image)
@@ -1472,65 +1487,47 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
 
                 obs_tensor = obs_as_tensor(obs, self.device)
 
-                # obs_tensor should have shape ([10, 10, 84, 250])
-
+                '''
                 if i == 0:
                     first_obs_tensor = obs_tensor[0]
                 if i ==1:
                     second_obs_tensor = obs_tensor[0]
+                '''
                 
                 actions, values, log_probs = self.policy(obs_tensor, deterministic=deterministic)
             actions = actions.cpu().numpy()
 
             reproduce_times.append(time.time() - replay_time_start)
-            replay_time_start = time.time()            
-
-            take_image(env, step_obs_unity_images[i])
+            
             
             reproduced_actions.append(actions[0])
             reproduced_values.append(values[0])
             reproduced_log_probs.append(log_probs[0])
 
-        #assert th.equal(self.first_obs, first_obs_tensor), f'first obs is not the same {self.first_obs} != {first_obs_tensor}'
+            replay_time_start = time.time()            
+
+            take_image(env, step_obs_unity_images[i])
+
+
+        '''
+        assert th.equal(self.first_obs, first_obs_tensor), f'first obs is not the same {self.first_obs} != {first_obs_tensor}'
         # the input has to be the same
+
+        print(f'self.first_obs: {self.first_obs}', flush=True)
+        print(f'self.second_obs: {self.second_obs}', flush=True)
+        print(f'second_obs_tensor: {second_obs_tensor}', flush=True)
+
+        assert th.equal(self.second_obs, second_obs_tensor), f'second obs is not the same {self.second_obs} != {second_obs_tensor}'
+        '''
+
         
         for i in range(recorded_game_length):
-            print(f'i = {i}', flush=True)
-            # TODO first one passed thorugh, the second is not equal anymore
-
-            # is the second observation different?
-            # or is it another reason?
-
-            if False: #i == 1:
-                print(f'self.first_obs: {self.first_obs}', flush=True)
-                print(f'self.second_obs: {self.second_obs}', flush=True)
-                print(f'second_obs_tensor: {second_obs_tensor}', flush=True)
-
-                assert th.equal(self.second_obs, second_obs_tensor), f'second obs is not the same {self.second_obs} != {second_obs_tensor}'
-
-            print(f'recorded actions {recorded_actions[i]} reproduced actions {reproduced_actions[i]}', flush=True)
             assert np.array_equal(recorded_values[i], reproduced_values[i]), f'values are not the same {recorded_values[i]} != {reproduced_values[i]}'
-            assert np.allclose(recorded_log_probs[i], reproduced_log_probs[i]), f'log_probs are not the same {recorded_log_probs[i]} != {reproduced_log_probs[i]}'
-            assert np.allclose(recorded_actions[i], reproduced_actions[i]), f'actions are not the same {recorded_actions[i]} != {reproduced_actions[i]}'
+            assert np.array_equal(recorded_log_probs[i], reproduced_log_probs[i]), f'log_probs are not the same {recorded_log_probs[i]} != {reproduced_log_probs[i]}'
+            assert np.array_equal(recorded_actions[i], reproduced_actions[i]), f'actions are not the same {recorded_actions[i]} != {reproduced_actions[i]}'
             
 
-        # save first image to file
-
-        print(f'replay game finished, deterministic={deterministic}', flush=True)
-
-        print(f'reproduce times avg length: {np.mean(reproduce_times)}')
-        print(f'reproduce times max length: {np.max(reproduce_times)}')
-
-        if np.max(reproduce_times) < time_for_step:
-            return 1
-        else:
-            return 0
-
-        # TODO reproduction in time?
-
-
-
-
+        return reproduce_times
 
 
 def get_obs_single_calls(env):
