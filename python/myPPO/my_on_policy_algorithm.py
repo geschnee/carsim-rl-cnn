@@ -766,8 +766,8 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         total_success_rate = total_success_rate / (3 * len(light_settings))
         if total_success_rate > self.max_total_success_rate:
             self.max_total_success_rate = total_success_rate
-            self.best_model_name = f"best_model_episode_{iteration}"
-            self.save(self.best_model_name)
+            self.eval_best_model_name = f"eval_best_model_episode_{iteration}"
+            self.save(self.eval_best_model_name)
         
         total_collision_rate = (total_collision_rate) / (3 * len(light_settings))
         

@@ -147,8 +147,7 @@ def run_ppo(cfg):
     
     # load best model and eval it again
     if not cfg.eval_settings.eval_only:
-        num_timesteps = model.num_timesteps
-        best_model_name = model.best_model_name
+        best_model_name = model.rollout_best_model_name
         print(f'loading best model {best_model_name} after learning')
         model.load(best_model_name)
         model.use_bundled_calls = cfg.use_bundled_calls
@@ -159,14 +158,7 @@ def run_ppo(cfg):
     else:
         print(f"replaying games from {cfg.game_record_replay_settings.replay_folder}")
     model.replay_games(cfg.game_record_replay_settings, seed, cfg.env_kwargs.fixedTimestepsLength)
-    print("replay again to see differences in runs")
-    model.replay_games(cfg.game_record_replay_settings, seed, cfg.env_kwargs.fixedTimestepsLength)
-    print("replay again to see differences in runs2")
-    model.replay_games(cfg.game_record_replay_settings, seed, cfg.env_kwargs.fixedTimestepsLength)
-
-
-    assert False, "replay finished, TODO test with only one env and replays from file"
-
+    
     # run more evals here after training completed or when eval only
     model.eval_only(total_eval_runs=cfg.eval_settings.number_eval_runs, num_evals_per_difficulty = cfg.eval_settings.num_evals_per_difficulty, eval_light_settings=cfg.eval_settings.eval_light_settings, offset=model.num_timesteps)
     

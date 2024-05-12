@@ -1,18 +1,22 @@
-comment: "isolated training config hard standard, event reward only"
+comment: "isolated training config hard standard, distance and event reward, oncePerTimestep"
+# "Trying with fixed light settings and variable timesteps, we want to see learning progress again. Did something break?"
+# we should also try it with the fixed spawn to be closer to the evaluation scenario, maybe the differential can do it 
+
 
 n_envs: 10
+
 
 copy_model_from: False
 # copy_model_from can be False or a string (filename without .zip suffix)
 
-total_timesteps: 6500000 # restricted to 650000 due to real time limit (about 5 hours per training)
+total_timesteps: 6500000 
 
 
 seed: 2048
 
 eval_settings:
   interval_during_learn: 1000
-  num_evals_per_difficulty: 100
+  num_evals_per_difficulty: 20
   eval_light_settings: True
   eval_only: False
   number_eval_runs: 2
@@ -26,6 +30,7 @@ game_record_replay_settings:
 
 algo_settings:
   n_epochs: 5 # amount of training passes over the replay buffer per timestep
+
 
   batch_size: 64
 
@@ -69,13 +74,13 @@ env_kwargs:
     # vielleicht eine art Mode variable hier reinpacken contrast increase s equalize
     normalize_images: False
   coefficients:
-    distanceCoefficient: 0
+    distanceCoefficient: 10
     orientationCoefficient: 0
     velocityCoefficient: 0
     eventCoefficient: 1
   collisionMode: oncePerTimestep
   # unrestricted, oncePerTimestep, oncePerEpisode, resetUponCollision, ignoreCollisions
-  trainingMapType: randomEvalMedium
+  trainingMapType: randomEvalHard
   trainingLightSetting: standard
   # random, bright, standard, dark
   fixedTimestepsLength: 0.3

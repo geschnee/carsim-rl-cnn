@@ -15,10 +15,10 @@ total_timesteps: 6500000 # restricted to 650000 due to real time limit (about 5 
 seed: 2048
 
 eval_settings:
-  log_interval: 100
+  interval: 100
   num_evals_per_difficulty: 100
   eval_light_settings: True
-  eval_only: True
+  eval_only: False
   number_eval_runs: 2
 
 
