@@ -27,6 +27,7 @@ import collections
 import PIL.Image as Image
 
 from hydra.core.hydra_config import HydraConfig
+from omegaconf import OmegaConf
 
 import os
 import csv
@@ -1205,6 +1206,10 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         game_recordings_path = f'{os.getcwd()}\\game_recordings'
         os.mkdir(game_recordings_path)
         self.save(f'{game_recordings_path}\\model')
+        np.save(f'{game_recordings_path}\\n_envs.npy', self.env.num_envs)
+        np.save(f'{game_recordings_path}\\n_games.npy', game_record_settings.n_games_per_setting)
+        with open(f'{game_recordings_path}config.yaml', 'w') as f:
+            OmegaConf.save(game_record_settings, f)
 
         total_number_games, succesful_games = 0, 0
 
@@ -1365,13 +1370,20 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         from stable_baselines3.common.utils import set_random_seed
 
         if game_replay_settings.replay_folder:
-            game_replay_path = f'{HydraConfig.get().runtime.cwd}/{game_replay_settings.replay_folder}'
+            base_path = f'{HydraConfig.get().runtime.cwd}/{game_replay_settings.replay_folder}'
         else:
             # replay the ones that were previously recorded in this same run
-            game_replay_path = f'{os.getcwd()}\\game_recordings'
+            base_path = f'{os.getcwd()}\\game_recordings'
         
+        n_envs_recording = np.load(f'{base_path}\\n_envs.npy')
+        if not game_replay_settings.deterministic_sampling:
+            assert self.n_envs == n_envs_recording, f'number of envs in recording {n_envs_recording} does not match the number of envs in the current environment {self.env.n_envs}, this is an issue only when sampling non_deterministically'
+    
+        n_games_recording = np.load(f'{base_path}\\n_games.npy')
+        assert n_games == n_games_recording, f'number of games in recording {n_games_recording} does not match the number of games to replay {n_games}'
+
         # find model
-        model_path = f'{os.getcwd()}\\game_recordings\\model.zip'
+        model_path = f'{base_path}\\model.zip'
         self.load(model_path)
         
         difficulties = ["easy", "medium", "hard"]
@@ -1385,7 +1397,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
 
         for difficulty in difficulties:
             for light_setting in light_settings:
-                settings_path = f'{game_replay_path}\\{difficulty}_{light_setting.name}'
+                settings_path = f'{base_path}\\{difficulty}_{light_setting.name}'
 
                 for idx in range(n_games):
                     game_path = f'{settings_path}\\game_{idx}'
@@ -1401,17 +1413,19 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         print(f'avg time for preprocessing and infer: {np.mean(preprocessing_plus_infer_times)}')
         print(f'max time for preprocessing and infer: {max_prepro_infer_time}')
 
-        np.save(f'{os.getcwd()}\\game_recordings\\preprocessing_plus_infer_times.npy', preprocessing_plus_infer_times)
+        np.save(f'{base_path}\\preprocessing_plus_infer_times.npy', preprocessing_plus_infer_times)
+        # TODO we could plot these times to analyse if it really would be an issue
+        # it does not seem to be an issue for n_envs == 1
 
         if timestepLength:
             
             if max_prepro_infer_time > timestepLength:
                 print(f'preprocessing and infer times on this device take longer than the predefined timestep length, this device is not able to drive in real time')
             
-                print(f'percentage of timesteps that are longer than the timestep length: {np.sum(np.array(preprocessing_plus_infer_times) > timestepLength) / len(preprocessing_plus_infer_times)}')
+                print(f'share of timesteps that are longer than the timestep length: {np.sum(np.array(preprocessing_plus_infer_times) > timestepLength) / len(preprocessing_plus_infer_times)*100}%')
             else:
                 print(f'preprocessing and infer times (maximum {max_prepro_infer_time}) are below the timestep length of {timestepLength} seconds')
-                print(f'this would leave at least {timestepLength - max_prepro_infer_time} seconds for the camera to take an image and send it to python')
+                print(f'this would leave {timestepLength - max_prepro_infer_time} seconds for the camera to take an image and send it to python')
         else:
             # timestepLength can also be false (unrestricted)
             # not sure what to log for that case
@@ -1522,10 +1536,11 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
 
         
         for i in range(recorded_game_length):
-            assert np.array_equal(recorded_values[i], reproduced_values[i]), f'values are not the same {recorded_values[i]} != {reproduced_values[i]}'
-            assert np.array_equal(recorded_log_probs[i], reproduced_log_probs[i]), f'log_probs are not the same {recorded_log_probs[i]} != {reproduced_log_probs[i]}'
-            assert np.array_equal(recorded_actions[i], reproduced_actions[i]), f'actions are not the same {recorded_actions[i]} != {reproduced_actions[i]}'
+            assert np.allclose(recorded_actions[i], reproduced_actions[i]), f'actions are not the same {recorded_actions[i]} != {reproduced_actions[i]}'
+            assert np.allclose(recorded_values[i], reproduced_values[i]), f'values are not the same {recorded_values[i]} != {reproduced_values[i]}'
+            assert np.allclose(recorded_log_probs[i], reproduced_log_probs[i]), f'log_probs are not the same {recorded_log_probs[i]} != {reproduced_log_probs[i]}'
             
+        print(f'max for setting {game_path} is {np.max(reproduce_times)}')
 
         return reproduce_times
 

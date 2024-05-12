@@ -73,6 +73,7 @@ python/imagelog
 python/isolated_runs_results
 python/latex_images
 python/expose_images
+python/game_recordings
 
 
 *.pyc
