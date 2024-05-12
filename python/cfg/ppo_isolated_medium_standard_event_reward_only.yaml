@@ -52,10 +52,6 @@ algo_settings:
   # we cannot define the cnn structure ourselves if we use the NatureCnn class
 
 
-
-
-
-
 env_kwargs:
   jetbot: DifferentialJetBot
   spawn_point: OrientationRandom
