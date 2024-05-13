@@ -68,7 +68,7 @@ public class EpisodeManager : MonoBehaviour
 
     public List<GameObject> centerIndicators = new List<GameObject>();
 
-    private GameManager gameManager;
+    private MapManager gameManager;
     public VideoRecorder arenaRecorder;
     public VideoRecorder jetBotRecorder;
 
@@ -80,7 +80,7 @@ public class EpisodeManager : MonoBehaviour
     {
         this.aIEngine = this.GetComponent<AIEngineBase>();
 
-        gameManager = this.transform.parent.Find("GameManager").GetComponent<GameManager>();
+        gameManager = this.transform.parent.Find("MapManager").GetComponent<MapManager>();
         carBody = this.transform.Find("carBody").gameObject;
     }
 
@@ -162,6 +162,7 @@ public class EpisodeManager : MonoBehaviour
         this.collisionMode = collisionMode;
 
         initializeStepRewards();
+
 
         this.PrepareAgent();
 

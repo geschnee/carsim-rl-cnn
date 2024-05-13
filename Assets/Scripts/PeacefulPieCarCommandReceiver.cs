@@ -185,6 +185,7 @@ public class PeacefulPieCarCommandReceiver : MonoBehaviour
             arena.setCollisionMode(cm);
 
             arenas.Add(arena);
+            
 
             arena.distanceCoefficient = distanceCoefficient;
             arena.orientationCoefficient = orientationCoefficient;

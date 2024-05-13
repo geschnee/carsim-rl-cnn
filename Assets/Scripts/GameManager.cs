@@ -12,7 +12,7 @@ public class GameManager : MonoBehaviour
 
 	// Corner coordinates of the arena: (0, 0) (0, 10) (20,10) (20, 0)
 
-	public int idOfCurrentRun;
+	/*
 
 	public GameObject JetBot;
 
@@ -49,13 +49,14 @@ public class GameManager : MonoBehaviour
 
 	public GameObject spawnJetbot(MapData md, int instanceNumber)
 	{
+		Debug.LogWarning("deprecated");
 		return this.obstacleMapManager.SpawnJetBot(md, instanceNumber);
 	}
 
 
 	public MapData InitializeMapWithObstacles(MapType mapType, int idOfCurrentRun, Spawn jetBotSpawn, float jetBotRotation)
 	{
-
+		Debug.LogWarning("deprecated");
 		// generate a new map with new obstacle, decide which type of map should be generated
 		mapData = this.obstacleMapManager.GenerateObstacleMap(mapType, this.idOfCurrentRun, jetBotSpawn, jetBotRotation);
 		this.obstacleMapManager.IntantiateObstacles(mapData);
@@ -65,12 +66,13 @@ public class GameManager : MonoBehaviour
 
 	public void DestroyObstaclesOnMap()
 	{
+		Debug.LogWarning("deprecated");
 		this.obstacleMapManager.DestroyMap();
 	}
 
 	public void setJetbot(string jetbotName)
 	{
-
+		Debug.LogWarning("deprecated");
 		for (int i = 0; i < this.availibleJetbots.Count; i++)
 		{
 			if (this.availibleJetbots[i].name == jetbotName)
@@ -81,5 +83,5 @@ public class GameManager : MonoBehaviour
 		}
 		Debug.LogError($"Jetbot {jetbotName} not found, will use default Jetbot {this.availibleJetbots[0].name}");
 		this.JetBot = this.availibleJetbots[0];
-	}
+	}*/
 }

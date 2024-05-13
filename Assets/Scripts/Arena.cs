@@ -12,9 +12,9 @@ public class Arena : MonoBehaviour
 
     EpisodeManager episodeManager;
 
-    public GameObject gameManagerObject;
+    public GameObject mapManagerObject;
 
-    GameManager gameManager;
+    MapManager mapManager;
 
     GameObject car;
     Camera carCam;
@@ -59,7 +59,7 @@ public class Arena : MonoBehaviour
 
         // initialize the private variables
 
-        this.gameManager = gameManagerObject.GetComponent<GameManager>();
+        this.mapManager = mapManagerObject.GetComponent<MapManager>();
 
     }
 
@@ -81,7 +81,7 @@ public class Arena : MonoBehaviour
         }
 
         // destroy previous obstacles:
-        gameManager.DestroyObstaclesOnMap();
+        mapManager.DestroyMap();
     }
 
     public string reset(MapType mt, Spawn jetBotSpawn, float spawn_rot, LightSetting lightSetting, bool evalMode, string video_filename)
@@ -95,13 +95,12 @@ public class Arena : MonoBehaviour
         }
 
         // destroy previous obstacles:
-        gameManager.DestroyObstaclesOnMap();
+        mapManager.DestroyMap();
 
         // spawn new obstacles:
-        MapData md = gameManager.InitializeMapWithObstacles(mt, 0, jetBotSpawn, spawn_rot);
+        MapData md = mapManager.InitializeMapWithObstacles(mt, jetBotSpawn, spawn_rot);
 
-        GameObject car = gameManager.spawnJetbot(md, this.instancenumber);
-
+        GameObject car = mapManager.SpawnJetBot(md, this.instancenumber);
 
 
         this.car = car;
@@ -114,7 +113,6 @@ public class Arena : MonoBehaviour
 
 
         SetLightSetting(lightSetting);
-
         episodeManager = car.GetComponent<EpisodeManager>();
 
         episodeManager.velocityCoefficient = this.velocityCoefficient;
@@ -127,6 +125,7 @@ public class Arena : MonoBehaviour
 
         episodeManager.StartEpisode(evalMode, collisionMode);
         episodeManager.arenaRecorder = arenaRecorder;
+
 
         VideoRecorder jetBotRecorder = car.GetComponent<VideoRecorder>();
         episodeManager.jetBotRecorder = jetBotRecorder;
@@ -229,7 +228,7 @@ public class Arena : MonoBehaviour
 
     public void setJetbot(string jetbotName)
     {
-        gameManager.setJetbot(jetbotName);
+        mapManager.setJetbot(jetbotName);
     }
 
 

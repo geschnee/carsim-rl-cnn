@@ -1099,8 +1099,9 @@ GameObject:
   m_Component:
   - component: {fileID: 6704490645189501258}
   - component: {fileID: 555475446350568012}
+  - component: {fileID: 1310700437309568407}
   m_Layer: 0
-  m_Name: GameManager
+  m_Name: MapManager
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1133,30 +1134,35 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f8798f8da543e4c3f8e262b5daab4dc2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  idOfCurrentRun: 0
-  JetBot: {fileID: 157310755166477506, guid: 9c9846b7f5309e841bbe71a5e1ee8098, type: 3}
+--- !u!114 &1310700437309568407
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4349961221506859474}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d7c5b806ca81d2a4fb56c03f031b11ab, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  allGoals: {fileID: 0}
+  finishLine: {fileID: 0}
+  JetBot: {fileID: 0}
+  obstacles: []
   availibleJetbots:
   - {fileID: 157310755166477506, guid: 1b0b30f45a8d03c4bb53bb6ca9d9e96e, type: 3}
   - {fileID: 157310755166477506, guid: 9c9846b7f5309e841bbe71a5e1ee8098, type: 3}
   - {fileID: 157310755166477506, guid: c5caddb5b7c5eff44a8c7c4de49c5020, type: 3}
+  gameManagerTransform: {fileID: 0}
+  gameManagerPosition: {x: 0, y: 0, z: 0}
   obstacleBlue: {fileID: 2786694837747256956, guid: 681200f7d15524e8589d7a28c0376f42, type: 3}
   obstacleRed: {fileID: 2786694837747256956, guid: bb1e06762c3f749b2869d0767ccf3249, type: 3}
-  goalPassedWallCheckpoint: {fileID: 1821709658331299659, guid: 4ce475aa445dc47488e73e1e4f548ca1, type: 3}
-  goalMissedWallCheckpoint: {fileID: 1821709658331299659, guid: 4b08f220d3a3c48f590fd8652ebf79e1, type: 3}
-  FinishLineCheckpoint: {fileID: 5933175081230500892, guid: 56c03fe3b32714087834dbd01bb96404, type: 3}
+  goalPassedGameObject: {fileID: 1821709658331299659, guid: 4ce475aa445dc47488e73e1e4f548ca1, type: 3}
+  goalMissedGameObject: {fileID: 1821709658331299659, guid: 4b08f220d3a3c48f590fd8652ebf79e1, type: 3}
+  finishlineCheckpoint: {fileID: 5933175081230500892, guid: 56c03fe3b32714087834dbd01bb96404, type: 3}
   goalBall: {fileID: 3768603593076211972, guid: 05f97b99f30200d4faeb43e8a1007842, type: 3}
-  FinishLineMissedCheckpoint: {fileID: 8953956626886953130, guid: a9cba5071a1fd074993aa556ee9e3c3d, type: 3}
   goalMiddleIndicator: {fileID: 4127949041808725285, guid: 7e404feffd1a54c4fb39ee81a4e03f73, type: 3}
-  isTrainingSpawnRandom: 0
-  isFinishLineLastGoal: 1
-  loadObstacles: 0
-  loadObstacleMapFilePath: .
-  saveObstacles: 0
-  saveObstacleMapFilePath: .
-  isLogTraining: 0
-  resultsPath: ./results_unity/test_run_1.csv
-  isEvaluation: 0
-  numberOfRunsPerMap: 2
 --- !u!1 &4705265076055910182
 GameObject:
   m_ObjectHideFlags: 0
@@ -1817,7 +1823,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9834f809eb417534982c8dcff9e67c0e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  gameManagerObject: {fileID: 4349961221506859474}
+  mapManagerObject: {fileID: 4349961221506859474}
   resWidth: 0
   resHeight: 0
   arenaCam: {fileID: 420009083408027165}

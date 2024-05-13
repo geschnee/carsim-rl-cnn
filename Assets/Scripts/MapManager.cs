@@ -157,11 +157,15 @@ public class MapData
 }
 
 
-public class ObstacleMapManager : MonoBehaviour
+public class MapManager : MonoBehaviour
 {
+    public GameObject allGoals;
+    public GameObject finishLine;
+    public GameObject JetBot;
     public List<UnityEngine.Object> obstacles = new List<UnityEngine.Object>();
 
-
+    
+	public List<GameObject> availibleJetbots;
 
     public Transform gameManagerTransform;
     public Vector3 gameManagerPosition;
@@ -176,33 +180,40 @@ public class ObstacleMapManager : MonoBehaviour
 
     public GameObject goalMiddleIndicator;
 
-    public GameObject allGoals;
-    public GameObject finishLine;
+    public List<GameObject> centerIndicators;
 
-    public GameObject JetBot;
+    // current map
+	private MapData mapData;
 
-    private List<GameObject> centerIndicators;
-
-    public ObstacleMapManager(Transform gameManagerTransform, GameObject obstacleBlue, GameObject obstacleRed, GameObject goalPassedGameObject, GameObject goalMissedGameObject, GameObject finishlineCheckpoint, GameObject goalBall, GameObject JetBot)
-    {
-        Debug.LogWarning("ObstacleMapManager constructor called, this is unexpected");
+    public void Awake(){
+        this.gameManagerTransform = this.transform;
+        this.gameManagerPosition = this.gameManagerTransform.position;
     }
 
-    public void SetLikeInitialize(Transform gameManagerTransform, GameObject obstacleBlue, GameObject obstacleRed, GameObject goalPassedGameObject, GameObject goalMissedGameObject, GameObject finishlineCheckpoint, GameObject FinishLineMissedCheckpoint, GameObject goalMiddleIndicator, GameObject goalBall, GameObject JetBot)
-    {
-        this.gameManagerTransform = gameManagerTransform;
-        this.gameManagerPosition = gameManagerTransform.position;
-        this.obstacleBlue = obstacleBlue;
-        this.obstacleRed = obstacleRed;
-        this.goalPassedGameObject = goalPassedGameObject;
-        this.goalMissedGameObject = goalMissedGameObject;
-        this.finishlineCheckpoint = finishlineCheckpoint;
-        this.finishMissedGameObject = FinishLineMissedCheckpoint;
-        this.goalMiddleIndicator = goalMiddleIndicator;
-        this.goalBall = goalBall;
+    public MapData InitializeMapWithObstacles(MapType mapType, Spawn jetBotSpawn, float jetBotRotation)
+	{
 
-        this.JetBot = JetBot;
-    }
+		// generate a new map with new obstacle, decide which type of map should be generated
+		mapData = this.GenerateObstacleMap(mapType, jetBotSpawn, jetBotRotation);
+		this.IntantiateObstacles(mapData);
+
+		return mapData;
+	}
+
+    public void setJetbot(string jetBotName)
+	{
+		
+		for (int i = 0; i < this.availibleJetbots.Count; i++)
+		{
+			if (this.availibleJetbots[i].name == jetBotName)
+			{
+				this.JetBot = this.availibleJetbots[i];
+				return;
+			}
+		}
+		Debug.LogError($"JetBot {jetBotName} not found, will use default JetBot {this.availibleJetbots[0].name}");
+		this.JetBot = this.availibleJetbots[0];
+	}
 
     public GameObject SpawnJetBot(MapData mapData, int instanceNumber)
     {
@@ -228,7 +239,6 @@ public class ObstacleMapManager : MonoBehaviour
 
         // in the middle of the short edge (z dimension)
 
-        Debug.LogWarning($"JetBotSpawn pos: {SpawnPoint}");
         // -8, 0, 1 + x * 30
 
         return SpawnPoint;
@@ -380,13 +390,14 @@ public class ObstacleMapManager : MonoBehaviour
         Destroy(this.finishLine);
     }
 
+    /*
     public void DestroyObstacles()
     {
         for (int i = 0; i < this.obstacles.Count; i++)
         {
             GameObject.DestroyImmediate(this.obstacles[i]);
         }
-    }
+    }*/
 
     private GameObject FindChildWithTag(GameObject parent, string tag)
     {
@@ -404,7 +415,7 @@ public class ObstacleMapManager : MonoBehaviour
 
 
     // generate maps with different placement of obstacles
-    public MapData GenerateObstacleMap(MapType mapType, int id, Spawn jetBotSpawn, float jetBotSpawnRotationAngle)
+    public MapData GenerateObstacleMap(MapType mapType, Spawn jetBotSpawn, float jetBotSpawnRotationAngle)
     {
 
 
