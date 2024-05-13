@@ -70,6 +70,7 @@ public class EpisodeManager : MonoBehaviour
 
     private MapManager gameManager;
     public VideoRecorder arenaRecorder;
+    public VideoRecorder topViewRecorder;
     public VideoRecorder jetBotRecorder;
 
     List<float> step_rewards;
@@ -190,6 +191,7 @@ public class EpisodeManager : MonoBehaviour
 
         arenaRecorder.StopVideo(this.duration);
         jetBotRecorder.StopVideo(this.duration);
+        topViewRecorder.StopVideo(this.duration);
 
         this.stepFinished = true;
 
@@ -434,17 +436,19 @@ public class EpisodeManager : MonoBehaviour
 
     public void finishLineHit(GameObject goal)
     {
-       
+
         if (this.passedGoals.Count == this.numberOfGoals)
         {
             AddEventReward(finishLineReward);
             EndEpisode(EpisodeStatus.Success);
 
-        } else {
+        }
+        else
+        {
             AddEventReward(goalMissedReward);
             EndEpisode(EpisodeStatus.FinishWithoutAllGoals);
         }
-        
+
     }
 
     public void hitWall(GameObject obstacle)

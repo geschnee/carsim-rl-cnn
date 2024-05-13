@@ -52,7 +52,7 @@ net_arch:
 env_kwargs:
   jetbot: DifferentialJetBot
   # can be DifferentialJetBot or StandardJetBot
-  spawn_point: OrientationRandom
+  spawn_point: Fixed
   # spawn_point can be Fixed, OrientationRandom, OrientationVeryRandom and FullyRandom
   frame_stacking: 10
   image_preprocessing:
@@ -69,7 +69,7 @@ env_kwargs:
     eventCoefficient: 1
   collisionMode: oncePerTimestep
   # unrestricted, oncePerTimestep, oncePerEpisode, resetUponCollision, ignoreCollisions
-  trainingMapType: randomEvalHard
+  trainingMapType: hardBlueFirstLeft
   trainingLightSetting: standard
   # random, bright, standard, dark
   fixedTimestepsLength: 0.3

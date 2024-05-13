@@ -46,6 +46,7 @@ public class Arena : MonoBehaviour
     public float fixedTimestepsLength;
 
     public VideoRecorder arenaRecorder;
+    public VideoRecorder topViewRecorder;
 
     public Material skyboxMaterialBright;
     public Material skyboxMaterialDark;
@@ -125,6 +126,7 @@ public class Arena : MonoBehaviour
 
         episodeManager.StartEpisode(evalMode, collisionMode);
         episodeManager.arenaRecorder = arenaRecorder;
+        episodeManager.topViewRecorder = topViewRecorder;
 
 
         VideoRecorder jetBotRecorder = car.GetComponent<VideoRecorder>();
@@ -138,6 +140,9 @@ public class Arena : MonoBehaviour
 
             jetBotRecorder.episodeManager = episodeManager;
             jetBotRecorder.StartVideo(video_filename + "_jetbot");
+
+            topViewRecorder.episodeManager = episodeManager;
+            topViewRecorder.StartVideo(video_filename + "_topview");
         }
 
         return this.getObservation();

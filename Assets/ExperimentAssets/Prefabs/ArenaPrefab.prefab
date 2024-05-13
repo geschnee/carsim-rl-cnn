@@ -1163,6 +1163,7 @@ MonoBehaviour:
   finishlineCheckpoint: {fileID: 5933175081230500892, guid: 56c03fe3b32714087834dbd01bb96404, type: 3}
   goalBall: {fileID: 3768603593076211972, guid: 05f97b99f30200d4faeb43e8a1007842, type: 3}
   goalMiddleIndicator: {fileID: 4127949041808725285, guid: 7e404feffd1a54c4fb39ee81a4e03f73, type: 3}
+  centerIndicators: []
 --- !u!1 &4705265076055910182
 GameObject:
   m_ObjectHideFlags: 0
@@ -1585,6 +1586,7 @@ GameObject:
   - component: {fileID: 418376698296606910}
   - component: {fileID: 4582652480435297950}
   - component: {fileID: 6785510215584805436}
+  - component: {fileID: 1834238312338225733}
   m_Layer: 0
   m_Name: TopviewCamera
   m_TagString: Untagged
@@ -1601,7 +1603,7 @@ Transform:
   m_GameObject: {fileID: 6955073374146610686}
   serializedVersion: 2
   m_LocalRotation: {x: 0.7071068, y: 0, z: 0, w: 0.7071068}
-  m_LocalPosition: {x: -0.8297968, y: 10.7, z: 1.0124204}
+  m_LocalPosition: {x: -0.8297968, y: 10.5, z: 1.5}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1646,9 +1648,9 @@ Camera:
   m_Depth: 0
   m_CullingMask:
     serializedVersion: 2
-    m_Bits: 4294967295
+    m_Bits: 119
   m_RenderingPath: -1
-  m_TargetTexture: {fileID: 0}
+  m_TargetTexture: {fileID: 8400000, guid: 7eebdc8273c47244e9db126a6ae54643, type: 2}
   m_TargetDisplay: 1
   m_TargetEye: 3
   m_HDR: 1
@@ -1666,6 +1668,24 @@ AudioListener:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 6955073374146610686}
   m_Enabled: 0
+--- !u!114 &1834238312338225733
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6955073374146610686}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5d3490f39b582e74483c60384bc484d1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  episodeManager: {fileID: 0}
+  cam: {fileID: 4582652480435297950}
+  video_filename: 
+  fileCounter: 0
+  isRecording: 0
+  renderTexture: {fileID: 8400000, guid: 7eebdc8273c47244e9db126a6ae54643, type: 2}
 --- !u!1 &7181885698944882943
 GameObject:
   m_ObjectHideFlags: 0
@@ -1843,6 +1863,7 @@ MonoBehaviour:
   fixedTimesteps: 0
   fixedTimestepsLength: 0
   arenaRecorder: {fileID: 8721291465432444832}
+  topViewRecorder: {fileID: 1834238312338225733}
   skyboxMaterialBright: {fileID: 2100000, guid: febda482812e2b54dae989433c3d16e4, type: 2}
   skyboxMaterialDark: {fileID: 2100000, guid: d442213dcf4a4c348b08978f13676364, type: 2}
   skyboxMaterialDefault: {fileID: 2100000, guid: 467d24dd638ac8b49ac49bfc98045797, type: 2}

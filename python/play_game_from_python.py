@@ -6,7 +6,7 @@ import sys
 import hydra
 from omegaconf import OmegaConf
 
-
+import os
 
 from gymEnv.carsimGymEnv import BaseCarsimEnv
 
@@ -51,7 +51,11 @@ def run(cfg) -> None:
 
 
     env = BaseCarsimEnv(**env_kwargs)
+
+    
+    env.setVideoFilename(f"{os.getcwd()}/play")
     new_obs, info_dict = env.reset()
+
 
     print(f'event reset')
 
