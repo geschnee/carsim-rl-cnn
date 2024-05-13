@@ -18,11 +18,11 @@ eval_settings:
   eval_only: True
   number_eval_runs: 3
 
-game_record_replay_settings:
-  n_games_per_setting: 1
+episode_record_replay_settings:
+  n_episodes_per_setting: 1
   deterministic_sampling: False
-  replay_folder: game_recordings/single_env_non_deterministic
-  # replay_folder can be False to replay the previously recorded games
+  replay_folder: episode_recordings/single_env_non_deterministic
+  # replay_folder can be False to replay the previously recorded episodes
 
 
 

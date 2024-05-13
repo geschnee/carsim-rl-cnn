@@ -24,13 +24,13 @@ public class VideoData
     public float fps;
     public List<float> delays;
     public List<byte[]> frames;
-    public float gameDuration;
-    public VideoData(string video_filename, List<float> delays, List<byte[]> frames, float gameDuration)
+    public float episodeDuration;
+    public VideoData(string video_filename, List<float> delays, List<byte[]> frames, float episodeDuration)
     {
         this.video_filename = video_filename;
         this.delays = delays;
         this.frames = frames;
-        this.gameDuration = gameDuration;
+        this.episodeDuration = episodeDuration;
     }
 }
 
@@ -115,7 +115,7 @@ public class VideoRecorder : MonoBehaviour
         }
     }
 
-    public void StopVideo(float gameDuration)
+    public void StopVideo(float episodeDuration)
     {
         if (!this.isRecording)
         {
@@ -123,7 +123,7 @@ public class VideoRecorder : MonoBehaviour
             return;
         }
 
-        this.videoData.gameDuration = gameDuration;
+        this.videoData.episodeDuration = episodeDuration;
 
         this.isRecording = false;
 
@@ -193,7 +193,7 @@ public class VideoRecorder : MonoBehaviour
 
             collection.Write($"{videoData.video_filename}.gif");
         }
-        // Debug.Log($"Gif length: {videoData.frames.Count} frames {gif_duration_in_seconds} seconds. Game length {videoData.gameDuration} seconds. Saved to {videoData.video_filename}.gif");
+        // Debug.Log($"Gif length: {videoData.frames.Count} frames {gif_duration_in_seconds} seconds. Episode length {videoData.episodeDuration} seconds. Saved to {videoData.video_filename}.gif");
     }
 
     public void FixedUpdate()

@@ -1,5 +1,5 @@
 
-class GamesResults:
+class EpisodesResults:
 
     completed_episodes, successfully_completed_episodes, number_of_goals, successfully_passed_goals, total_reward, total_timesteps, distance_reward, velocity_reward, event_reward, orientation_reward = 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
     timesteps_of_completed_episodes, collision_episodes = 0, 0
@@ -95,4 +95,3 @@ class GamesResults:
 
             self.collision_rate, self.obstacle_collision_rate, self.wall_collision_rate = 0, 0, 0
         
-        #self.step_average_wait_time = self.waitTime / self.total_timesteps

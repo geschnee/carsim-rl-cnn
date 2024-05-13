@@ -136,7 +136,7 @@ def run_ppo(cfg):
     if not cfg.eval_settings.eval_only:
 
         model.invariant_output_test()
-        model.playGamesWithIdenticalStartConditions(n_episodes=10, iteration=0, light_setting=LightSetting.standard)
+        model.test_episodes_identical_start_conditions(n_episodes=10, iteration=0, light_setting=LightSetting.standard)
         model.test_deterministic_improves(10, "medium", 0, LightSetting.standard)
 
 
@@ -153,11 +153,11 @@ def run_ppo(cfg):
         model.use_bundled_calls = cfg.use_bundled_calls
         model.use_fresh_obs=cfg.use_fresh_obs
 
-    if not cfg.game_record_replay_settings.replay_folder:
-        model.record_games(cfg.game_record_replay_settings, seed)
+    if not cfg.episode_record_replay_settings.replay_folder:
+        model.record_episodes(cfg.episode_record_replay_settings, seed)
     else:
-        print(f"replaying games from {cfg.game_record_replay_settings.replay_folder}")
-    model.replay_games(cfg.game_record_replay_settings, seed, cfg.env_kwargs.fixedTimestepsLength)
+        print(f"replaying episodes from {cfg.episode_record_replay_settings.replay_folder}")
+    model.replay_episodes(cfg.episode_record_replay_settings, seed, cfg.env_kwargs.fixedTimestepsLength)
     
     # run more evals here after training completed or when eval only
     model.eval_only(total_eval_runs=cfg.eval_settings.number_eval_runs, num_evals_per_difficulty = cfg.eval_settings.num_evals_per_difficulty, eval_light_settings=cfg.eval_settings.eval_light_settings, offset=model.num_timesteps)

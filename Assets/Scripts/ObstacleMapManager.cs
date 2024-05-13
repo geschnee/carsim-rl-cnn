@@ -177,17 +177,18 @@ public class ObstacleMapManager : MonoBehaviour
     public GameObject goalMiddleIndicator;
 
     public GameObject allGoals;
+    public GameObject finishLine;
+
     public GameObject JetBot;
-    public double JetBotXSpawn;
 
     private List<GameObject> centerIndicators;
 
-    public ObstacleMapManager(Transform gameManagerTransform, GameObject obstacleBlue, GameObject obstacleRed, GameObject goalPassedGameObject, GameObject goalMissedGameObject, GameObject finishlineCheckpoint, GameObject goalBall, Boolean isFinishLine, GameObject JetBot)
+    public ObstacleMapManager(Transform gameManagerTransform, GameObject obstacleBlue, GameObject obstacleRed, GameObject goalPassedGameObject, GameObject goalMissedGameObject, GameObject finishlineCheckpoint, GameObject goalBall, GameObject JetBot)
     {
         Debug.LogWarning("ObstacleMapManager constructor called, this is unexpected");
     }
 
-    public void SetLikeInitialize(Transform gameManagerTransform, GameObject obstacleBlue, GameObject obstacleRed, GameObject goalPassedGameObject, GameObject goalMissedGameObject, GameObject finishlineCheckpoint, GameObject FinishLineMissedCheckpoint, GameObject goalMiddleIndicator, GameObject goalBall, Boolean isFinishLine, GameObject JetBot)
+    public void SetLikeInitialize(Transform gameManagerTransform, GameObject obstacleBlue, GameObject obstacleRed, GameObject goalPassedGameObject, GameObject goalMissedGameObject, GameObject finishlineCheckpoint, GameObject FinishLineMissedCheckpoint, GameObject goalMiddleIndicator, GameObject goalBall, GameObject JetBot)
     {
         this.gameManagerTransform = gameManagerTransform;
         this.gameManagerPosition = gameManagerTransform.position;
@@ -226,6 +227,9 @@ public class ObstacleMapManager : MonoBehaviour
         Vector3 SpawnPoint = new(minXLocal, Constants.JETBOT_SPAWN_Y, z);
 
         // in the middle of the short edge (z dimension)
+
+        Debug.LogWarning($"JetBotSpawn pos: {SpawnPoint}");
+        // -8, 0, 1 + x * 30
 
         return SpawnPoint;
     }
@@ -321,7 +325,7 @@ public class ObstacleMapManager : MonoBehaviour
         // add finishLine after the last goal
         GameObject finishLine = InstantiateFinishLine();
         finishLine.transform.SetParent(this.gameManagerTransform.parent);
-
+        this.finishLine = finishLine;
 
         this.centerIndicators = new List<GameObject>();
 
@@ -373,6 +377,7 @@ public class ObstacleMapManager : MonoBehaviour
     public void DestroyMap()
     {
         Destroy(this.allGoals);
+        Destroy(this.finishLine);
     }
 
     public void DestroyObstacles()

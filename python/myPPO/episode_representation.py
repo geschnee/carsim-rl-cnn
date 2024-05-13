@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 
 @dataclass(repr=True, eq=True, frozen=False, unsafe_hash=True)
-class GameRepresentation:
+class EpisodeRepresentation:
     endEvent: str
     collision: bool
     passedFirstGoal: bool

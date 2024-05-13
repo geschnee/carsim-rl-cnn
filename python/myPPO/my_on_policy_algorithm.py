@@ -20,8 +20,8 @@ from gymEnv.myEnums import LightSetting
 from gymEnv.myEnums import MapType
 from gymEnv.myEnums import Spawn
 
-from myPPO.game_repr import GameRepresentation
-from myPPO.games_results import GamesResults
+from myPPO.episode_representation import EpisodeRepresentation
+from myPPO.episodes_results import EpisodesResults
 import collections
 
 import PIL.Image as Image
@@ -271,7 +271,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         callback.on_rollout_start()
 
         
-        games_results = GamesResults()
+        episodes_results = EpisodesResults()
 
         total_timesteps = 0
         
@@ -348,7 +348,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
                     rewards[idx] += self.gamma * terminal_value
 
                 if done:
-                    games_results.processInfoDictEpisodeFinished(infos[idx])
+                    episodes_results.processInfoDictEpisodeFinished(infos[idx])
                     
                     
 
@@ -417,47 +417,47 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         callback.on_rollout_end()
 
         
-        games_results.computeRates()
+        episodes_results.computeRates()
         
         
-        self.my_record("rollout/success_rate", games_results.success_rate)
-        self.my_record("rollout/timeout_rate", games_results.timeout_rate)
-        self.my_record("rollout/goal_completion_rate", games_results.goal_completion_rate)
-        self.my_record("rollout/mean_reward", games_results.mean_reward)
-        self.my_record("rollout/mean_episode_length", games_results.mean_episode_length)
-        self.my_record("rollout/mean_distance_reward", games_results.mean_distance_reward)
-        self.my_record("rollout/mean_velocity_reward", games_results.mean_velocity_reward)
-        self.my_record("rollout/mean_orientation_reward", games_results.mean_orientation_reward)
-        self.my_record("rollout/mean_event_reward", games_results.mean_event_reward)
-        self.my_record("rollout/first_goal_completion_rate", games_results.first_goal_completion_rate)
-        self.my_record("rollout/second_goal_completion_rate", games_results.second_goal_completion_rate)
-        self.my_record("rollout/third_goal_completion_rate", games_results.third_goal_completion_rate)
+        self.my_record("rollout/success_rate", episodes_results.success_rate)
+        self.my_record("rollout/timeout_rate", episodes_results.timeout_rate)
+        self.my_record("rollout/goal_completion_rate", episodes_results.goal_completion_rate)
+        self.my_record("rollout/mean_reward", episodes_results.mean_reward)
+        self.my_record("rollout/mean_episode_length", episodes_results.mean_episode_length)
+        self.my_record("rollout/mean_distance_reward", episodes_results.mean_distance_reward)
+        self.my_record("rollout/mean_velocity_reward", episodes_results.mean_velocity_reward)
+        self.my_record("rollout/mean_orientation_reward", episodes_results.mean_orientation_reward)
+        self.my_record("rollout/mean_event_reward", episodes_results.mean_event_reward)
+        self.my_record("rollout/first_goal_completion_rate", episodes_results.first_goal_completion_rate)
+        self.my_record("rollout/second_goal_completion_rate", episodes_results.second_goal_completion_rate)
+        self.my_record("rollout/third_goal_completion_rate", episodes_results.third_goal_completion_rate)
 
-        self.my_record("rollout/completed_episodes", games_results.completed_episodes)
+        self.my_record("rollout/completed_episodes", episodes_results.completed_episodes)
 
-        step_average_wait_time = games_results.waitTime / total_timesteps
+        step_average_wait_time = episodes_results.waitTime / total_timesteps
         self.my_record("rollout/step_average_wait_time", step_average_wait_time)
-        self.my_record("rollout/rate_episodes_with_collisions", games_results.rate_episodes_with_collisions)
-        self.my_record("rollout/avg_step_duration_unity", games_results.avg_step_duration_unity_env) # average duration of a step measured in unity episode duration time
+        self.my_record("rollout/rate_episodes_with_collisions", episodes_results.rate_episodes_with_collisions)
+        self.my_record("rollout/avg_step_duration_unity", episodes_results.avg_step_duration_unity_env) # average duration of a step measured in unity episode duration time
 
-        self.my_record("prescalerewards/mean_distance_reward", games_results.mean_prescale_distance_reward)
-        self.my_record("prescalerewards/mean_velocity_reward", games_results.mean_prescale_velocity_reward)
-        self.my_record("prescalerewards/mean_orientation_reward", games_results.mean_prescale_orientation_reward)
-        self.my_record("prescalerewards/mean_event_reward", games_results.mean_prescale_event_reward)
+        self.my_record("prescalerewards/mean_distance_reward", episodes_results.mean_prescale_distance_reward)
+        self.my_record("prescalerewards/mean_velocity_reward", episodes_results.mean_prescale_velocity_reward)
+        self.my_record("prescalerewards/mean_orientation_reward", episodes_results.mean_prescale_orientation_reward)
+        self.my_record("prescalerewards/mean_event_reward", episodes_results.mean_prescale_event_reward)
 
-        self.my_record("rollout_collisions/collision_rate", games_results.collision_rate)
-        self.my_record("rollout_collisions/obstacle_collision_rate", games_results.obstacle_collision_rate)
-        self.my_record("rollout_collisions/wall_collision_rate", games_results.wall_collision_rate)
+        self.my_record("rollout_collisions/collision_rate", episodes_results.collision_rate)
+        self.my_record("rollout_collisions/obstacle_collision_rate", episodes_results.obstacle_collision_rate)
+        self.my_record("rollout_collisions/wall_collision_rate", episodes_results.wall_collision_rate)
 
         cr_time = time.time() - cr_time
         
-        print(f'collect rollouts finished with {games_results.completed_episodes} episodes in {cr_time} seconds', flush=True)
+        print(f'collect rollouts finished with {episodes_results.completed_episodes} episodes in {cr_time} seconds', flush=True)
 
-        if games_results.success_rate >= self.rollout_best_success_rate:
-            self.rollout_best_success_rate = games_results.success_rate
+        if episodes_results.success_rate >= self.rollout_best_success_rate:
+            self.rollout_best_success_rate = episodes_results.success_rate
             if self.rollout_best_model_name != "":
                 os.remove(f'{self.rollout_best_model_name}.zip')
-            self.rollout_best_model_name = f'rollout_model_{int(games_results.success_rate*100)}-sr_{self.num_timesteps}-steps'
+            self.rollout_best_model_name = f'rollout_model_{int(episodes_results.success_rate*100)}-sr_{self.num_timesteps}-steps'
             self.save(self.rollout_best_model_name)
 
         return True, cr_time
@@ -623,7 +623,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
                 print(f'Will eval now as after every {log_interval} collect and trains')
                 eval_time = time.time()
                 self.eval(iteration=iteration, num_evals_per_difficulty=num_evals_per_difficulty, eval_light_settings=eval_light_settings)
-                self.playGamesWithIdenticalStartConditions(n_episodes=num_evals_per_difficulty, iteration=iteration, light_setting=LightSetting.standard, log=True)
+                self.test_episodes_identical_start_conditions(n_episodes=num_evals_per_difficulty, iteration=iteration, light_setting=LightSetting.standard, log=True)
                 self.test_deterministic_improves(n_episodes=num_evals_per_difficulty, difficulty="medium", iteration=iteration, light_setting=LightSetting.standard, log=True)
                 self.test_fresh_obs_improves(n_episodes=num_evals_per_difficulty, difficulty = "medium", iteration=iteration, light_setting=LightSetting.standard, log=True)
 
@@ -837,7 +837,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         episode_lengths = []
         finished_episodes = 0
         
-        games_results = GamesResults()
+        episodes_results = EpisodesResults()
 
 
         episode_counts = np.zeros(n_envs, dtype="int")
@@ -913,7 +913,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
                         current_lengths[i] = 0
                         finished_episodes += 1
 
-                        games_results.processInfoDictEpisodeFinished(infos[i])
+                        episodes_results.processInfoDictEpisodeFinished(infos[i])
 
                         if i in log_indices:
                             if episode_counts[i] == episode_count_targets[i]-1:
@@ -945,22 +945,22 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         mean_reward = np.mean(episode_rewards)
         std_reward = np.std(episode_rewards)
         
-        games_results.computeRates()
+        episodes_results.computeRates()
 
         if log: 
             self.my_record(f'eval_{difficulty}_{light_setting.name}/mean_reward', mean_reward)
             
             self.my_record(f'eval_{difficulty}_{light_setting.name}/std_reward', std_reward)
-            self.my_record(f'eval_{difficulty}_{light_setting.name}/success_rate', games_results.success_rate)
-            self.my_record(f'eval_{difficulty}_{light_setting.name}/rate_passed_goals', games_results.goal_completion_rate)
-            self.my_record(f'eval_{difficulty}_{light_setting.name}/timeout_rate', games_results.timeout_rate)
-            self.my_record(f'eval_{difficulty}_{light_setting.name}/rate_episode_with_collision', games_results.collision_episodes / n_eval_episodes)
+            self.my_record(f'eval_{difficulty}_{light_setting.name}/success_rate', episodes_results.success_rate)
+            self.my_record(f'eval_{difficulty}_{light_setting.name}/rate_passed_goals', episodes_results.goal_completion_rate)
+            self.my_record(f'eval_{difficulty}_{light_setting.name}/timeout_rate', episodes_results.timeout_rate)
+            self.my_record(f'eval_{difficulty}_{light_setting.name}/rate_episode_with_collision', episodes_results.collision_episodes / n_eval_episodes)
 
-            self.my_record(f'eval_{difficulty}_{light_setting.name}/rate_first_goal', games_results.first_goal_completion_rate)
-            self.my_record(f'eval_{difficulty}_{light_setting.name}/rate_second_goal', games_results.second_goal_completion_rate)
-            self.my_record(f'eval_{difficulty}_{light_setting.name}/rate_third_goal', games_results.third_goal_completion_rate)
+            self.my_record(f'eval_{difficulty}_{light_setting.name}/rate_first_goal', episodes_results.first_goal_completion_rate)
+            self.my_record(f'eval_{difficulty}_{light_setting.name}/rate_second_goal', episodes_results.second_goal_completion_rate)
+            self.my_record(f'eval_{difficulty}_{light_setting.name}/rate_third_goal', episodes_results.third_goal_completion_rate)
 
-            step_average_wait_time = games_results.waitTime / np.sum(episode_lengths)
+            step_average_wait_time = episodes_results.waitTime / np.sum(episode_lengths)
             self.my_record(f"eval_{difficulty}_{light_setting.name}/step_average_wait_time", step_average_wait_time)
             self.my_record(f'eval_{difficulty}_{light_setting.name}/average_episode_length', np.average(episode_lengths))
 
@@ -972,7 +972,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
                 video_filename = ""
             )
 
-        return games_results.success_rate, games_results.collision_rate
+        return episodes_results.success_rate, episodes_results.collision_rate
     
 
     def eval_only(
@@ -1004,7 +1004,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
 
             eval_time = time.time()
             self.eval(iteration=step, num_evals_per_difficulty=num_evals_per_difficulty, eval_light_settings=eval_light_settings)
-            self.playGamesWithIdenticalStartConditions(n_episodes=num_evals_per_difficulty, iteration=step, light_setting=LightSetting.standard, deterministic=True, log=True)
+            self.test_episodes_identical_start_conditions(n_episodes=num_evals_per_difficulty, iteration=step, light_setting=LightSetting.standard, deterministic=True, log=True)
             self.test_deterministic_improves(n_episodes=num_evals_per_difficulty, difficulty = "medium", iteration=step, light_setting=LightSetting.standard, log=True)
             self.test_fresh_obs_improves(n_episodes=num_evals_per_difficulty, difficulty = "medium", iteration=step, light_setting=LightSetting.standard, log=True)
 
@@ -1045,7 +1045,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
             print(f'actions are invariant to the batch size/samples')
 
 
-    def playGamesWithIdenticalStartConditions(
+    def test_episodes_identical_start_conditions(
         self: SelfOnPolicyAlgorithm,
         n_episodes: int = 10,
         iteration: int = 0,
@@ -1061,9 +1061,9 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         episode_lengths = []
         success_count, finished_episodes = 0, 0
        
-        # game results are characterized by endEvent, collision, passedFirstGoal, passedSecondGoal, passedThirdGoal
+        # episode results are characterized by endEvent, collision, passedFirstGoal, passedSecondGoal, passedThirdGoal
 
-        game_results = []
+        episode_results = []
 
 
         episode_counts = np.zeros(n_envs, dtype="int")
@@ -1141,7 +1141,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
                         if infos[i]["endEvent"] == "Success":
                             success_count += 1
 
-                        game_results.append(GameRepresentation(infos[i]))
+                        episode_results.append(EpisodeRepresentation(infos[i]))
 
                         if i in log_indices:
                             if episode_counts[i] == episode_count_targets[i]-1:
@@ -1171,15 +1171,15 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         success_rate = success_count / n_episodes
 
 
-        game_results_counter = collections.Counter(game_results)
+        episode_results_counter = collections.Counter(episode_results)
 
-        most_common_game_result = max(set(game_results), key=game_results.count)
-        print(f'most common game result: {most_common_game_result}')
+        most_common_episode_result = max(set(episode_results), key=episode_results.count)
+        print(f'most common episode result: {most_common_episode_result}')
 
-        print(f'game results and counts: {game_results_counter}')
+        print(f'episode results and counts: {episode_results_counter}')
 
-        most_common_game_result_rate = game_results_counter[most_common_game_result] / n_episodes
-        print(f'deterministic={deterministic} rate of most common game result: {most_common_game_result_rate}')
+        most_common_episode_result_rate = episode_results_counter[most_common_episode_result] / n_episodes
+        print(f'deterministic={deterministic} rate of most common episode result: {most_common_episode_result_rate}')
         
         
         # set to no video afterwards
@@ -1190,28 +1190,28 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
                 video_filename = ""
             )
 
-        print(f'playGamesWithIdenticalStartConditions finished', flush=True)
+        print(f'test_episodes_identical_start_conditions finished', flush=True)
 
         if log:
-            self.my_record(f'identicalStartConditions/most_common_game_result_rate', most_common_game_result_rate)
+            self.my_record(f'identicalStartConditions/most_common_episode_result_rate', most_common_episode_result_rate)
 
-        return most_common_game_result_rate, success_rate
+        return most_common_episode_result_rate, success_rate
     
-    def record_games(self, game_record_settings, seed):
-        n_games = game_record_settings.n_games_per_setting
+    def record_episodes(self, episode_record_settings, seed):
+        n_episodes = episode_record_settings.n_episodes_per_setting
 
         from stable_baselines3.common.utils import set_random_seed
 
 
-        game_recordings_path = f'{os.getcwd()}\\game_recordings'
-        os.mkdir(game_recordings_path)
-        self.save(f'{game_recordings_path}\\model')
-        np.save(f'{game_recordings_path}\\n_envs.npy', self.env.num_envs)
-        np.save(f'{game_recordings_path}\\n_games.npy', game_record_settings.n_games_per_setting)
-        with open(f'{game_recordings_path}config.yaml', 'w') as f:
-            OmegaConf.save(game_record_settings, f)
+        episode_recordings_path = f'{os.getcwd()}\\episode_recordings'
+        os.mkdir(episode_recordings_path)
+        self.save(f'{episode_recordings_path}\\model')
+        np.save(f'{episode_recordings_path}\\n_envs.npy', self.env.num_envs)
+        np.save(f'{episode_recordings_path}\\n_episodes.npy', episode_record_settings.n_episodes_per_setting)
+        with open(f'{episode_recordings_path}config.yaml', 'w') as f:
+            OmegaConf.save(episode_record_settings, f)
 
-        total_number_games, succesful_games = 0, 0
+        total_number_episodes, succesful_episodes = 0, 0
 
         difficulties = ["easy", "medium", "hard"]
         #difficulties = ["easy"]
@@ -1219,24 +1219,24 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         light_settings = [LightSetting.standard]
         for difficulty in difficulties:
             for light_setting in light_settings:
-                settings_path = f'{game_recordings_path}\\{difficulty}_{light_setting.name}'
+                settings_path = f'{episode_recordings_path}\\{difficulty}_{light_setting.name}'
                 os.mkdir(settings_path)
 
-                map_and_rotations = self.generate_map_and_rotations(difficulty, n_games, self.env)
+                map_and_rotations = self.generate_map_and_rotations(difficulty, n_episodes, self.env)
 
                 for idx, map_and_rotation in enumerate(map_and_rotations):
-                    game_path = f'{settings_path}\\game_{idx}'
-                    os.mkdir(game_path)
+                    episode_path = f'{settings_path}\\episode_{idx}'
+                    os.mkdir(episode_path)
                     
                     set_random_seed(seed)
-                    success = self.record_game(light_setting, game_path, map_and_rotation, deterministic=game_record_settings.deterministic_sampling)
-                    total_number_games += 1
-                    succesful_games += success
+                    success = self.record_episode(light_setting, episode_path, map_and_rotation, deterministic=episode_record_settings.deterministic_sampling)
+                    total_number_episodes += 1
+                    succesful_episodes += success
                  
         
-        print(f'recorded games:\ntotal_number_games: {total_number_games} succesful_games: {succesful_games}')
+        print(f'recorded episodes:\ntotal_number_episodes: {total_number_episodes} succesful_episodes: {succesful_episodes}')
 
-    def record_game(self, light_setting, game_path, map_and_rotation, deterministic):
+    def record_episode(self, light_setting, episode_path, map_and_rotation, deterministic):
         env = self.env
 
         # this uses the first environment exclusively
@@ -1245,7 +1245,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         env.env_method(
             method_name="setVideoFilename",
             indices=[0],
-            video_filename = f'{game_path}\\video_'
+            video_filename = f'{episode_path}\\video_'
         )
 
         # reset to initialize all envs (required for bundled calls)
@@ -1267,7 +1267,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         # switch to eval mode
         self.policy.set_training_mode(False)
 
-        # we always use fresh obs for recorded games, easier to implement and more reliable
+        # we always use fresh obs for recorded episodes, easier to implement and more reliable
 
         infer_obsstrings, step_obstrings = [], []
 
@@ -1305,11 +1305,11 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
 
             if dones[0]:
                 done = True
-                game_repr = GameRepresentation(infos[0])
+                episode_repr = EpisodeRepresentation(infos[0])
 
-                #print(f'record game end status: {game_repr.endEvent}', flush=True)
+                #print(f'record episode end status: {episode_repr.endEvent}', flush=True)
 
-                if game_repr.endEvent == "Success":
+                if episode_repr.endEvent == "Success":
                     success=True
 
             
@@ -1331,23 +1331,23 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
 
 
         for i in range(len(step_obstrings)):
-            saveImg(step_obstrings[i], f'{game_path}\\step_image_{i}.png')
+            saveImg(step_obstrings[i], f'{episode_path}\\step_image_{i}.png')
             # images from step are also needed to reproduce the observations (since there is a memory_rolloer in processStepReturnObject)
             
         for i in range(len(infer_obsstrings)):
-            saveImg(infer_obsstrings[i], f'{game_path}\\infer_image_{i}.png')
+            saveImg(infer_obsstrings[i], f'{episode_path}\\infer_image_{i}.png')
 
         for i in range(len(sampled_actions)):
-            np.save(f'{game_path}\\sampled_action_{i}.npy', sampled_actions[i])
+            np.save(f'{episode_path}\\sampled_action_{i}.npy', sampled_actions[i])
 
         for i in range(len(obtained_values)):
-            np.save(f'{game_path}\\obtained_value_{i}.npy', obtained_values[i])
+            np.save(f'{episode_path}\\obtained_value_{i}.npy', obtained_values[i])
 
         for i in range(len(obtained_log_probs)):
-            np.save(f'{game_path}\\obtained_log_prob_{i}.npy', obtained_log_probs[i])
+            np.save(f'{episode_path}\\obtained_log_prob_{i}.npy', obtained_log_probs[i])
 
-        # save game length
-        np.save(f'{game_path}\\game_length.npy', len(infer_obsstrings))
+        # save episode length
+        np.save(f'{episode_path}\\episode_length.npy', len(infer_obsstrings))
         
         # set to no video afterwards
         env.env_method(
@@ -1356,7 +1356,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
             video_filename = ""
         )
 
-        #print(f'record game finished with params {light_setting}, {map_and_rotation}, {success}', flush=True)
+        #print(f'record episode finished with params {light_setting}, {map_and_rotation}, {success}', flush=True)
 
 
         if success:
@@ -1364,23 +1364,23 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         else:
             return 0
 
-    def replay_games(self, game_replay_settings, seed, timestepLength):
-        n_games = game_replay_settings.n_games_per_setting
+    def replay_episodes(self, episode_replay_settings, seed, timestepLength):
+        n_episodes = episode_replay_settings.n_episodes_per_setting
 
         from stable_baselines3.common.utils import set_random_seed
 
-        if game_replay_settings.replay_folder:
-            base_path = f'{HydraConfig.get().runtime.cwd}/{game_replay_settings.replay_folder}'
+        if episode_replay_settings.replay_folder:
+            base_path = f'{HydraConfig.get().runtime.cwd}/{episode_replay_settings.replay_folder}'
         else:
             # replay the ones that were previously recorded in this same run
-            base_path = f'{os.getcwd()}\\game_recordings'
+            base_path = f'{os.getcwd()}\\episode_recordings'
         
         n_envs_recording = np.load(f'{base_path}\\n_envs.npy')
-        if not game_replay_settings.deterministic_sampling:
+        if not episode_replay_settings.deterministic_sampling:
             assert self.n_envs == n_envs_recording, f'number of envs in recording {n_envs_recording} does not match the number of envs in the current environment {self.env.n_envs}, this is an issue only when sampling non_deterministically'
     
-        n_games_recording = np.load(f'{base_path}\\n_games.npy')
-        assert n_games == n_games_recording, f'number of games in recording {n_games_recording} does not match the number of games to replay {n_games}'
+        n_episodes_recording = np.load(f'{base_path}\\n_episodes.npy')
+        assert n_episodes == n_episodes_recording, f'number of episodes in recording {n_episodes_recording} does not match the number of episodes to replay {n_episodes}'
 
         # find model
         model_path = f'{base_path}\\model.zip'
@@ -1399,17 +1399,17 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
             for light_setting in light_settings:
                 settings_path = f'{base_path}\\{difficulty}_{light_setting.name}'
 
-                for idx in range(n_games):
-                    game_path = f'{settings_path}\\game_{idx}'
+                for idx in range(n_episodes):
+                    episode_path = f'{settings_path}\\episode_{idx}'
                     
                     set_random_seed(seed)
-                    times = self.replay_game(game_path, deterministic=game_replay_settings.deterministic_sampling)
+                    times = self.replay_episode(episode_path, deterministic=episode_replay_settings.deterministic_sampling)
                     
                     preprocessing_plus_infer_times.extend(times)
         
         max_prepro_infer_time = np.max(preprocessing_plus_infer_times)
 
-        print(f'replay game results:')
+        print(f'replay episode results:')
         print(f'avg time for preprocessing and infer: {np.mean(preprocessing_plus_infer_times)}')
         print(f'max time for preprocessing and infer: {max_prepro_infer_time}')
 
@@ -1434,7 +1434,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
 
     
 
-    def replay_game(self, game_path, deterministic):
+    def replay_episode(self, episode_path, deterministic):
         env = self.env
 
         # this uses the first environment exclusively
@@ -1448,7 +1448,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         # switch to eval mode
         self.policy.set_training_mode(False)
 
-        # we always use fresh obs for recorded games, easier to implement and more reliable
+        # we always use fresh obs for recorded episodes, easier to implement and more reliable
 
 
 
@@ -1462,14 +1462,14 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
             pixels_rgb = np.array(im, dtype=np.uint8)
             return pixels_rgb
 
-        recorded_game_length = np.load(f'{game_path}\\game_length.npy')
-        for i in range(recorded_game_length):
-            recorded_actions.append(np.load(f'{game_path}\\sampled_action_{i}.npy'))
-            recorded_values.append(np.load(f'{game_path}\\obtained_value_{i}.npy'))
-            recorded_log_probs.append(np.load(f'{game_path}\\obtained_log_prob_{i}.npy'))
+        recorded_episode_length = np.load(f'{episode_path}\\episode_length.npy')
+        for i in range(recorded_episode_length):
+            recorded_actions.append(np.load(f'{episode_path}\\sampled_action_{i}.npy'))
+            recorded_values.append(np.load(f'{episode_path}\\obtained_value_{i}.npy'))
+            recorded_log_probs.append(np.load(f'{episode_path}\\obtained_log_prob_{i}.npy'))
 
-            infer_obs_unity_images.append(loadImage(f'{game_path}\\infer_image_{i}.png'))
-            step_obs_unity_images.append(loadImage(f'{game_path}\\step_image_{i}.png'))
+            infer_obs_unity_images.append(loadImage(f'{episode_path}\\infer_image_{i}.png'))
+            step_obs_unity_images.append(loadImage(f'{episode_path}\\step_image_{i}.png'))
 
 
         reproduced_actions, reproduced_values, reproduced_log_probs = [], [], []
@@ -1494,7 +1494,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
 
         replay_time_start = time.time()
 
-        for i in range(recorded_game_length):
+        for i in range(recorded_episode_length):
 
             with th.no_grad():
                 obs = take_image(env, infer_obs_unity_images[i])
@@ -1535,12 +1535,12 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         '''
 
         
-        for i in range(recorded_game_length):
+        for i in range(recorded_episode_length):
             assert np.allclose(recorded_actions[i], reproduced_actions[i]), f'actions are not the same {recorded_actions[i]} != {reproduced_actions[i]}'
             assert np.allclose(recorded_values[i], reproduced_values[i]), f'values are not the same {recorded_values[i]} != {reproduced_values[i]}'
             assert np.allclose(recorded_log_probs[i], reproduced_log_probs[i]), f'log_probs are not the same {recorded_log_probs[i]} != {reproduced_log_probs[i]}'
             
-        print(f'max for setting {game_path} is {np.max(reproduce_times)}')
+        print(f'max for setting {episode_path} is {np.max(reproduce_times)}')
 
         return reproduce_times
 

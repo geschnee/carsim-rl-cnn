@@ -21,11 +21,11 @@ eval_settings:
   eval_only: False
   number_eval_runs: 2
 
-game_record_replay_settings:
-  n_games_per_setting: 2
+episode_record_replay_settings:
+  n_episodes_per_setting: 2
   deterministic_sampling: False
   replay_folder: False
-  # replay_folder can be False to replay the previously recorded games
+  # replay_folder can be False to replay the previously recorded episodes
 
 
 algo_settings:

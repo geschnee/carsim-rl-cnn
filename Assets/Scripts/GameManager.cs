@@ -30,12 +30,6 @@ public class GameManager : MonoBehaviour
 
 	public GameObject goalMiddleIndicator;
 
-	//spawn jetbot random on map if trainnig
-	public Boolean isTrainingSpawnRandom;
-
-	// has the last goal the finish line?
-	public Boolean isFinishLineLastGoal = true;
-
 	// initialize obstacle Map Generator
 	private ObstacleMapManager obstacleMapManager;
 
@@ -50,7 +44,7 @@ public class GameManager : MonoBehaviour
 
 		this.obstacleMapManager = this.gameObject.GetComponent<ObstacleMapManager>();
 
-		this.obstacleMapManager.SetLikeInitialize(this.transform, obstacleBlue, obstacleRed, goalPassedWallCheckpoint, goalMissedWallCheckpoint, this.FinishLineCheckpoint, this.FinishLineMissedCheckpoint, goalMiddleIndicator, this.goalBall, this.isFinishLineLastGoal, this.JetBot);
+		this.obstacleMapManager.SetLikeInitialize(this.transform, obstacleBlue, obstacleRed, goalPassedWallCheckpoint, goalMissedWallCheckpoint, this.FinishLineCheckpoint, this.FinishLineMissedCheckpoint, goalMiddleIndicator, this.goalBall, this.JetBot);
 	}
 
 	public GameObject spawnJetbot(MapData md, int instanceNumber)
@@ -72,16 +66,6 @@ public class GameManager : MonoBehaviour
 	public void DestroyObstaclesOnMap()
 	{
 		this.obstacleMapManager.DestroyMap();
-	}
-
-	public int GetIdOfCurrentRun()
-	{
-		return this.idOfCurrentRun;
-	}
-
-	public String GetMapTypeName(MapType mt)
-	{
-		return mt.ToString();
 	}
 
 	public void setJetbot(string jetbotName)
