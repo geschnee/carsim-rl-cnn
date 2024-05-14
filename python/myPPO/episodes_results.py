@@ -92,7 +92,10 @@ class EpisodesResults:
             self.obstacle_collision_rate = self.obstacle_collision_episodes / self.completed_episodes
             self.wall_collision_rate = self.wall_collision_episodes / self.completed_episodes
 
-            self.collision_rate_succesful_episodes = self.successful_episodes_with_collisions / self.successfully_completed_episodes
+            if self.successfully_completed_episodes != 0:
+                self.collision_rate_succesful_episodes = self.successful_episodes_with_collisions / self.successfully_completed_episodes
+            else:
+                self.collision_rate_succesful_episodes = 0
         else:
             self.success_rate, self.mean_reward, self.mean_episode_length, self.mean_distance_reward, self.mean_velocity_reward, self.mean_event_reward, self.mean_orientation_reward, self.first_goal_completion_rate = 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
             self.timeout_rate = 0
