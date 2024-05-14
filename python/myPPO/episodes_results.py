@@ -13,6 +13,8 @@ class EpisodesResults:
 
     prescale_distance_reward, prescale_velocity_reward, prescale_event_reward, prescale_orientation_reward = 0, 0, 0, 0
 
+    successful_episodes_with_collisions = 0
+
     def __init__(self):
         pass
 
@@ -56,6 +58,9 @@ class EpisodesResults:
 
         self.unity_duration += float(infos["duration"].replace(",","."))
 
+        if int(infos["collision"]) == 1 and infos["endEvent"] == "Success":
+            self.successful_episodes_with_collisions += 1
+
     def computeRates(self):
 
         if self.number_of_goals != 0:
@@ -86,6 +91,8 @@ class EpisodesResults:
             self.collision_rate = self.collision_episodes / self.completed_episodes
             self.obstacle_collision_rate = self.obstacle_collision_episodes / self.completed_episodes
             self.wall_collision_rate = self.wall_collision_episodes / self.completed_episodes
+
+            self.collision_rate_succesful_episodes = self.successful_episodes_with_collisions / self.successfully_completed_episodes
         else:
             self.success_rate, self.mean_reward, self.mean_episode_length, self.mean_distance_reward, self.mean_velocity_reward, self.mean_event_reward, self.mean_orientation_reward, self.first_goal_completion_rate = 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
             self.timeout_rate = 0
@@ -94,4 +101,6 @@ class EpisodesResults:
             self.mean_prescale_distance_reward, self.mean_prescale_velocity_reward, self.mean_prescale_event_reward, self.mean_prescale_orientation_reward = 0, 0, 0, 0
 
             self.collision_rate, self.obstacle_collision_rate, self.wall_collision_rate = 0, 0, 0
+
+            self.collision_rate_succesful_episodes = 0
         

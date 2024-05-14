@@ -154,7 +154,7 @@ def run_ppo(cfg):
         model.use_fresh_obs=cfg.use_fresh_obs
 
     if not cfg.episode_record_replay_settings.replay_folder:
-        model.record_episodes(cfg.episode_record_replay_settings, seed)
+        model.record_episodes(cfg.episode_record_replay_settings, seed, cfg)
     else:
         print(f"replaying episodes from {cfg.episode_record_replay_settings.replay_folder}")
     model.replay_episodes(cfg.episode_record_replay_settings, seed, cfg.env_kwargs.fixedTimestepsLength)

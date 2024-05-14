@@ -448,6 +448,8 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         self.my_record("rollout_collisions/collision_rate", episodes_results.collision_rate)
         self.my_record("rollout_collisions/obstacle_collision_rate", episodes_results.obstacle_collision_rate)
         self.my_record("rollout_collisions/wall_collision_rate", episodes_results.wall_collision_rate)
+        self.my_record("rollout_collisions/collision_rate_succesful_episodes", episodes_results.collision_rate_succesful_episodes)
+
 
         cr_time = time.time() - cr_time
         
@@ -964,6 +966,9 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
             self.my_record(f"eval_{difficulty}_{light_setting.name}/step_average_wait_time", step_average_wait_time)
             self.my_record(f'eval_{difficulty}_{light_setting.name}/average_episode_length', np.average(episode_lengths))
 
+            self.my_record(f'eval_{difficulty}_{light_setting.name}/collision_rate_succesful_episodes', episodes_results.collision_rate_succesful_episodes)
+
+
         # set to no video afterwards
         for index in log_indices:
             env.env_method(
@@ -1197,7 +1202,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
 
         return most_common_episode_result_rate, success_rate
     
-    def record_episodes(self, episode_record_settings, seed):
+    def record_episodes(self, episode_record_settings, seed, cfg):
         n_episodes = episode_record_settings.n_episodes_per_setting
 
         from stable_baselines3.common.utils import set_random_seed
@@ -1208,8 +1213,10 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         self.save(f'{episode_recordings_path}\\model')
         np.save(f'{episode_recordings_path}\\n_envs.npy', self.env.num_envs)
         np.save(f'{episode_recordings_path}\\n_episodes.npy', episode_record_settings.n_episodes_per_setting)
-        with open(f'{episode_recordings_path}config.yaml', 'w') as f:
+        with open(f'{episode_recordings_path}record_config.yaml', 'w') as f:
             OmegaConf.save(episode_record_settings, f)
+        with open(f'{episode_recordings_path}total_config.yaml', 'w') as f:
+            OmegaConf.save(cfg, f)
 
         total_number_episodes, succesful_episodes = 0, 0
 
