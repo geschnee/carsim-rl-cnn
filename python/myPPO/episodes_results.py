@@ -97,7 +97,7 @@ class EpisodesResults:
             else:
                 self.collision_rate_succesful_episodes = 0
         else:
-            self.success_rate, self.mean_reward, self.mean_episode_length, self.mean_distance_reward, self.mean_velocity_reward, self.mean_event_reward, self.mean_orientation_reward, self.first_goal_completion_rate = 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+            self.success_rate, self.mean_reward, self.mean_episode_length, self.mean_distance_reward, self.mean_velocity_reward, self.mean_event_reward, self.mean_orientation_reward = 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
             self.timeout_rate = 0
             self.rate_episodes_with_collisions = 0
             self.avg_step_duration_unity_env = 0
@@ -106,4 +106,6 @@ class EpisodesResults:
             self.collision_rate, self.obstacle_collision_rate, self.wall_collision_rate = 0, 0, 0
 
             self.collision_rate_succesful_episodes = 0
+
+            self.first_goal_completion_rate, self.second_goal_completion_rate, self.third_goal_completion_rate = 0.0, 0.0, 0.0
         
