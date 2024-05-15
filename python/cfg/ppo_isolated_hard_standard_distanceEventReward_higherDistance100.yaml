@@ -1,4 +1,5 @@
-comment: "isolated training config hard standard, distance and event reward, oncePerTimestep, higherDistance"
+
+comment: "isolated training config hard standard, distance and event reward, oncePerTimestep"
 # "Trying with fixed light settings and variable timesteps, we want to see learning progress again. Did something break?"
 # we should also try it with the fixed spawn to be closer to the evaluation scenario, maybe the differential can do it 
 
