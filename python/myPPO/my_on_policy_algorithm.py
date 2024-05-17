@@ -457,6 +457,10 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
             self.my_record("rollout_success_rates/success_rate_medium", episodes_results.medium_success_rate)
         if episodes_results.num_hard_episodes != 0:
             self.my_record("rollout_success_rates/success_rate_hard", episodes_results.hard_success_rate)
+        
+        self.my_record("rollout_episodes/easy_episodes", episodes_results.num_easy_episodes)
+        self.my_record("rollout_episodes/medium_episodes", episodes_results.num_medium_episodes)
+        self.my_record("rollout_episodes/hard_episodes", episodes_results.num_hard_episodes)
 
         cr_time = time.time() - cr_time
         
