@@ -1,4 +1,4 @@
-comment: "isolated training base, distance reward only"
+comment: "all settings, distance reward only, more nsteps to account for mixed difficulties"
 # "Trying with fixed light settings and variable timesteps, we want to see learning progress again. Did something break?"
 # we should also try it with the fixed spawn to be closer to the evaluation scenario, maybe the differential can do it 
 
@@ -78,8 +78,8 @@ env_kwargs:
     eventCoefficient: 0
   collisionMode: oncePerTimestep
   # unrestricted, oncePerTimestep, oncePerEpisode, resetUponCollision, ignoreCollisions
-  trainingMapType: randomEvalHard
-  trainingLightSetting: standard
+  trainingMapType: randomEval
+  trainingLightSetting: random
   # random, bright, standard, dark
   fixedTimestepsLength: 0.3
   # non fixed with 10 envs takes 0.5 seconds for vecenv_step --> this results in 1 fps (per env)
