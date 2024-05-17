@@ -112,6 +112,11 @@ class EpisodesResults:
                 self.collision_rate_succesful_episodes = self.successful_episodes_with_collisions / self.successfully_completed_episodes
             else:
                 self.collision_rate_succesful_episodes = 0
+
+            self.rate_easy_episodes = self.num_easy_episodes / self.completed_episodes
+            self.rate_medium_episodes = self.num_medium_episodes / self.completed_episodes
+            self.rate_hard_episodes = self.num_hard_episodes / self.completed_episodes
+            
         else:
             self.success_rate, self.mean_reward, self.mean_episode_length, self.mean_distance_reward, self.mean_velocity_reward, self.mean_event_reward, self.mean_orientation_reward = 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
             self.timeout_rate = 0
@@ -124,6 +129,8 @@ class EpisodesResults:
             self.collision_rate_succesful_episodes = 0
 
             self.first_goal_completion_rate, self.second_goal_completion_rate, self.third_goal_completion_rate = 0.0, 0.0, 0.0
+
+            self.rate_easy_episodes, self.rate_medium_episodes, self.rate_hard_episodes = 0, 0, 0
 
 
         if self.num_easy_episodes != 0:
