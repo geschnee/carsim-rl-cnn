@@ -339,7 +339,7 @@ class myPPO(MyOnPolicyAlgorithm):
         tb_log_name: str = "PPO",
         reset_num_timesteps: bool = True,
         progress_bar: bool = False,
-        num_evals_per_difficulty: int = 10,
+        n_eval_episodes: int = 10,
         eval_light_settings: bool = False,
     ) -> SelfPPO:
         return super().learn(
@@ -349,7 +349,7 @@ class myPPO(MyOnPolicyAlgorithm):
             tb_log_name=tb_log_name,
             reset_num_timesteps=reset_num_timesteps,
             progress_bar=progress_bar,
-            num_evals_per_difficulty=num_evals_per_difficulty,
+            n_eval_episodes=n_eval_episodes,
             eval_light_settings=eval_light_settings,
         )
     
@@ -361,7 +361,7 @@ class myPPO(MyOnPolicyAlgorithm):
         tb_log_name: str = "PPO",
         reset_num_timesteps: bool = True,
         progress_bar: bool = False,
-        num_evals_per_difficulty: int = 10,
+        n_eval_episodes: int = 10,
         eval_light_settings: bool = False,
         offset: int = 0,
     ) -> SelfPPO:
@@ -372,7 +372,7 @@ class myPPO(MyOnPolicyAlgorithm):
             tb_log_name=tb_log_name,
             reset_num_timesteps=reset_num_timesteps,
             progress_bar=progress_bar,
-            num_evals_per_difficulty=num_evals_per_difficulty,
+            n_eval_episodes=n_eval_episodes,
             eval_light_settings=eval_light_settings,
             offset=offset,
         )

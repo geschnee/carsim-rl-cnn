@@ -15,6 +15,9 @@ class EpisodesResults:
 
     successful_episodes_with_collisions = 0
 
+    num_easy_episodes, num_medium_episodes, num_hard_episodes = 0, 0, 0
+    successful_easy_episodes, successful_medium_episodes, successful_hard_episodes = 0, 0, 0
+
     def __init__(self):
         pass
 
@@ -60,6 +63,19 @@ class EpisodesResults:
 
         if int(infos["collision"]) == 1 and infos["endEvent"] == "Success":
             self.successful_episodes_with_collisions += 1
+
+        if infos["mapDifficulty"] == "easy":
+            self.num_easy_episodes += 1
+            if infos["endEvent"] == "Success":
+                self.successful_easy_episodes += 1
+        if infos["mapDifficulty"] == "medium":
+            self.num_medium_episodes += 1
+            if infos["endEvent"] == "Success":
+                self.successful_medium_episodes += 1
+        if infos["mapDifficulty"] == "hard":
+            self.num_hard_episodes += 1
+            if infos["endEvent"] == "Success":
+                self.successful_hard_episodes += 1
 
     def computeRates(self):
 
@@ -108,4 +124,18 @@ class EpisodesResults:
             self.collision_rate_succesful_episodes = 0
 
             self.first_goal_completion_rate, self.second_goal_completion_rate, self.third_goal_completion_rate = 0.0, 0.0, 0.0
+
+
+        if self.num_easy_episodes != 0:
+            self.easy_success_rate = self.successful_easy_episodes / self.num_easy_episodes
+        else:
+            self.easy_success_rate = 0
+        if self.num_medium_episodes != 0:
+            self.medium_success_rate = self.successful_medium_episodes / self.num_medium_episodes
+        else:
+            self.medium_success_rate = 0
+        if self.num_hard_episodes != 0:
+            self.hard_success_rate = self.successful_hard_episodes / self.num_hard_episodes
+        else:
+            self.hard_success_rate = 0
         

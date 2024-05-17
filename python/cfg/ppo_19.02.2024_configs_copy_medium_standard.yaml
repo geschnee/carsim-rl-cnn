@@ -3,7 +3,7 @@ comment: "19.02.2024 medium standard"
 
 eval_settings:
   log_interval: 5
-  num_evals_per_difficulty: 20
+  n_eval_episodes: 20
   eval_light_settings: True
 
 print_network_and_loss_structure: False

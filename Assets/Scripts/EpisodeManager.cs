@@ -76,6 +76,8 @@ public class EpisodeManager : MonoBehaviour
     List<float> step_rewards;
     // the index indicates the step in which the reward was found
 
+    private MapType mapType;
+
 
     public void PrepareAgent()
     {
@@ -136,7 +138,7 @@ public class EpisodeManager : MonoBehaviour
         // there is a center indicator for the finishLine we thus need to substract one
     }
 
-    public void StartEpisode(bool evalMode, CollisionMode collisionMode)
+    public void StartEpisode(bool evalMode, CollisionMode collisionMode, MapType mt)
     {
         this.duration = 0f;
         this.passedGoals = new List<int>();
@@ -156,6 +158,7 @@ public class EpisodeManager : MonoBehaviour
         this.obstacleHit = false;
         this.wallHit = false;
         this.hitObstacles = new List<GameObject>();
+        this.mapType = mt;
 
         this.timestepObstacleHit = false;
 
@@ -247,6 +250,8 @@ public class EpisodeManager : MonoBehaviour
         info.Add("collision", this.obstacleOrWallHit ? "1" : "0");
         info.Add("obstacleCollision", this.obstacleHit ? "1" : "0");
         info.Add("wallCollision", this.wallHit ? "1" : "0");
+
+        info.Add("mapDifficulty", this.mapType.GetDifficulty());
 
         return info;
     }

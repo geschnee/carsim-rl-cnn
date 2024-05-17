@@ -124,7 +124,7 @@ public class Arena : MonoBehaviour
         episodeManager.fixedTimesteps = fixedTimesteps;
         episodeManager.fixedTimestepsLength = fixedTimestepsLength;
 
-        episodeManager.StartEpisode(evalMode, collisionMode);
+        episodeManager.StartEpisode(evalMode, collisionMode, mt);
         episodeManager.arenaRecorder = arenaRecorder;
         episodeManager.topViewRecorder = topViewRecorder;
 

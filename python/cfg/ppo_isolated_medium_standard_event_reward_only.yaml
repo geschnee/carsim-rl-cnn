@@ -12,7 +12,7 @@ seed: 2048
 
 eval_settings:
   interval_during_learn: 1000
-  num_evals_per_difficulty: 100
+  n_eval_episodes: 100
   eval_light_settings: True
   eval_only: False
   number_eval_runs: 2

@@ -140,7 +140,7 @@ def run_ppo(cfg):
         model.test_deterministic_improves(10, "medium", 0, LightSetting.standard)
 
 
-        model.learn(total_timesteps=cfg.total_timesteps, log_interval=cfg.eval_settings.interval_during_learn, num_evals_per_difficulty = cfg.eval_settings.num_evals_per_difficulty, eval_light_settings=cfg.eval_settings.eval_light_settings)
+        model.learn(total_timesteps=cfg.total_timesteps, log_interval=cfg.eval_settings.interval_during_learn, n_eval_episodes = cfg.eval_settings.n_eval_episodes, eval_light_settings=cfg.eval_settings.eval_light_settings)
         model.save("finished_ppo")
         print("finished learning without issues")
 
@@ -160,7 +160,7 @@ def run_ppo(cfg):
     model.replay_episodes(cfg.episode_record_replay_settings, seed, cfg.env_kwargs.fixedTimestepsLength)
     
     # run more evals here after training completed or when eval only
-    model.eval_only(total_eval_runs=cfg.eval_settings.number_eval_runs, num_evals_per_difficulty = cfg.eval_settings.num_evals_per_difficulty, eval_light_settings=cfg.eval_settings.eval_light_settings, offset=model.num_timesteps)
+    model.eval_only(total_eval_runs=cfg.eval_settings.number_eval_runs, n_eval_episodes = cfg.eval_settings.n_eval_episodes, eval_light_settings=cfg.eval_settings.eval_light_settings, offset=model.num_timesteps)
     
 
 

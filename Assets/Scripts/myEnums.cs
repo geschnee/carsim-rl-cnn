@@ -1,3 +1,5 @@
+using UnityEngine;
+
 public enum CollisionMode
 {
     unrestricted = 0,
@@ -51,4 +53,33 @@ public enum MapType
     hardBlueFirstRight = 8,
     hardRedFirstLeft = 9,
     hardRedFirstRight = 10,
+}
+
+static class MapTypeMethods
+{
+
+    public static string GetDifficulty(this MapType mt)
+    {
+        if ((int) mt == 0)
+        {
+            return "random";
+        }
+        else if ((int) mt == 1 || (int) mt == 2)
+        {
+            return "easy";
+        }
+        else if ((int) mt > 2 && (int) mt < 7)
+        {
+            return "medium";
+        }
+        else if ((int) mt > 6 && (int) mt < 11)
+        {
+            return "hard";
+        }
+        else
+        {
+            Debug.LogError("Error: MapType not recognized");
+            return "Error: MapType not recognized";
+        }
+    }
 }

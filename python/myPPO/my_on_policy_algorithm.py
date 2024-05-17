@@ -450,6 +450,13 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         self.my_record("rollout_collisions/wall_collision_rate", episodes_results.wall_collision_rate)
         self.my_record("rollout_collisions/collision_rate_succesful_episodes", episodes_results.collision_rate_succesful_episodes)
 
+        self.my_record("rollout_success_rates/success_rate", episodes_results.success_rate)
+        if episodes_results.num_easy_episodes != 0:
+            self.my_record("rollout_success_rates/success_rate_easy", episodes_results.easy_success_rate)
+        if episodes_results.num_medium_episodes != 0:
+            self.my_record("rollout_success_rates/success_rate_medium", episodes_results.medium_success_rate)
+        if episodes_results.num_hard_episodes != 0:
+            self.my_record("rollout_success_rates/success_rate_hard", episodes_results.hard_success_rate)
 
         cr_time = time.time() - cr_time
         
@@ -514,13 +521,13 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         tb_log_name: str = "OnPolicyAlgorithm",
         reset_num_timesteps: bool = True,
         progress_bar: bool = False,
-        num_evals_per_difficulty: int = 10,
+        n_eval_episodes: int = 10,
         eval_light_settings: bool = False,
     ) -> SelfOnPolicyAlgorithm:
         iteration = 0
         
 
-        print(f'num_evals_per_difficulty {num_evals_per_difficulty} eval_light_settings {eval_light_settings}')
+        print(f'n_eval_episodes {n_eval_episodes} eval_light_settings {eval_light_settings}')
 
         assert self.env is not None
 
@@ -624,10 +631,10 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
             if log_interval is not None and iteration % log_interval == 0:
                 print(f'Will eval now as after every {log_interval} collect and trains')
                 eval_time = time.time()
-                self.eval(iteration=iteration, num_evals_per_difficulty=num_evals_per_difficulty, eval_light_settings=eval_light_settings)
-                self.test_episodes_identical_start_conditions(n_episodes=num_evals_per_difficulty, iteration=iteration, light_setting=LightSetting.standard, log=True)
-                self.test_deterministic_improves(n_episodes=num_evals_per_difficulty, difficulty="medium", iteration=iteration, light_setting=LightSetting.standard, log=True)
-                self.test_fresh_obs_improves(n_episodes=num_evals_per_difficulty, difficulty = "medium", iteration=iteration, light_setting=LightSetting.standard, log=True)
+                self.eval(iteration=iteration, n_eval_episodes=n_eval_episodes, eval_light_settings=eval_light_settings)
+                self.test_episodes_identical_start_conditions(n_episodes=n_eval_episodes, iteration=iteration, light_setting=LightSetting.standard, log=True)
+                self.test_deterministic_improves(n_episodes=n_eval_episodes, difficulty="medium", iteration=iteration, light_setting=LightSetting.standard, log=True)
+                self.test_fresh_obs_improves(n_episodes=n_eval_episodes, difficulty = "medium", iteration=iteration, light_setting=LightSetting.standard, log=True)
 
 
                 eval_time = time.time() - eval_time
@@ -703,7 +710,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
 
 
 
-    def eval(self: SelfOnPolicyAlgorithm, iteration: int = 0, num_evals_per_difficulty: int = 20, eval_light_settings: bool = False) -> float:
+    def eval(self: SelfOnPolicyAlgorithm, iteration: int = 0, n_eval_episodes: int = 20, eval_light_settings: bool = False) -> float:
         print(f'eval started', flush=True)
 
 
@@ -725,9 +732,9 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
 
         for light_setting in light_settings:
             
-            easy_success_rate, easy_collision_rate = self.eval_model_track(n_eval_episodes = num_evals_per_difficulty, difficulty ="easy", iteration=iteration, light_setting=light_setting)
-            medium_success_rate, medium_collision_rate = self.eval_model_track(n_eval_episodes =num_evals_per_difficulty, difficulty="medium", iteration=iteration, light_setting=light_setting)
-            hard_success_rate, hard_collision_rate = self.eval_model_track(n_eval_episodes =num_evals_per_difficulty, difficulty="hard", iteration=iteration, light_setting=light_setting)
+            easy_success_rate, easy_collision_rate = self.eval_model_track(n_eval_episodes = n_eval_episodes, difficulty ="easy", iteration=iteration, light_setting=light_setting)
+            medium_success_rate, medium_collision_rate = self.eval_model_track(n_eval_episodes =n_eval_episodes, difficulty="medium", iteration=iteration, light_setting=light_setting)
+            hard_success_rate, hard_collision_rate = self.eval_model_track(n_eval_episodes =n_eval_episodes, difficulty="hard", iteration=iteration, light_setting=light_setting)
             total_success_rate += easy_success_rate + medium_success_rate + hard_success_rate
             light_success_rate = (easy_success_rate + medium_success_rate + hard_success_rate) / 3
             
@@ -753,17 +760,17 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
             avg_hard_collision_rate += hard_collision_rate
 
         if eval_light_settings:
-            self.my_record(f"eval/success_easy_across_light_settings", avg_easy_success_rate / len(light_settings))
-            self.my_record(f"eval/success_medium_across_light_settings", avg_medium_success_rate / len(light_settings))
-            self.my_record(f"eval/success_hard_across_light_settings", avg_hard_success_rate / len(light_settings))
+            self.my_record(f"eval/success_easy", avg_easy_success_rate / len(light_settings))
+            self.my_record(f"eval/success_medium", avg_medium_success_rate / len(light_settings))
+            self.my_record(f"eval/success_hard", avg_hard_success_rate / len(light_settings))
 
-            self.my_record(f"eval_important/success_easy_across_light_settings", avg_easy_success_rate / len(light_settings))
-            self.my_record(f"eval_important/success_medium_across_light_settings", avg_medium_success_rate / len(light_settings))
-            self.my_record(f"eval_important/success_hard_across_light_settings", avg_hard_success_rate / len(light_settings))
+            self.my_record(f"eval_important/success_easy", avg_easy_success_rate / len(light_settings))
+            self.my_record(f"eval_important/success_medium", avg_medium_success_rate / len(light_settings))
+            self.my_record(f"eval_important/success_hard", avg_hard_success_rate / len(light_settings))
 
-            self.my_record(f"eval_collision_rates/collision_rate_easy_across_light_settings", avg_easy_collision_rate / len(light_settings))
-            self.my_record(f"eval_collision_rates/collision_rate_medium_across_light_settings", avg_medium_collision_rate / len(light_settings))
-            self.my_record(f"eval_collision_rates/collision_rate_hard_across_light_settings", avg_hard_collision_rate / len(light_settings))
+            self.my_record(f"eval_collision_rates/collision_rate_easy", avg_easy_collision_rate / len(light_settings))
+            self.my_record(f"eval_collision_rates/collision_rate_medium", avg_medium_collision_rate / len(light_settings))
+            self.my_record(f"eval_collision_rates/collision_rate_hard", avg_hard_collision_rate / len(light_settings))
 
         total_success_rate = total_success_rate / (3 * len(light_settings))
         if total_success_rate > self.max_total_success_rate:
@@ -775,8 +782,8 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         
 
 
-        self.my_record("eval/success_rate", total_success_rate)
-        self.my_record("eval_important/success_rate", total_success_rate)
+        self.my_record("eval/total_success_rate", total_success_rate)
+        self.my_record("eval_important/total_success_rate", total_success_rate)
 
         self.my_record("eval/collision_rate", total_collision_rate)
         self.my_record("eval_collision_rates/collision_rate", total_collision_rate)
@@ -988,7 +995,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         tb_log_name: str = "OnPolicyAlgorithm",
         reset_num_timesteps: bool = True,
         progress_bar: bool = False,
-        num_evals_per_difficulty: int = 10,
+        n_eval_episodes: int = 10,
         eval_light_settings: bool = False,
         offset: int = 0,
     ) -> SelfOnPolicyAlgorithm:
@@ -1008,10 +1015,10 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
             self.num_timesteps = step # for proper logging we need to manipulate this, very dirty!!!
 
             eval_time = time.time()
-            self.eval(iteration=step, num_evals_per_difficulty=num_evals_per_difficulty, eval_light_settings=eval_light_settings)
-            self.test_episodes_identical_start_conditions(n_episodes=num_evals_per_difficulty, iteration=step, light_setting=LightSetting.standard, deterministic=True, log=True)
-            self.test_deterministic_improves(n_episodes=num_evals_per_difficulty, difficulty = "medium", iteration=step, light_setting=LightSetting.standard, log=True)
-            self.test_fresh_obs_improves(n_episodes=num_evals_per_difficulty, difficulty = "medium", iteration=step, light_setting=LightSetting.standard, log=True)
+            self.eval(iteration=step, n_eval_episodes=n_eval_episodes, eval_light_settings=eval_light_settings)
+            self.test_episodes_identical_start_conditions(n_episodes=n_eval_episodes, iteration=step, light_setting=LightSetting.standard, deterministic=True, log=True)
+            self.test_deterministic_improves(n_episodes=n_eval_episodes, difficulty = "medium", iteration=step, light_setting=LightSetting.standard, log=True)
+            self.test_fresh_obs_improves(n_episodes=n_eval_episodes, difficulty = "medium", iteration=step, light_setting=LightSetting.standard, log=True)
 
 
             eval_time = time.time() - eval_time
@@ -1058,6 +1065,9 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         deterministic: bool = True,
         log=False
     ):
+        # TODO make the mapType a parameter??
+
+
         # same initialization of envs, does the agent traverse the env in the same way?
 
         env = self.env
