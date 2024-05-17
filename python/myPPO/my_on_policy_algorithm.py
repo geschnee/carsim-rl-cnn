@@ -633,7 +633,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
 
             # model eval 
             if log_interval is not None and iteration % log_interval == 0:
-                print(f'Will eval now as after every {log_interval} collect and trains')
+                print(f'Will eval now as after every {log_interval} collect and trains', flush=True)
                 eval_time = time.time()
                 self.eval(iteration=iteration, n_eval_episodes=n_eval_episodes, eval_light_settings=eval_light_settings)
                 self.test_episodes_identical_start_conditions(n_episodes=n_eval_episodes, iteration=iteration, light_setting=LightSetting.standard, log=True)
@@ -735,8 +735,11 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         avg_easy_collision_rate, avg_medium_collision_rate, avg_hard_collision_rate = 0, 0, 0
 
         for light_setting in light_settings:
+            print(f'running eval for light setting {light_setting.name}', flush=True)
             
+            time_easy = time.time()
             easy_success_rate, easy_collision_rate = self.eval_model_track(n_eval_episodes = n_eval_episodes, difficulty ="easy", iteration=iteration, light_setting=light_setting)
+            print(f'eval_model_track easy done in {(time_easy - time.time())/60} minutes', flush=True)
             medium_success_rate, medium_collision_rate = self.eval_model_track(n_eval_episodes =n_eval_episodes, difficulty="medium", iteration=iteration, light_setting=light_setting)
             hard_success_rate, hard_collision_rate = self.eval_model_track(n_eval_episodes =n_eval_episodes, difficulty="hard", iteration=iteration, light_setting=light_setting)
             total_success_rate += easy_success_rate + medium_success_rate + hard_success_rate
@@ -1255,7 +1258,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
                     succesful_episodes += success
                  
         
-        print(f'recorded episodes:\ntotal_number_episodes: {total_number_episodes} succesful_episodes: {succesful_episodes}')
+        print(f'recorded episodes:\ntotal_number_episodes: {total_number_episodes} succesful_episodes: {succesful_episodes}', flush=True)
 
     def record_episode(self, light_setting, episode_path, map_and_rotation, deterministic):
         env = self.env
@@ -1361,11 +1364,14 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         for i in range(len(sampled_actions)):
             np.save(f'{episode_path}\\sampled_action_{i}.npy', sampled_actions[i])
 
+        #print(f'type sampled_actions[i]: {type(sampled_actions[0])}')
+        #print(f'type of obtained_values[i]: {type(obtained_values[0])}')
+
         for i in range(len(obtained_values)):
-            np.save(f'{episode_path}\\obtained_value_{i}.npy', obtained_values[i])
+            np.save(f'{episode_path}\\obtained_value_{i}.npy', obtained_values[i].cpu().numpy())
 
         for i in range(len(obtained_log_probs)):
-            np.save(f'{episode_path}\\obtained_log_prob_{i}.npy', obtained_log_probs[i])
+            np.save(f'{episode_path}\\obtained_log_prob_{i}.npy', obtained_log_probs[i].cpu().numpy())
 
         # save episode length
         np.save(f'{episode_path}\\episode_length.npy', len(infer_obsstrings))
@@ -1558,8 +1564,8 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         
         for i in range(recorded_episode_length):
             assert np.allclose(recorded_actions[i], reproduced_actions[i]), f'actions are not the same {recorded_actions[i]} != {reproduced_actions[i]}'
-            assert np.allclose(recorded_values[i], reproduced_values[i]), f'values are not the same {recorded_values[i]} != {reproduced_values[i]}'
-            assert np.allclose(recorded_log_probs[i], reproduced_log_probs[i]), f'log_probs are not the same {recorded_log_probs[i]} != {reproduced_log_probs[i]}'
+            assert np.allclose(recorded_values[i], reproduced_values[i].cpu().numpy()), f'values are not the same {recorded_values[i]} != {reproduced_values[i]}'
+            assert np.allclose(recorded_log_probs[i], reproduced_log_probs[i].cpu().numpy()), f'log_probs are not the same {recorded_log_probs[i]} != {reproduced_log_probs[i]}'
             
         print(f'max for setting {episode_path} is {np.max(reproduce_times)}')
 
