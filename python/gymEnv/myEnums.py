@@ -88,7 +88,7 @@ class MapType(Enum):
 
     
     @classmethod
-    def getAllTracksnumbersOfDifficulty(myEnum, difficulty):
+    def getAllTracknumbersOfDifficulty(myEnum, difficulty):
         if difficulty == "easy":
             return [1,2]
         elif difficulty == "medium":

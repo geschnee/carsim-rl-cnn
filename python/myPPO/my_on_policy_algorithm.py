@@ -809,14 +809,14 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         range_width = rotation_range_max - rotation_range_min
 
         if n_eval_episodes == 1:
-            rotations = [int(rotation_range_min + range_width / 2)]
+            rotations = [int((rotation_range_min + range_width) / 2)]
         else:
             step = range_width / (n_eval_episodes-1)
 
             rotations = [rotation_range_min + i * step for i in range(n_eval_episodes)]
             rotations = [int(rotation) for rotation in rotations]
 
-        track_numbers = MapType.getAllTracksnumbersOfDifficulty(difficulty)
+        track_numbers = MapType.getAllTracknumbersOfDifficulty(difficulty)
 
         tracks = []
         for i in range(n_eval_episodes):
