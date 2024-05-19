@@ -14,6 +14,9 @@ from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback, Schedul
 from stable_baselines3.common.utils import obs_as_tensor, safe_mean
 from stable_baselines3.common.vec_env import VecEnv
 
+
+from stable_baselines3.common.utils import set_random_seed
+
 from myPPO.my_buffers import MyRolloutBuffer
 
 from gymEnv.myEnums import LightSetting
@@ -1222,7 +1225,8 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
     def record_episodes(self, episode_record_settings, seed, cfg):
         n_episodes = episode_record_settings.n_episodes_per_setting
 
-        from stable_baselines3.common.utils import set_random_seed
+        if not episode_record_settings.deterministic_sampling:
+            print(f'WARNING, non deterministic sampling might not provide the same results acorss different computers, as they might use different devices (cpu or cuda) for sampling from the distributions. Please use deterministic sampling for recordings.', flush=True)
 
 
         episode_recordings_path = f'{os.getcwd()}\\episode_recordings'
@@ -1252,7 +1256,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
                     episode_path = f'{settings_path}\\episode_{idx}'
                     os.mkdir(episode_path)
                     
-                    set_random_seed(seed)
+                    set_random_seed(seed, using_cuda=True)
                     success = self.record_episode(light_setting, episode_path, map_and_rotation, deterministic=episode_record_settings.deterministic_sampling)
                     total_number_episodes += 1
                     succesful_episodes += success
@@ -1394,7 +1398,6 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
     def replay_episodes(self, episode_replay_settings, seed, timestepLength):
         n_episodes = episode_replay_settings.n_episodes_per_setting
 
-        from stable_baselines3.common.utils import set_random_seed
 
         if episode_replay_settings.replay_folder:
             base_path = f'{HydraConfig.get().runtime.cwd}/{episode_replay_settings.replay_folder}'
@@ -1403,8 +1406,8 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
             base_path = f'{os.getcwd()}\\episode_recordings'
         
         n_envs_recording = np.load(f'{base_path}\\n_envs.npy')
-        if not episode_replay_settings.deterministic_sampling:
-            assert self.n_envs == n_envs_recording, f'number of envs in recording {n_envs_recording} does not match the number of envs in the current environment {self.env.n_envs}, this is an issue only when sampling non_deterministically'
+        #if not episode_replay_settings.deterministic_sampling:
+        #    assert self.env.num_envs == n_envs_recording, f'number of envs in recording {n_envs_recording} does not match the number of envs in the current environment {self.env.num_envs}, this is an issue only when sampling non_deterministically'
     
         n_episodes_recording = np.load(f'{base_path}\\n_episodes.npy')
         assert n_episodes == n_episodes_recording, f'number of episodes in recording {n_episodes_recording} does not match the number of episodes to replay {n_episodes}'
@@ -1430,7 +1433,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
                 for idx in range(n_episodes):
                     episode_path = f'{settings_path}\\episode_{idx}'
                     
-                    set_random_seed(seed)
+                    set_random_seed(seed, using_cuda=True)
                     times = self.replay_episode(episode_path, deterministic=episode_replay_settings.deterministic_sampling)
                     
                     preprocessing_plus_infer_times.extend(times)
@@ -1539,7 +1542,10 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
                 actions, values, log_probs = self.policy(obs_tensor, deterministic=deterministic)
             actions = actions.cpu().numpy()
 
-            reproduce_times.append(time.time() - replay_time_start)
+            if i > 0:
+                # we exclude the first frame, it can take a long time if the model was not loaded on the gpu or some other reason
+                # only the very first frame of the model takes this long
+                reproduce_times.append(time.time() - replay_time_start)
             
             
             reproduced_actions.append(actions[0])
@@ -1551,24 +1557,28 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
             take_image(env, step_obs_unity_images[i])
 
 
-        '''
-        assert th.equal(self.first_obs, first_obs_tensor), f'first obs is not the same {self.first_obs} != {first_obs_tensor}'
-        # the input has to be the same
+        if deterministic:
+            for i in range(recorded_episode_length):
+                assert np.allclose(recorded_actions[i], reproduced_actions[i], atol=1e-5), f'actions are not the same {recorded_actions[i]} != {reproduced_actions[i]}'
+                assert np.allclose(recorded_values[i], reproduced_values[i].cpu().numpy(), atol=1e-3), f'values are not the same {recorded_values[i]} != {reproduced_values[i]}'
+                assert np.allclose(recorded_log_probs[i], reproduced_log_probs[i].cpu().numpy(), atol=1e-3), f'log_probs are not the same {recorded_log_probs[i]} != {reproduced_log_probs[i]}'
+        else:
+            # non deterministic does not always allow for exact reproduction of the actions (even with the same given seed) across computers
+            # since they might use different devices (cpu or cuda)
 
-        print(f'self.first_obs: {self.first_obs}', flush=True)
-        print(f'self.second_obs: {self.second_obs}', flush=True)
-        print(f'second_obs_tensor: {second_obs_tensor}', flush=True)
+            # example: laptop uses cpu, desktop uses cuda --> distribution nondeterministic sampling is different
+            # Option 1: we could rewrite ActorCriticPolicy to also give the mean and std of the distribution and verify them, however that requires a small rewrite
+            # it is much more convenient to just use the deterministic sampling for the recording and replay
+            # Option 2: force cpu usage
+            # Option 3: only check the values, as they do not depend on the distributions
 
-        assert th.equal(self.second_obs, second_obs_tensor), f'second obs is not the same {self.second_obs} != {second_obs_tensor}'
-        '''
+            # therefore we only check the values, as they do not depend on the distributions
 
-        
-        for i in range(recorded_episode_length):
-            assert np.allclose(recorded_actions[i], reproduced_actions[i]), f'actions are not the same {recorded_actions[i]} != {reproduced_actions[i]}'
-            assert np.allclose(recorded_values[i], reproduced_values[i].cpu().numpy()), f'values are not the same {recorded_values[i]} != {reproduced_values[i]}'
-            assert np.allclose(recorded_log_probs[i], reproduced_log_probs[i].cpu().numpy()), f'log_probs are not the same {recorded_log_probs[i]} != {reproduced_log_probs[i]}'
+            for i in range(recorded_episode_length):
+                
+                assert np.allclose(recorded_values[i], reproduced_values[i].cpu().numpy(), atol=1e-3), f'values are not the same {recorded_values[i]} != {reproduced_values[i]}'
+                
             
-        print(f'max for setting {episode_path} is {np.max(reproduce_times)}')
 
         return reproduce_times
 

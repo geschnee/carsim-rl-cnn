@@ -3,7 +3,7 @@ comment: "easy standard, replay on laptop"
 # we should also try it with the fixed spawn to be closer to the evaluation scenario, maybe the differential can do it 
 
 # reducing n_envs results in higher fps (per env)
-n_envs: 10
+n_envs: 2
 copy_model_from: False
 # copy_model_from can be False or a string (filename without .zip suffix)
 
@@ -21,7 +21,7 @@ eval_settings:
 episode_record_replay_settings:
   n_episodes_per_setting: 2
   deterministic_sampling: True
-  replay_folder: False
+  replay_folder: episode_recordings/episode_recordings_from_laptop_deter
   # replay_folder can be False to replay the previously recorded episodes
 
 algo_settings:
