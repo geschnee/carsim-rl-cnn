@@ -1230,15 +1230,15 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         self.save(f'{episode_recordings_path}\\model')
         np.save(f'{episode_recordings_path}\\n_envs.npy', self.env.num_envs)
         np.save(f'{episode_recordings_path}\\n_episodes.npy', episode_record_settings.n_episodes_per_setting)
-        with open(f'{episode_recordings_path}record_config.yaml', 'w') as f:
+        with open(f'{episode_recordings_path}\\record_config.yaml', 'w') as f:
             OmegaConf.save(episode_record_settings, f)
-        with open(f'{episode_recordings_path}total_config.yaml', 'w') as f:
+        with open(f'{episode_recordings_path}\\total_config.yaml', 'w') as f:
             OmegaConf.save(cfg, f)
 
         total_number_episodes, succesful_episodes = 0, 0
 
         difficulties = ["easy", "medium", "hard"]
-        #difficulties = ["easy"]
+        difficulties = ["easy"]
         light_settings = [LightSetting.bright, LightSetting.standard, LightSetting.dark]
         light_settings = [LightSetting.standard]
         for difficulty in difficulties:
@@ -1412,9 +1412,10 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         # find model
         model_path = f'{base_path}\\model.zip'
         self.load(model_path)
+        print(f'model loaded from {model_path}', flush=True)
         
         difficulties = ["easy", "medium", "hard"]
-        #difficulties = ["easy"]
+        difficulties = ["easy"]
         light_settings = [LightSetting.bright, LightSetting.standard, LightSetting.dark]
         light_settings = [LightSetting.standard]
 
