@@ -874,7 +874,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
 
 
         # reset environment 0 to record the videos
-        log_indices = [0, 1] # these indices will record videos
+        log_indices = [0] # these indices will record videos
         for i in log_indices:
             env.env_method(
                 method_name="setVideoFilename",
