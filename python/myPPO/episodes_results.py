@@ -18,6 +18,10 @@ class EpisodesResults:
     num_easy_episodes, num_medium_episodes, num_hard_episodes = 0, 0, 0
     successful_easy_episodes, successful_medium_episodes, successful_hard_episodes = 0, 0, 0
 
+    successful_easy_goals, successful_medium_goals, successful_hard_goals = 0, 0, 0
+    easy_goals, medium_goals, hard_goals = 0, 0, 0
+
+
     def __init__(self):
         pass
 
@@ -30,8 +34,9 @@ class EpisodesResults:
         elif infos["endEvent"] == "OutOfTime":
             self.timeouts += 1
         else:
-            print(f'end event is {infos["endEvent"]}')
+            #print(f'end event is {infos["endEvent"]}')
             # FinishMissed
+            pass
 
 
         self.successfully_passed_goals += int(infos["passedGoals"])
@@ -66,14 +71,21 @@ class EpisodesResults:
 
         if infos["mapDifficulty"] == "easy":
             self.num_easy_episodes += 1
+            self.easy_goals += int(infos["numberOfGoals"])
+            self.successful_easy_goals += int(infos["passedGoals"])
             if infos["endEvent"] == "Success":
                 self.successful_easy_episodes += 1
+
         if infos["mapDifficulty"] == "medium":
             self.num_medium_episodes += 1
+            self.medium_goals += int(infos["numberOfGoals"])
+            self.successful_medium_goals += int(infos["passedGoals"])
             if infos["endEvent"] == "Success":
                 self.successful_medium_episodes += 1
         if infos["mapDifficulty"] == "hard":
             self.num_hard_episodes += 1
+            self.hard_goals += int(infos["numberOfGoals"])
+            self.successful_hard_goals += int(infos["passedGoals"])
             if infos["endEvent"] == "Success":
                 self.successful_hard_episodes += 1
 
@@ -135,14 +147,20 @@ class EpisodesResults:
 
         if self.num_easy_episodes != 0:
             self.easy_success_rate = self.successful_easy_episodes / self.num_easy_episodes
+            self.easy_goal_completion_rate = self.successful_easy_goals / self.easy_goals
         else:
             self.easy_success_rate = 0
+            self.easy_goal_completion_rate = 0
         if self.num_medium_episodes != 0:
             self.medium_success_rate = self.successful_medium_episodes / self.num_medium_episodes
+            self.medium_goal_completion_rate = self.successful_medium_goals / self.medium_goals
         else:
             self.medium_success_rate = 0
+            self.medium_goal_completion_rate = 0
         if self.num_hard_episodes != 0:
             self.hard_success_rate = self.successful_hard_episodes / self.num_hard_episodes
+            self.hard_goal_completion_rate = self.successful_hard_goals / self.hard_goals
         else:
             self.hard_success_rate = 0
+            self.hard_goal_completion_rate = 0
         

@@ -453,13 +453,17 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         self.my_record("rollout_collisions/wall_collision_rate", episodes_results.wall_collision_rate)
         self.my_record("rollout_collisions/collision_rate_succesful_episodes", episodes_results.collision_rate_succesful_episodes)
 
-        self.my_record("rollout_success_rates/success_rate", episodes_results.success_rate)
+        self.my_record("rollout_success/success_rate", episodes_results.success_rate)
+        self.my_record("rollout_success/goal_completion_rate", episodes_results.goal_completion_rate)
         if episodes_results.num_easy_episodes != 0:
-            self.my_record("rollout_success_rates/success_rate_easy", episodes_results.easy_success_rate)
+            self.my_record("rollout_success/success_rate_easy", episodes_results.easy_success_rate)
+            self.my_record("rollout_success/goal_completion_rate_easy", episodes_results.easy_goal_completion_rate)
         if episodes_results.num_medium_episodes != 0:
-            self.my_record("rollout_success_rates/success_rate_medium", episodes_results.medium_success_rate)
+            self.my_record("rollout_success/success_rate_medium", episodes_results.medium_success_rate)
+            self.my_record("rollout_success/goal_completion_rate_medium", episodes_results.medium_goal_completion_rate)
         if episodes_results.num_hard_episodes != 0:
-            self.my_record("rollout_success_rates/success_rate_hard", episodes_results.hard_success_rate)
+            self.my_record("rollout_success/success_rate_hard", episodes_results.hard_success_rate)
+            self.my_record("rollout_success/goal_completion_rate_hard", episodes_results.hard_goal_completion_rate)
         
         self.my_record("rollout_episodes/rate_easy_episodes", episodes_results.rate_easy_episodes)
         self.my_record("rollout_episodes/rate_medium_episodes", episodes_results.rate_medium_episodes)
@@ -742,7 +746,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
             
             time_easy = time.time()
             easy_success_rate, easy_collision_rate = self.eval_model_track(n_eval_episodes = n_eval_episodes, difficulty ="easy", iteration=iteration, light_setting=light_setting)
-            print(f'eval_model_track easy done in {(time_easy - time.time())/60} minutes', flush=True)
+            print(f'eval_model_track easy done in {(time.time() - time_easy)/60} minutes', flush=True)
             medium_success_rate, medium_collision_rate = self.eval_model_track(n_eval_episodes =n_eval_episodes, difficulty="medium", iteration=iteration, light_setting=light_setting)
             hard_success_rate, hard_collision_rate = self.eval_model_track(n_eval_episodes =n_eval_episodes, difficulty="hard", iteration=iteration, light_setting=light_setting)
             total_success_rate += easy_success_rate + medium_success_rate + hard_success_rate
@@ -1242,9 +1246,9 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         total_number_episodes, succesful_episodes = 0, 0
 
         difficulties = ["easy", "medium", "hard"]
-        difficulties = ["easy"]
+        
         light_settings = [LightSetting.bright, LightSetting.standard, LightSetting.dark]
-        light_settings = [LightSetting.standard]
+       
         for difficulty in difficulties:
             for light_setting in light_settings:
                 settings_path = f'{episode_recordings_path}\\{difficulty}_{light_setting.name}'
@@ -1418,9 +1422,8 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         print(f'model loaded from {model_path}', flush=True)
         
         difficulties = ["easy", "medium", "hard"]
-        difficulties = ["easy"]
         light_settings = [LightSetting.bright, LightSetting.standard, LightSetting.dark]
-        light_settings = [LightSetting.standard]
+        
 
         
 
@@ -1565,6 +1568,8 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         else:
             # non deterministic does not always allow for exact reproduction of the actions (even with the same given seed) across computers
             # since they might use different devices (cpu or cuda)
+
+            # https://github.com/pytorch/pytorch/issues/47347
 
             # example: laptop uses cpu, desktop uses cuda --> distribution nondeterministic sampling is different
             # Option 1: we could rewrite ActorCriticPolicy to also give the mean and std of the distribution and verify them, however that requires a small rewrite
