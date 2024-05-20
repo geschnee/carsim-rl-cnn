@@ -14,7 +14,7 @@ public class EpisodeManager : MonoBehaviour
     public bool stepFinished;
 
     private float allowedTimeDefault = 25f; // was 10f
-    private float allowedTimePerGoal = 40f; // was 10f
+    private float allowedTimePerGoal = 20f; // was 10f
 
     // multiply by some constant, the reward is very small
     public float distanceCoefficient;// = 10f;
