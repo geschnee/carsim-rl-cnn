@@ -988,7 +988,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
             self.my_record(f'eval_{difficulty}_{light_setting.name}/average_episode_length', np.average(episode_lengths))
 
             self.my_record(f'eval_{difficulty}_{light_setting.name}/collision_rate_succesful_episodes', episodes_results.collision_rate_succesful_episodes)
-
+            self.my_record(f'eval_{difficulty}_{light_setting.name}/goal_completion_rate', episodes_results.goal_completion_rate)
 
         # set to no video afterwards
         for index in log_indices:

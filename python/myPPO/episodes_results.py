@@ -25,13 +25,17 @@ class EpisodesResults:
     def __init__(self):
         pass
 
+    def is_success(self, infos):
+        return infos["endEvent"] == "Success" or int(infos["numberOfGoals"]) == int(infos["passedGoals"])
+
     def processInfoDictEpisodeFinished(self, infos):
 
         self.completed_episodes += 1
 
-        if infos["endEvent"] == "Success":
+        if self.is_success(infos):
             self.successfully_completed_episodes += 1
-        elif infos["endEvent"] == "OutOfTime":
+            
+        if infos["endEvent"] == "OutOfTime":
             self.timeouts += 1
         else:
             #print(f'end event is {infos["endEvent"]}')
@@ -66,27 +70,27 @@ class EpisodesResults:
 
         self.unity_duration += float(infos["duration"].replace(",","."))
 
-        if int(infos["collision"]) == 1 and infos["endEvent"] == "Success":
+        if int(infos["collision"]) == 1 and self.is_success(infos):
             self.successful_episodes_with_collisions += 1
 
         if infos["mapDifficulty"] == "easy":
             self.num_easy_episodes += 1
             self.easy_goals += int(infos["numberOfGoals"])
             self.successful_easy_goals += int(infos["passedGoals"])
-            if infos["endEvent"] == "Success":
+            if self.is_success(infos):
                 self.successful_easy_episodes += 1
 
         if infos["mapDifficulty"] == "medium":
             self.num_medium_episodes += 1
             self.medium_goals += int(infos["numberOfGoals"])
             self.successful_medium_goals += int(infos["passedGoals"])
-            if infos["endEvent"] == "Success":
+            if self.is_success(infos):
                 self.successful_medium_episodes += 1
         if infos["mapDifficulty"] == "hard":
             self.num_hard_episodes += 1
             self.hard_goals += int(infos["numberOfGoals"])
             self.successful_hard_goals += int(infos["passedGoals"])
-            if infos["endEvent"] == "Success":
+            if self.is_success(infos):
                 self.successful_hard_episodes += 1
 
     def computeRates(self):
