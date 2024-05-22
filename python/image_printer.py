@@ -86,6 +86,8 @@ time.sleep(1) # wait for the car to spawn
 env.get_arena_screenshot("latex_images/evaluation_hard.png")
 
 
+
+
 # agent POV screenshots:
 import PIL.Image as Image
 import gymEnv.data_augmentation as da
@@ -133,7 +135,7 @@ saveAugmentedImages(env, name)
 # agent vision with reduced lighting
 lighting = myEnums.LightSetting.dark
 env.reset(lightSetting=lighting)
-name= "reduced_lighting"
+name= "dark"
 time.sleep(1) # wait for the car to spawn
 obs_to_file(env.getObservation(), f"latex_images/light_setting_{name}_pov.png")
 env.saveObservationNoPreprocessing(f"latex_images/light_setting_{name}_pov_no_preprocessing.png")
@@ -145,7 +147,7 @@ saveAugmentedImages(env, name)
 # agent vision with increased lighting
 lighting = myEnums.LightSetting.bright
 env.reset(lightSetting=lighting)
-name = "increased_lighting"
+name = "bright"
 time.sleep(1) # wait for the car to spawn
 obs_to_file(env.getObservation(), f"latex_images/light_setting_{name}_pov.png")
 env.saveObservationNoPreprocessing(f"latex_images/light_setting_{name}_pov_no_preprocessing.png")

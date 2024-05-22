@@ -137,7 +137,7 @@ def run_ppo(cfg):
 
         model.invariant_output_test()
         model.test_episodes_identical_start_conditions(n_episodes=10, iteration=0, light_setting=LightSetting.standard)
-        model.test_deterministic_improves(10, "medium", 0, LightSetting.standard)
+        model.test_deterministic_improves(10, 0, cfg.eval_settings.eval_light_settings)
 
 
         model.learn(total_timesteps=cfg.total_timesteps, log_interval=cfg.eval_settings.interval_during_learn, n_eval_episodes = cfg.eval_settings.n_eval_episodes, eval_light_settings=cfg.eval_settings.eval_light_settings)

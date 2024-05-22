@@ -477,7 +477,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
             self.rollout_best_success_rate = episodes_results.success_rate
             if self.rollout_best_model_name != "":
                 os.remove(f'{self.rollout_best_model_name}.zip')
-            self.rollout_best_model_name = f'rollout_model_{int(episodes_results.success_rate*100)}-sr_{self.num_timesteps}-steps'
+            self.rollout_best_model_name = f'rollout_model_success_rate-{int(episodes_results.success_rate*100)}_timestep-{self.num_timesteps}'
             self.save(self.rollout_best_model_name)
 
         return True, cr_time
@@ -644,7 +644,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
                 eval_time = time.time()
                 self.eval(iteration=iteration, n_eval_episodes=n_eval_episodes, eval_light_settings=eval_light_settings)
                 self.test_episodes_identical_start_conditions(n_episodes=n_eval_episodes, iteration=iteration, light_setting=LightSetting.standard, log=True)
-                self.test_deterministic_improves(n_episodes=n_eval_episodes, difficulty="medium", iteration=iteration, light_setting=LightSetting.standard, log=True)
+                self.test_deterministic_improves(n_episodes=n_eval_episodes, iteration=iteration, eval_light_settings=False, log=True)
                 self.test_fresh_obs_improves(n_episodes=n_eval_episodes, difficulty = "medium", iteration=iteration, light_setting=LightSetting.standard, log=True)
 
 
@@ -669,34 +669,67 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
 
         return state_dicts, []
     
-    def test_deterministic_improves(self, n_episodes: int = 10, difficulty: str = "easy", iteration: int = 0, light_setting: LightSetting = LightSetting.standard, log =False) -> float:
+    def test_deterministic_improves(self, n_episodes: int = 10, iteration: int = 0, eval_light_settings: bool = False, log =False) -> float:
         dirpath=f'{os.getcwd()}\\videos_iter_{iteration}'
         if not os.path.exists(dirpath):
             os.mkdir(dirpath)
 
-        deter_success_rate, deter_collision_rate = self.eval_model_track(n_episodes, difficulty, iteration, light_setting, deterministic=True, log=False)
-        nondeter_success_rate, nondeter_collision_rate = self.eval_model_track(n_episodes, difficulty, iteration, light_setting, deterministic=False, log=False)
+        
+        if eval_light_settings:
+            light_settings = [LightSetting.bright, LightSetting.standard, LightSetting.dark]
+        else: 
+            light_settings = [LightSetting.standard]
 
-        print(f'deter success rate: {deter_success_rate} collision rate: {deter_collision_rate}')
-        print(f'nondeter success rate: {nondeter_success_rate} collision rate: {nondeter_collision_rate}')
-        print(f'medium deter better than nondeter: {deter_success_rate > nondeter_success_rate}')
+        difficulties = ["easy", "medium", "hard"]
+
+        total_deter_success_rate, total_deter_collision_rate = 0, 0
+        total_nondeter_success_rate, total_nondeter_collision_rate = 0, 0
+
+        for light_setting in light_settings:
+
+            for difficulty in difficulties:
+
+                deter_success_rate, deter_collision_rate = self.eval_model_track(n_episodes, difficulty, iteration, light_setting, deterministic=True, log=False)
+                nondeter_success_rate, nondeter_collision_rate = self.eval_model_track(n_episodes, difficulty, iteration, light_setting, deterministic=False, log=False)
+
+                total_deter_success_rate += deter_success_rate
+                total_deter_collision_rate += deter_collision_rate
+                total_nondeter_success_rate += nondeter_success_rate
+                total_nondeter_collision_rate += nondeter_collision_rate
+
+                if log:
+                    self.my_record(f"deter_nondeter_comparison/success_deter_{difficulty}_{light_setting.name}", deter_success_rate)
+                    self.my_record(f"deter_nondeter_comparison/success_nondeter_{difficulty}_{light_setting.name}", nondeter_success_rate)
+                    self.my_record(f"deter_nondeter_comparison/collision_rate_deter_{difficulty}_{light_setting.name}", deter_collision_rate)
+                    self.my_record(f"deter_nondeter_comparison/collision_rate_nondeter_{difficulty}_{light_setting.name}", nondeter_collision_rate)
+
+                    self.my_record(f"deter_nondeter_comparison/nondeter_better_by_{difficulty}_{light_setting.name}", nondeter_success_rate - deter_success_rate)
+
+        total_deter_success_rate /= len(light_settings) * len(difficulties)
+        total_deter_collision_rate /= len(light_settings) * len(difficulties)
+        total_nondeter_success_rate /= len(light_settings) * len(difficulties)
+        total_nondeter_collision_rate /= len(light_settings) * len(difficulties)
+
+        print(f'overall deter success rate: {total_deter_success_rate} collision rate: {total_deter_collision_rate}')
+        print(f'overall nondeter success rate: {total_nondeter_success_rate} collision rate: {total_nondeter_collision_rate}')
+        print(f'overall deter better than nondeter: {total_deter_success_rate > total_nondeter_success_rate}')
 
         # TODO atari/human_level_control paper uses epsilon greedy during evaluation to avoid overfitting, see paragraph Evaluation procedure. 
         # it might not be needed for our task, as we have different start rotations
 
-        if log:
-            self.my_record(f"deter_nondeter_comparison/success_deter_{difficulty}_{light_setting.name}", deter_success_rate)
-            self.my_record(f"deter_nondeter_comparison/success_nondeter_{difficulty}_{light_setting.name}", nondeter_success_rate)
-            self.my_record(f"deter_nondeter_comparison/collision_rate_deter_{difficulty}_{light_setting.name}", deter_collision_rate)
-            self.my_record(f"deter_nondeter_comparison/collision_rate_nondeter_{difficulty}_{light_setting.name}", nondeter_collision_rate)
-
-            self.my_record(f"deter_nondeter_comparison/nondeter_better_by_{difficulty}_{light_setting.name}", nondeter_success_rate - deter_success_rate)
+        self.my_record(f"deter_nondeter_comparison/success_deter", total_deter_success_rate)
+        self.my_record(f"deter_nondeter_comparison/success_nondeter", total_nondeter_success_rate)
+        self.my_record(f"deter_nondeter_comparison/collision_rate_deter", total_deter_collision_rate)
+        self.my_record(f"deter_nondeter_comparison/collision_rate_nondeter", total_nondeter_collision_rate)
+        self.my_record(f"deter_nondeter_comparison/nondeter_success_rate_better", total_nondeter_success_rate - total_deter_success_rate)
 
 
     def test_fresh_obs_improves(self, n_episodes: int = 10, difficulty: str = "easy", iteration: int = 0, light_setting: LightSetting = LightSetting.standard, log=False) -> float:
         dirpath=f'{os.getcwd()}\\videos_iter_{iteration}'
         if not os.path.exists(dirpath):
             os.mkdir(dirpath)
+
+        print(f'test_fresh_obs_improves started with difficulty {difficulty}', flush=True)
 
         fresh_obs_status = self.use_fresh_obs
 
@@ -976,7 +1009,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
             self.my_record(f'eval_{difficulty}_{light_setting.name}/std_reward', std_reward)
             self.my_record(f'eval_{difficulty}_{light_setting.name}/success_rate', episodes_results.success_rate)
             self.my_record(f'eval_{difficulty}_{light_setting.name}/rate_passed_goals', episodes_results.goal_completion_rate)
-            self.my_record(f'eval_{difficulty}_{light_setting.name}/timeout_rate', episodes_results.timeout_rate)
+            self.my_record(f'eval_{difficulty}_{light_setting.name}/rate_timeouts', episodes_results.timeout_rate)
             self.my_record(f'eval_{difficulty}_{light_setting.name}/rate_episode_with_collision', episodes_results.collision_episodes / n_eval_episodes)
 
             self.my_record(f'eval_{difficulty}_{light_setting.name}/rate_first_goal', episodes_results.first_goal_completion_rate)
@@ -989,6 +1022,8 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
 
             self.my_record(f'eval_{difficulty}_{light_setting.name}/collision_rate_succesful_episodes', episodes_results.collision_rate_succesful_episodes)
             self.my_record(f'eval_{difficulty}_{light_setting.name}/goal_completion_rate', episodes_results.goal_completion_rate)
+            self.my_record(f'eval_{difficulty}_{light_setting.name}/rate_timeouts_all_goals_succesful', episodes_results.rate_timeout_all_goals_successful)
+
 
         # set to no video afterwards
         for index in log_indices:
@@ -1031,7 +1066,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
             eval_time = time.time()
             self.eval(iteration=step, n_eval_episodes=n_eval_episodes, eval_light_settings=eval_light_settings)
             self.test_episodes_identical_start_conditions(n_episodes=n_eval_episodes, iteration=step, light_setting=LightSetting.standard, deterministic=True, log=True)
-            self.test_deterministic_improves(n_episodes=n_eval_episodes, difficulty = "medium", iteration=step, light_setting=LightSetting.standard, log=True)
+            self.test_deterministic_improves(n_episodes=n_eval_episodes, iteration=step, eval_light_settings=False, log=True)
             self.test_fresh_obs_improves(n_episodes=n_eval_episodes, difficulty = "medium", iteration=step, light_setting=LightSetting.standard, log=True)
 
 
