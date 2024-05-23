@@ -100,13 +100,13 @@ public class PeacefulPieCarCommandReceiver : MonoBehaviour
         }
 
         [JsonRpcMethod]
-        string reset(int id, string mapType, string spawn_pos, float spawn_rot, string lightSettingName, bool evalMode, string video_filename)
+        string reset(int id, string mapType, string spawn_pos, float spawn_rot, string lightSettingName, bool evalMode, string video_filename, string jetbot_name)
         {
             MapType mt = (MapType)Enum.Parse(typeof(MapType), mapType);
             Spawn sp = (Spawn)Enum.Parse(typeof(Spawn), spawn_pos);
             LightSetting lightSetting = (LightSetting)Enum.Parse(typeof(LightSetting), lightSettingName);
 
-            return arenas[id].reset(mt, sp, spawn_rot, lightSetting, evalMode, video_filename);
+            return arenas[id].reset(mt, sp, spawn_rot, lightSetting, evalMode, video_filename, jetbot_name);
         }
 
         [JsonRpcMethod]
@@ -158,7 +158,7 @@ public class PeacefulPieCarCommandReceiver : MonoBehaviour
         }
 
         [JsonRpcMethod]
-        void startArena(int id, string jetbotName, float distanceCoefficient, float orientationCoefficient, float velocityCoefficient, float eventCoefficient, int resWidth, int resHeight, bool fixedTimesteps, float fixedTimestepsLength, string collisionMode)
+        void startArena(int id, float distanceCoefficient, float orientationCoefficient, float velocityCoefficient, float eventCoefficient, int resWidth, int resHeight, bool fixedTimesteps, float fixedTimestepsLength, string collisionMode)
         {
             // spawn a new arena including gameManager and everything
 
@@ -176,7 +176,7 @@ public class PeacefulPieCarCommandReceiver : MonoBehaviour
 
             Arena arena = arenaGameObject.GetComponent<Arena>();
             arena.setInstanceNumber(id);
-            arena.setJetbot(jetbotName);
+            //arena.setJetbot(jetbotName);
             arena.fixedTimesteps = fixedTimesteps;
             arena.fixedTimestepsLength = fixedTimestepsLength;
 

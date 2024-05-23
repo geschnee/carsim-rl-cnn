@@ -85,7 +85,7 @@ public class Arena : MonoBehaviour
         mapManager.DestroyMap();
     }
 
-    public string reset(MapType mt, Spawn jetBotSpawn, float spawn_rot, LightSetting lightSetting, bool evalMode, string video_filename)
+    public string reset(MapType mt, Spawn jetBotSpawn, float spawn_rot, LightSetting lightSetting, bool evalMode, string video_filename, string jetbot_name)
     {
         if (this.car != null)
         {
@@ -101,7 +101,7 @@ public class Arena : MonoBehaviour
         // spawn new obstacles:
         MapData md = mapManager.InitializeMapWithObstacles(mt, jetBotSpawn, spawn_rot);
 
-        GameObject car = mapManager.SpawnJetBot(md, this.instancenumber);
+        GameObject car = mapManager.SpawnJetBot(md, this.instancenumber, jetbot_name);
 
 
         this.car = car;
@@ -124,7 +124,7 @@ public class Arena : MonoBehaviour
         episodeManager.fixedTimesteps = fixedTimesteps;
         episodeManager.fixedTimestepsLength = fixedTimestepsLength;
 
-        episodeManager.StartEpisode(evalMode, collisionMode, mt);
+        episodeManager.StartEpisode(evalMode, collisionMode, mt, jetbot_name);
         episodeManager.arenaRecorder = arenaRecorder;
         episodeManager.topViewRecorder = topViewRecorder;
 
@@ -230,14 +230,6 @@ public class Arena : MonoBehaviour
 
         return new StepReturnObject(observation, done, terminated, info, rewards);
     }
-
-    public void setJetbot(string jetbotName)
-    {
-        mapManager.setJetbot(jetbotName);
-    }
-
-
-
 
 
     //Get the AI vehicles camera input encode as byte array

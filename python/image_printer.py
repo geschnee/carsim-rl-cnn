@@ -13,10 +13,12 @@ from stable_baselines3.common.env_util import make_vec_env
 from stable_baselines3.common.vec_env import DummyVecEnv
 
 import gymEnv.carsimGymEnv as carsimGymEnv
+import gymEnv.myEnums
 
 from myPPO.myPPO import myPPO
 
 import gymEnv.myEnums as myEnums
+from gymEnv.myEnums import MapType, LightSetting
 
 import os
 
@@ -42,7 +44,7 @@ coefficients = {"distanceCoefficient": 0.5,
 
 env_kwargs = {"fixedTimestepsLength": fixedTimestepsLength, 
               "jetbot": "DifferentialJetBot",
-              "spawn_point": "Fixed",
+              "spawn_point": myEnums.Spawn.Fixed,
               "frame_stacking": 3, 
               "image_preprocessing": {
                     "downsampling_factor": 2,
@@ -52,10 +54,12 @@ env_kwargs = {"fixedTimestepsLength": fixedTimestepsLength,
                     "normalize_images": False},
                 "coefficients": coefficients,
                 "width": 500,
-                "height": 168}
+                "height": 168,
+                "collisionMode": "oncePerTimestep"}
 
 
 env = carsimGymEnv.BaseCarsimEnv(**env_kwargs)
+
 
 # agent preprocessing steps:
 env.mapType = carsimGymEnv.MapType.hardBlueFirstLeft
@@ -67,21 +71,19 @@ env.log = False
 
 # arena screenshots:
 # easy eval parcour
-env.mapType = carsimGymEnv.MapType.easyBlueFirst
-env.reset()
+
+env.reset(mapType = MapType.easyBlueFirst, lightSetting=LightSetting.standard)
 time.sleep(1) # wait for the car to spawn
 env.get_arena_screenshot("latex_images/evaluation_easy.png")
 
 
 # medium eval parcour
-env.mapType = carsimGymEnv.MapType.mediumBlueFirstLeft
-env.reset()
+env.reset(mapType = MapType.mediumBlueFirstLeft, lightSetting=LightSetting.standard)
 time.sleep(1) # wait for the car to spawn
 env.get_arena_screenshot("latex_images/evaluation_medium.png")
 
 # hard eval parcour
-env.mapType = carsimGymEnv.MapType.hardBlueFirstLeft
-env.reset()
+env.reset(mapType = MapType.hardBlueFirstLeft, lightSetting=LightSetting.standard)
 time.sleep(1) # wait for the car to spawn
 env.get_arena_screenshot("latex_images/evaluation_hard.png")
 

@@ -13,7 +13,7 @@ public class EpisodeManager : MonoBehaviour
     public float fixedTimestepsLength;
     public bool stepFinished;
 
-    private float allowedTimeDefault = 25f; // was 10f
+    private float allowedTimeDefault = 20f; // was 10f
     private float allowedTimePerGoal = 20f; // was 10f
 
     // multiply by some constant, the reward is very small
@@ -77,7 +77,7 @@ public class EpisodeManager : MonoBehaviour
     // the index indicates the step in which the reward was found
 
     private MapType mapType;
-
+    private string jetbot_name;
 
     public void PrepareAgent()
     {
@@ -138,7 +138,7 @@ public class EpisodeManager : MonoBehaviour
         // there is a center indicator for the finishLine we thus need to substract one
     }
 
-    public void StartEpisode(bool evalMode, CollisionMode collisionMode, MapType mt)
+    public void StartEpisode(bool evalMode, CollisionMode collisionMode, MapType mt, string jetbot_name)
     {
         this.duration = 0f;
         this.passedGoals = new List<int>();
@@ -164,6 +164,8 @@ public class EpisodeManager : MonoBehaviour
 
         this.evalMode = evalMode;
         this.collisionMode = collisionMode;
+
+        this.jetbot_name = jetbot_name;
 
         initializeStepRewards();
 
@@ -252,6 +254,8 @@ public class EpisodeManager : MonoBehaviour
         info.Add("wallCollision", this.wallHit ? "1" : "0");
 
         info.Add("mapDifficulty", this.mapType.GetDifficulty());
+
+        info.Add("jetbotType", this.jetbot_name);
 
         return info;
     }
@@ -445,8 +449,13 @@ public class EpisodeManager : MonoBehaviour
         if (this.passedGoals.Count == this.numberOfGoals)
         {
             AddEventReward(finishLineReward);
-            EndEpisode(EpisodeStatus.Success);
 
+            // add an event reward independent of the scaling, we want to avoid timeouts
+            // AddReward(5);
+            // this was tested with the medium setting to see if the agent then learns to move to the finishLine
+
+
+            EndEpisode(EpisodeStatus.Success);
         }
         else
         {
@@ -567,7 +576,7 @@ public class EpisodeManager : MonoBehaviour
                 this.hitObstacles.Add(obstacle);
             }
         }
-        else if (this.collisionMode == CollisionMode.resetUponCollision)
+        else if (this.collisionMode == CollisionMode.terminate)
         {
             this.hitObstacles.Add(obstacle);
 
@@ -665,11 +674,6 @@ public class EpisodeManager : MonoBehaviour
         {
             hitWall(coll);
 
-            return;
-        }
-        if (coll.tag == "FinishMissed")
-        {
-            Debug.LogError($"deprecated TODO remove the object + tag");
             return;
         }
         if (coll.tag == "FinishLine")

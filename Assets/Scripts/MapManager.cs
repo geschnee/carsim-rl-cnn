@@ -200,22 +200,21 @@ public class MapManager : MonoBehaviour
 		return mapData;
 	}
 
-    public void setJetbot(string jetBotName)
+    public GameObject GetJetBot(string jetBotName)
 	{
 		
 		for (int i = 0; i < this.availibleJetbots.Count; i++)
 		{
 			if (this.availibleJetbots[i].name == jetBotName)
 			{
-				this.JetBot = this.availibleJetbots[i];
-				return;
+				return this.availibleJetbots[i];
 			}
 		}
 		Debug.LogError($"JetBot {jetBotName} not found, will use default JetBot {this.availibleJetbots[0].name}");
-		this.JetBot = this.availibleJetbots[0];
+		return this.availibleJetbots[0];
 	}
 
-    public GameObject SpawnJetBot(MapData mapData, int instanceNumber)
+    public GameObject SpawnJetBot(MapData mapData, int instanceNumber, string jetbot_name)
     {
 
         Vector3 spawnPoint = mapData.jetBotSpawnPosition;
@@ -223,7 +222,9 @@ public class MapManager : MonoBehaviour
         Quaternion jbRotation = new Quaternion(0, 1, 0, 1); // OLD
         jbRotation = mapData.jetBotSpawnRotation;
 
-        GameObject jb = GameObject.Instantiate(original: this.JetBot, position: spawnPoint, rotation: jbRotation, this.gameManagerTransform.parent);
+        GameObject jetBot = GetJetBot(jetbot_name);
+
+        GameObject jb = GameObject.Instantiate(original: jetBot, position: spawnPoint, rotation: jbRotation, this.gameManagerTransform.parent);
         jb.name = $"JetBot {instanceNumber}";
 
         jb.GetComponent<EpisodeManager>().setCenterIndicators(this.centerIndicators);

@@ -14,7 +14,7 @@ GameObject:
   - component: {fileID: 1495485468968361062}
   - component: {fileID: 8088950759316295360}
   m_Layer: 6
-  m_Name: StandardJetBot
+  m_Name: FourWheelJetBot
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

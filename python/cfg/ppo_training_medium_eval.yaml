@@ -1,10 +1,10 @@
-comment: "training medium standard, all light settings, nsteps 512, now testing with an event reward bonus for finishing"
+comment: "training medium, all light settings, nsteps 512, now testing with an event reward bonus for finishing"
 # "Trying with fixed light settings and variable timesteps, we want to see learning progress again. Did something break?"
 # we should also try it with the fixed spawn to be closer to the evaluation scenario, maybe the differential can do it 
 
 # reducing n_envs results in higher fps (per env)
 n_envs: 10
-copy_model_from: models_and_dumps/medium_distanceReward_rollout_model_65-sr_512000-steps
+copy_model_from: models/medium_distanceReward_bonusFinishLine_reward_rollout_model_success_rate-100_timestep-276480
 # copy_model_from can be False or a string (filename without .zip suffix)
 
 total_timesteps: 5000000
@@ -15,7 +15,7 @@ eval_settings:
   interval_during_learn: 1000
   n_eval_episodes: 100
   eval_light_settings: True
-  eval_only: False
+  eval_only: True
   number_eval_runs: 1
 
 episode_record_replay_settings:

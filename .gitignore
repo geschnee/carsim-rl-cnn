@@ -75,7 +75,7 @@ python/latex_images
 python/expose_images
 python/game_recordings
 python/episode_recordings
-
+python/models
 
 *.pyc
 

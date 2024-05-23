@@ -6,7 +6,7 @@ class CollisionMode(Enum):
     unrestricted = 0
     oncePerTimestep = 1
     oncePerEpisode = 2
-    resetUponCollision = 3
+    terminate = 3
     ignoreCollisions = 4
 
 class Spawn(Enum):

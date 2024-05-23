@@ -147,7 +147,7 @@ class BaseCarsimEnv(gym.Env):
 
         self.collisionMode = collisionMode
 
-        self.unityStartArena(width, height, jetbot, fixedTimesteps, fixedTimestepsLength)
+        self.unityStartArena(width, height, fixedTimesteps, fixedTimestepsLength)
         BaseCarsimEnv.instancenumber += 1
 
         self.spawn_point = spawn_point
@@ -252,12 +252,10 @@ class BaseCarsimEnv(gym.Env):
         return BaseCarsimEnv.unity_comms.immediateStep(ResultClass=StepReturnObject, id=self.instancenumber, step=self.step_nr, inputAccelerationLeft=float(
             left_acceleration), inputAccelerationRight=float(right_acceleration))
 
-    def unityReset(self, mp_name, spawn_rot, video_filename, lightSettingName, evalMode):
-
-        
+    def unityReset(self, mp_name, spawn_rot, video_filename, lightSettingName, evalMode, jetbot_name):
 
         return BaseCarsimEnv.unity_comms.reset(mapType=mp_name,
-            id=self.instancenumber, spawn_pos=self.spawn_point.name, spawn_rot=spawn_rot, lightSettingName=lightSettingName, evalMode=evalMode, video_filename=video_filename) 
+            id=self.instancenumber, spawn_pos=self.spawn_point.name, spawn_rot=spawn_rot, lightSettingName=lightSettingName, evalMode=evalMode, video_filename=video_filename, jetbot_name=jetbot_name) 
 
     def unityGetObservation(self):
         return BaseCarsimEnv.unity_comms.getObservation(id=self.instancenumber)
@@ -271,10 +269,10 @@ class BaseCarsimEnv(gym.Env):
     def unityPing(self):
         return BaseCarsimEnv.unity_comms.ping(id=self.instancenumber)
 
-    def unityStartArena(self, width, height, jetbot, fixedTimesteps, fixedTimestepsLength):
+    def unityStartArena(self, width, height, fixedTimesteps, fixedTimestepsLength):
 
         return BaseCarsimEnv.unity_comms.startArena(
-            id=self.instancenumber, jetbotName=jetbot, distanceCoefficient=self.distanceCoefficient, orientationCoefficient=self.orientationCoefficient, velocityCoefficient=self.velocityCoefficient, eventCoefficient=self.eventCoefficient, resWidth=width, resHeight=height, fixedTimesteps=fixedTimesteps, fixedTimestepsLength=fixedTimestepsLength, collisionMode=self.collisionMode)
+            id=self.instancenumber, distanceCoefficient=self.distanceCoefficient, orientationCoefficient=self.orientationCoefficient, velocityCoefficient=self.velocityCoefficient, eventCoefficient=self.eventCoefficient, resWidth=width, resHeight=height, fixedTimesteps=fixedTimesteps, fixedTimestepsLength=fixedTimestepsLength, collisionMode=self.collisionMode)
         
     def unityDeleteAllArenas(self):
         BaseCarsimEnv.unity_comms.deleteAllArenas()
@@ -286,7 +284,7 @@ class BaseCarsimEnv(gym.Env):
         self.video_filename = video_filename
         #print(f'{self.instancenumber} video filename {self.video_filename}', flush=True)
 
-    def reset(self, seed = None, mapType = None, lightSetting = None, evalMode = False, spawnRot=None):
+    def reset(self, seed = None, mapType = None, lightSetting = None, evalMode = False, spawnRot=None, jetBotName=None):
         super().reset(seed=seed)  # gynasium migration guide https://gymnasium.farama.org/content/migration-guide/
 
 
@@ -304,7 +302,10 @@ class BaseCarsimEnv(gym.Env):
         spawn_rot = self.getSpawnRot(spawnRot)
         self.current_spawn_rot = spawn_rot
 
-        obsstring = self.unityReset(mp_name, spawn_rot, video_filename=self.video_filename, lightSettingName=lightSettingName, evalMode=evalMode)
+        if jetBotName is None:
+            jetBotName = self.jetbot
+
+        obsstring = self.unityReset(mp_name, spawn_rot, video_filename=self.video_filename, lightSettingName=lightSettingName, evalMode=evalMode, jetbot_name=jetBotName)
 
         
         info = {"mapType": mp_name, "spawnRot": self.current_spawn_rot}
@@ -354,9 +355,10 @@ class BaseCarsimEnv(gym.Env):
     def getSpawnMode(self):
         return self.spawn_point
     
-    def reset_with_difficulty(self, difficulty, lightSetting=None, evalMode=False):
-        mapType = MapType.getMapTypeFromDifficulty(difficulty)
-        return self.reset(mapType=mapType, lightSetting=lightSetting, evalMode=evalMode)
+    # deprecated
+    #def reset_with_difficulty(self, difficulty, lightSetting=None, evalMode=False):
+    #    mapType = MapType.getMapTypeFromDifficulty(difficulty)
+    #    return self.reset(mapType=mapType, lightSetting=lightSetting, evalMode=evalMode)
 
     def reset_with_difficulty_spawnrotation(self, difficulty, lightSetting=None, evalMode=False, spawnRot=None):
         mapType = MapType.getMapTypeFromDifficulty(difficulty)
