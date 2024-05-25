@@ -12,7 +12,7 @@ total_timesteps: 6500000
 
 
 eval_settings:
-  interval_during_learn: 100
+  interval_during_learn: False
   n_eval_episodes: 20
   eval_light_settings: True
   eval_only: True

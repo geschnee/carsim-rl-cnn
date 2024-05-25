@@ -360,9 +360,9 @@ class BaseCarsimEnv(gym.Env):
     #    mapType = MapType.getMapTypeFromDifficulty(difficulty)
     #    return self.reset(mapType=mapType, lightSetting=lightSetting, evalMode=evalMode)
 
-    def reset_with_difficulty_spawnrotation(self, difficulty, lightSetting=None, evalMode=False, spawnRot=None):
-        mapType = MapType.getMapTypeFromDifficulty(difficulty)
-        return self.reset(mapType=mapType, lightSetting=lightSetting, evalMode=evalMode, spawnRot=spawnRot)
+    #def reset_with_difficulty_spawnrotation(self, difficulty, lightSetting=None, evalMode=False, spawnRot=None):
+    #    mapType = MapType.getMapTypeFromDifficulty(difficulty)
+    #    return self.reset(mapType=mapType, lightSetting=lightSetting, evalMode=evalMode, spawnRot=spawnRot)
     
     def reset_with_mapType_spawnrotation(self, mapType, lightSetting=None, evalMode=False, spawnRot=None):
         return self.reset(mapType=mapType, lightSetting=lightSetting, evalMode=evalMode, spawnRot=spawnRot)

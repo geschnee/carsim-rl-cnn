@@ -437,6 +437,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         self.my_record("rollout/third_goal_completion_rate", episodes_results.third_goal_completion_rate)
 
         self.my_record("rollout/completed_episodes", episodes_results.completed_episodes)
+        self.my_record("rollout/rate_finishLineHit", episodes_results.rate_finishLineHit)
 
         step_average_wait_time = episodes_results.waitTime / total_timesteps
         self.my_record("rollout/step_average_wait_time", step_average_wait_time)
@@ -639,14 +640,14 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
             total_train_time += train_time
 
             # model eval 
-            if log_interval is not None and iteration % log_interval == 0:
+            if type(log_interval)==int and iteration % log_interval == 0:
                 print(f'Will eval now as after every {log_interval} collect and trains', flush=True)
                 eval_time = time.time()
-                self.eval(iteration=iteration, n_eval_episodes=n_eval_episodes, eval_light_settings=eval_light_settings)
+                self.eval_model(iteration=iteration, n_eval_episodes=n_eval_episodes)
                 self.test_episodes_identical_start_conditions(n_episodes=n_eval_episodes, iteration=iteration, light_setting=LightSetting.standard, log=True)
                 self.test_deterministic_improves(n_episodes=n_eval_episodes, iteration=iteration, eval_light_settings=False, log=True)
                 self.test_fresh_obs_improves(n_episodes=n_eval_episodes, difficulty = "medium", iteration=iteration, light_setting=LightSetting.standard, log=True)
-
+                self.test_jetbot_generalization(n_episodes=n_eval_episodes, iteration=iteration, light_setting=LightSetting.standard, log=True)
 
                 eval_time = time.time() - eval_time
                 self.my_record("time/eval_time_seconds", eval_time)
@@ -752,16 +753,29 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
 
             self.my_record(f"fresh_nonfresh_comparison/fresh_better_by_{difficulty}_{light_setting.name}", fresh_obs_success_rate - nonfresh_obs_success_rate)
 
+    def test_jetbot_generalization(self, n_episodes: int = 10, iteration: int = 0, light_setting: LightSetting = LightSetting.standard, log=False) -> float:
+        dirpath=f'{os.getcwd()}\\videos_iter_{iteration}'
+        if not os.path.exists(dirpath):
+            os.mkdir(dirpath)
+
+        difficulties = ["easy", "medium", "hard"]
+
+        for difficulty in difficulties:
+            fourwheel_success_rate, fourwheel_collision_rate = self.eval_model_track(n_episodes, difficulty, iteration, light_setting, deterministic=False, log=False, jetbot_name = "FourWheelJetBot")
+
+            print(f'FourWheelJetBot success rate: {fourwheel_success_rate} collision rate: {fourwheel_collision_rate} for difficulty {difficulty} Light Setting {light_setting}', flush=True)
+            if log:
+                self.my_record(f"fourwheeljetbot/success_{difficulty}_{light_setting.name}", fourwheel_success_rate)
+                self.my_record(f"fourwheeljetbot/success_{difficulty}_{light_setting.name}", fourwheel_collision_rate)
+           
 
 
-    def eval(self: SelfOnPolicyAlgorithm, iteration: int = 0, n_eval_episodes: int = 20, eval_light_settings: bool = False) -> float:
+    def eval_model(self: SelfOnPolicyAlgorithm, iteration: int = 0, n_eval_episodes: int = 20) -> float:
         print(f'eval started', flush=True)
 
 
-        if eval_light_settings:
-            light_settings = [LightSetting.bright, LightSetting.standard, LightSetting.dark]
-        else: 
-            light_settings = [LightSetting.standard]
+        light_settings = [LightSetting.bright, LightSetting.standard, LightSetting.dark]
+        
 
         dirpath = f'{os.getcwd()}\\videos_iter_{iteration}'
         if not os.path.exists(dirpath):
@@ -875,7 +889,8 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         iteration: int = 0,
         light_setting: LightSetting = LightSetting.standard,
         deterministic: bool = False,
-        log=True
+        log: bool = True,
+        jetbot_name: str = "DifferentialJetBot",
     ):
         # all maps from the difficulty setting are selected with the same proportion
         # the JetBot spawn rotation depends on the spawn_pos in the config, e.g. OrientationRandom
@@ -925,6 +940,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
                 lightSetting=light_setting,
                 evalMode=True,
                 spawnRot = map_and_rotations[map_and_rotations_counter][1],
+                jetbot_name = jetbot_name
             )
             map_and_rotations_counter += 1
 
@@ -989,6 +1005,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
                                 lightSetting=light_setting,
                                 evalMode=True,
                                 spawnRot = map_and_rotations[map_and_rotations_counter][1],
+                                jetbot_name = jetbot_name
                             )
                             map_and_rotations_counter += 1
             
@@ -1023,6 +1040,8 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
             self.my_record(f'eval_{difficulty}_{light_setting.name}/collision_rate_succesful_episodes', episodes_results.collision_rate_succesful_episodes)
             self.my_record(f'eval_{difficulty}_{light_setting.name}/goal_completion_rate', episodes_results.goal_completion_rate)
             self.my_record(f'eval_{difficulty}_{light_setting.name}/rate_timeouts_all_goals_succesful', episodes_results.rate_timeout_all_goals_successful)
+
+            self.my_record(f'eval_{difficulty}_{light_setting.name}/rate_finishLineHit', episodes_results.rate_finishLineHit)
 
 
         # set to no video afterwards
@@ -1064,10 +1083,11 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
             self.num_timesteps = step # for proper logging we need to manipulate this, very dirty!!!
 
             eval_time = time.time()
-            self.eval(iteration=step, n_eval_episodes=n_eval_episodes, eval_light_settings=eval_light_settings)
+            self.eval_model(iteration=step, n_eval_episodes=n_eval_episodes)
             self.test_episodes_identical_start_conditions(n_episodes=n_eval_episodes, iteration=step, light_setting=LightSetting.standard, deterministic=True, log=True)
             self.test_deterministic_improves(n_episodes=n_eval_episodes, iteration=step, eval_light_settings=False, log=True)
             self.test_fresh_obs_improves(n_episodes=n_eval_episodes, difficulty = "medium", iteration=step, light_setting=LightSetting.standard, log=True)
+            self.test_jetbot_generalization(n_episodes=n_eval_episodes, iteration=iteration, light_setting=LightSetting.standard, log=True)
 
 
             eval_time = time.time() - eval_time

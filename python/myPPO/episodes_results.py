@@ -23,6 +23,8 @@ class EpisodesResults:
 
     episodes_timeout_all_goals_successful = 0
 
+    episodes_finishLineHit = 0
+
     def __init__(self):
         pass
 
@@ -53,6 +55,7 @@ class EpisodesResults:
         self.collision_episodes += int(infos["collision"])
         self.obstacle_collision_episodes += int(infos["obstacleCollision"])
         self.wall_collision_episodes += int(infos["wallCollision"])
+        self.episodes_finishLineHit += int(infos["finishLineHit"])
 
         self.distance_reward += float(infos["distanceReward"].replace(",","."))
         self.velocity_reward += float(infos["velocityReward"].replace(",","."))
@@ -138,6 +141,8 @@ class EpisodesResults:
             
             
             self.rate_timeout_all_goals_successful = self.episodes_timeout_all_goals_successful / self.completed_episodes
+
+            self.rate_finishLineHit = self.episodes_finishLineHit / self.completed_episodes
         else:
             self.success_rate, self.mean_reward, self.mean_episode_length, self.mean_distance_reward, self.mean_velocity_reward, self.mean_event_reward, self.mean_orientation_reward = 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
             self.timeout_rate = 0
@@ -154,6 +159,8 @@ class EpisodesResults:
             self.rate_easy_episodes, self.rate_medium_episodes, self.rate_hard_episodes = 0, 0, 0
 
             self.rate_timeout_all_goals_successful = 0
+
+            self.rate_finishLineHit = 0
 
 
         if self.num_easy_episodes != 0:

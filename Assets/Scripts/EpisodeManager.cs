@@ -78,6 +78,7 @@ public class EpisodeManager : MonoBehaviour
 
     private MapType mapType;
     private string jetbot_name;
+    private bool finishLineHit;
 
     public void PrepareAgent()
     {
@@ -159,6 +160,7 @@ public class EpisodeManager : MonoBehaviour
         this.wallHit = false;
         this.hitObstacles = new List<GameObject>();
         this.mapType = mt;
+        this.finishLineHit = false;
 
         this.timestepObstacleHit = false;
 
@@ -256,6 +258,7 @@ public class EpisodeManager : MonoBehaviour
         info.Add("mapDifficulty", this.mapType.GetDifficulty());
 
         info.Add("jetbotType", this.jetbot_name);
+        info.Add("finishLineHit", this.finishLineHit ? "1" : "0");
 
         return info;
     }
@@ -443,15 +446,16 @@ public class EpisodeManager : MonoBehaviour
     }
 
 
-    public void finishLineHit(GameObject goal)
+    public void hitFinishLine(GameObject goal)
     {
+        this.finishLineHit = true;
 
         if (this.passedGoals.Count == this.numberOfGoals)
         {
             AddEventReward(finishLineReward);
 
             // add an event reward independent of the scaling, we want to avoid timeouts
-            // AddReward(5);
+            AddReward(5);
             // this was tested with the medium setting to see if the agent then learns to move to the finishLine
 
 
@@ -678,7 +682,7 @@ public class EpisodeManager : MonoBehaviour
         }
         if (coll.tag == "FinishLine")
         {
-            finishLineHit(coll);
+            hitFinishLine(coll);
             return;
         }
         if (coll.tag == "Destroyed")

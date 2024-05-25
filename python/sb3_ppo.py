@@ -144,8 +144,8 @@ def run_ppo(cfg):
         best_model_name = model.rollout_best_model_name
         print(f'loading best model {best_model_name} after learning')
         model.load(best_model_name)
-        model.use_bundled_calls = cfg.use_bundled_calls
-        model.use_fresh_obs=cfg.use_fresh_obs
+        model.use_bundled_calls = cfg.algo_settings.use_bundled_calls
+        model.use_fresh_obs=cfg.algo_settings.use_fresh_obs
 
     if not cfg.episode_record_replay_settings.replay_folder:
         model.record_episodes(cfg.episode_record_replay_settings, seed, cfg)

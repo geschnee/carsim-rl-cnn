@@ -376,22 +376,3 @@ class myPPO(MyOnPolicyAlgorithm):
             eval_light_settings=eval_light_settings,
             offset=offset,
         )
-
-    def visualize_sample(self):
-        # TODO visualize some samples from the rollout buffer
-
-        for rollout_data in self.rollout_buffer.get(self.batch_size):
-            actions = rollout_data.actions
-            if isinstance(self.action_space, spaces.Discrete):
-                # Convert discrete action from float to long
-                actions = rollout_data.actions.long().flatten()
-
-            # Re-sample the noise matrix because the log_std has changed
-            if self.use_sde:
-                self.policy.reset_noise(self.batch_size)
-
-            values, log_prob, entropy = self.policy.evaluate_actions(rollout_data.observations, actions)
-            values = values.flatten()
-
-
-            break
