@@ -21,7 +21,7 @@ from myPPO.my_buffers import MyRolloutBuffer
 
 from gymEnv.myEnums import LightSetting
 from gymEnv.myEnums import MapType
-from gymEnv.myEnums import Spawn
+from gymEnv.myEnums import SpawnOrientation
 
 from myPPO.episode_representation import EpisodeRepresentation
 from myPPO.episodes_results import EpisodesResults
@@ -851,24 +851,24 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
 
         return total_success_rate
     
-    def generate_map_and_rotations(self, difficulty: str, n_eval_episodes: int, env: VecEnv) -> List[Tuple[str, List[int]]]:
+    def generate_map_and_rotations(self, difficulty: str, n_eval_episodes: int, env: VecEnv) -> List[Tuple[MapType, float]]:
         
         rotationMode = env.env_method(
             method_name="getSpawnMode",
             indices=[0]
         )[0]
 
-        rotation_range_min, rotation_range_max = Spawn.getOrientationRange(rotationMode)
+        rotation_range_min, rotation_range_max = SpawnOrientation.getOrientationRange(rotationMode)
 
         range_width = rotation_range_max - rotation_range_min
 
         if n_eval_episodes == 1:
-            rotations = [int((rotation_range_min + range_width) / 2)]
+            rotations = [float((rotation_range_min + range_width) / 2)]
         else:
             step = range_width / (n_eval_episodes-1)
 
             rotations = [rotation_range_min + i * step for i in range(n_eval_episodes)]
-            rotations = [int(rotation) for rotation in rotations]
+            rotations = [float(rotation) for rotation in rotations]
 
         track_numbers = MapType.getAllTracknumbersOfDifficulty(difficulty)
 

@@ -9,22 +9,25 @@ class CollisionMode(Enum):
     terminate = 3
     ignoreCollisions = 4
 
-class Spawn(Enum):
+class SpawnOrientation(Enum):
     Fixed = 0
-    OrientationRandom = 1
-    OrientationVeryRandom = 2
-    FullyRandom = 3
+    Random = 1
+    VeryRandom = 2
+    # FullyRandom = 3
+    # we deprecate FullyRandom because it is not used in the current implementation
+    # easier to explain the spawn positions if there are only 3 options
 
     @classmethod
     def getOrientationRange(myEnum, spawnEnum):
         # returns the interval of spawn rotations corresponding to the Spawn method
         if spawnEnum.value == 0:
-            return 0, 0
+            return 0.0, 0.0
         elif spawnEnum.value == 1:
-            return -15, 15
+            return -15.0, 15.0
         elif spawnEnum.value == 2:
-            return -45, 45
+            return -45.0, 45.0
         elif spawnEnum.value == 3:
+            assert False, f'FullyRandom is deprecated'
             return -45, 45
         else:
             assert False, f'unknown spawnEnum {spawnEnum}'

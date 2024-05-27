@@ -30,12 +30,12 @@ public enum LightSetting
     dark = 3,
 }
 
-public enum Spawn
+public enum SpawnOrientation
 {
     Fixed = 0,
     OrientationRandom = 1,
     OrientationVeryRandom = 2,
-    FullyRandom = 3,
+    //FullyRandom = 3, //deprecated
 }
 
 public enum MapType

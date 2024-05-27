@@ -26,7 +26,7 @@ from stable_baselines3.common import torch_layers
 
 from gymEnv.histogram_equilization import hist_eq
 
-from gymEnv.myEnums import MapType, EndEvent, Spawn, LightSetting
+from gymEnv.myEnums import MapType, EndEvent, SpawnOrientation, LightSetting
 
 import random
 
@@ -49,7 +49,7 @@ class BaseCarsimEnv(gym.Env):
     unity_comms: UnityComms = None
     instancenumber = 0
 
-    def __init__(self, width=336, height=168, port=9000, log=False, jetbot=None, spawn_point=None, fixedTimestepsLength=None, trainingMapType=MapType.randomEval, trainingLightSetting=LightSetting.random, image_preprocessing={}, frame_stacking=5, coefficients=None, collisionMode=None):
+    def __init__(self, width=336, height=168, port=9000, log=False, jetbot=None, spawnOrientation=None, fixedTimestepsLength=None, trainingMapType=MapType.randomEval, trainingLightSetting=LightSetting.random, image_preprocessing={}, frame_stacking=5, coefficients=None, collisionMode=None):
         # height and width was previous 168, that way we could downsample and reach the same dimensions as the nature paper of 84 x 84
 
         self.instancenumber = BaseCarsimEnv.instancenumber
@@ -150,7 +150,7 @@ class BaseCarsimEnv(gym.Env):
         self.unityStartArena(width, height, fixedTimesteps, fixedTimestepsLength)
         BaseCarsimEnv.instancenumber += 1
 
-        self.spawn_point = spawn_point
+        self.spawnOrientation = spawnOrientation
 
         self.mapType = trainingMapType
 
@@ -255,7 +255,7 @@ class BaseCarsimEnv(gym.Env):
     def unityReset(self, mp_name, spawn_rot, video_filename, lightSettingName, evalMode, jetbot_name):
 
         return BaseCarsimEnv.unity_comms.reset(mapType=mp_name,
-            id=self.instancenumber, spawn_pos=self.spawn_point.name, spawn_rot=spawn_rot, lightSettingName=lightSettingName, evalMode=evalMode, video_filename=video_filename, jetbot_name=jetbot_name) 
+            id=self.instancenumber, spawn_rot=spawn_rot, lightSettingName=lightSettingName, evalMode=evalMode, video_filename=video_filename, jetbot_name=jetbot_name) 
 
     def unityGetObservation(self):
         return BaseCarsimEnv.unity_comms.getObservation(id=self.instancenumber)
@@ -279,6 +279,9 @@ class BaseCarsimEnv(gym.Env):
 
     def unityGetArenaScreenshot(self):
         return BaseCarsimEnv.unity_comms.getArenaScreenshot(id=self.instancenumber)
+    
+    def unityGetArenaTopview(self):
+        return BaseCarsimEnv.unity_comms.getArenaTopview(id=self.instancenumber)
 
     def setVideoFilename(self, video_filename):
         self.video_filename = video_filename
@@ -343,26 +346,17 @@ class BaseCarsimEnv(gym.Env):
     def getSpawnRot(self, spawnRot):
         if spawnRot is None:
 
-            assert type(self.spawn_point) == Spawn, f'spawn point must be set'
+            assert type(self.spawnOrientation) == SpawnOrientation, f'spawn point must be set'
 
-            interval_min, interval_max = Spawn.getOrientationRange(self.spawn_point)
-            spawn_rot = random.randint(interval_min, interval_max)
+            interval_min, interval_max = SpawnOrientation.getOrientationRange(self.spawnOrientation)
+            spawn_rot = random.uniform(interval_min, interval_max)
             return spawn_rot
         else:
-            assert isinstance(spawnRot, int), f'spawnRot must be int, not {type(spawnRot)}'
+            assert isinstance(spawnRot, float), f'spawnRot must be float, not {type(spawnRot)}'
             return spawnRot
     
     def getSpawnMode(self):
-        return self.spawn_point
-    
-    # deprecated
-    #def reset_with_difficulty(self, difficulty, lightSetting=None, evalMode=False):
-    #    mapType = MapType.getMapTypeFromDifficulty(difficulty)
-    #    return self.reset(mapType=mapType, lightSetting=lightSetting, evalMode=evalMode)
-
-    #def reset_with_difficulty_spawnrotation(self, difficulty, lightSetting=None, evalMode=False, spawnRot=None):
-    #    mapType = MapType.getMapTypeFromDifficulty(difficulty)
-    #    return self.reset(mapType=mapType, lightSetting=lightSetting, evalMode=evalMode, spawnRot=spawnRot)
+        return self.spawnOrientation
     
     def reset_with_mapType_spawnrotation(self, mapType, lightSetting=None, evalMode=False, spawnRot=None):
         return self.reset(mapType=mapType, lightSetting=lightSetting, evalMode=evalMode, spawnRot=spawnRot)
@@ -674,6 +668,14 @@ class BaseCarsimEnv(gym.Env):
 
     def get_arena_screenshot(self, savepath="arena_screenshot.png"):
         screenshot = self.unityGetArenaScreenshot()
+
+        im = self.stringToImg(screenshot)
+
+        im.save(savepath)
+        return im
+    
+    def get_arena_topview(self, savepath="arena_topview.png"):
+        screenshot = self.unityGetArenaTopview()
 
         im = self.stringToImg(screenshot)
 

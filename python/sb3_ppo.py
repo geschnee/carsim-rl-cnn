@@ -20,7 +20,7 @@ from myPPO.myPPO import myPPO
 
 from gymEnv.myEnums import MapType
 from gymEnv.myEnums import LightSetting
-from gymEnv.myEnums import Spawn
+from gymEnv.myEnums import SpawnOrientation
 
 import torch
 from torch.utils.tensorboard import SummaryWriter
@@ -74,7 +74,7 @@ def run_ppo(cfg):
     env_kwargs["trainingMapType"] = MapType[cfg.env_kwargs.trainingMapType]
     env_kwargs["trainingLightSetting"] = LightSetting[cfg.env_kwargs.trainingLightSetting]
     # get proper enum type from string
-    env_kwargs["spawn_point"] = Spawn[cfg.env_kwargs.spawn_point]
+    env_kwargs["spawnOrientation"] = SpawnOrientation[cfg.env_kwargs.spawnOrientation]
 
 
 

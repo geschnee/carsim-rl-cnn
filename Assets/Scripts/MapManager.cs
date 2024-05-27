@@ -190,11 +190,11 @@ public class MapManager : MonoBehaviour
         this.gameManagerPosition = this.gameManagerTransform.position;
     }
 
-    public MapData InitializeMapWithObstacles(MapType mapType, Spawn jetBotSpawn, float jetBotRotation)
+    public MapData InitializeMapWithObstacles(MapType mapType, float jetBotRotation)
 	{
 
 		// generate a new map with new obstacle, decide which type of map should be generated
-		mapData = this.GenerateObstacleMap(mapType, jetBotSpawn, jetBotRotation);
+		mapData = this.GenerateObstacleMap(mapType, jetBotRotation);
 		this.IntantiateObstacles(mapData);
 
 		return mapData;
@@ -416,16 +416,13 @@ public class MapManager : MonoBehaviour
 
 
     // generate maps with different placement of obstacles
-    public MapData GenerateObstacleMap(MapType mapType, Spawn jetBotSpawn, float jetBotSpawnRotationAngle)
+    public MapData GenerateObstacleMap(MapType mapType, float jetBotSpawnRotationAngle)
     {
 
 
-        Vector3 jetBotSpawnPosition;
-        if (jetBotSpawn != Spawn.FullyRandom)
-        {
-            jetBotSpawnPosition = this.GetJetBotSpawnCoords();
+        Vector3 jetBotSpawnPosition = this.GetJetBotSpawnCoords();
 
-        }
+        /* random spawn is deprecated
         else if (mapType == MapType.random)
         {
             jetBotSpawnPosition = this.GetJetBotRandomCoords();
@@ -435,7 +432,7 @@ public class MapManager : MonoBehaviour
             // the mapType is not random (it is an evaluation track)
             // we cannot use the same random spawn for these
             jetBotSpawnPosition = this.GetJetBotRandomCoordsEval();
-        }
+        }*/
 
         Quaternion jetBotSpawnRotation = this.JetBotRotation(jetBotSpawnRotationAngle);
 
@@ -444,10 +441,6 @@ public class MapManager : MonoBehaviour
 
         switch (mapType)
         {
-            case MapType.random:
-                obstacles = this.GenerateRandomObstacleMap(jetBotSpawn, jetBotSpawnPosition);
-                Debug.LogWarning("Random Map generated! This is not intended in the master's thesis");
-                break;
             case MapType.easyBlueFirst:
                 obstacles = this.GenerateEasyGoalLaneMiddleMap(true);
                 break;
@@ -488,8 +481,13 @@ public class MapManager : MonoBehaviour
 
     }
 
-    private Goal[] GenerateRandomObstacleMap(Spawn jetBotSpawn, Vector3 jetBotSpawnPosition)
+    //deprecated
+    
+    /*
+    private Goal[] GenerateRandomObstacleMap(SpawnOrientation jetBotSpawn, Vector3 jetBotSpawnPosition)
     {
+        Debug.LogError("deprecated TODO remove");        
+
 
         List<Goal> obstacles = new List<Goal>();
         Random rnd = new Random();
@@ -504,7 +502,7 @@ public class MapManager : MonoBehaviour
         int minXLocal = (int)(Constants.MIN_X + this.gameManagerPosition.x);
         int maxXLocal = minXLocal + Constants.X_WIDTH;
 
-        if (jetBotSpawn == Spawn.FullyRandom)
+        if (jetBotSpawn == SpawnOrientation.FullyRandom)
         {
             //first goal random distance to JetBot
             minXLocal = (int)(jetBotSpawnPosition.x + rnd.Next(Constants.MINXDISTANCEGOALS, Constants.MAXXDISTANCEGOALS));
@@ -538,7 +536,7 @@ public class MapManager : MonoBehaviour
         }
 
         return obstacles.ToArray();
-    }
+    }*/
 
     private Goal[] GenerateEasyGoalLaneMiddleMap(Boolean isBlueFirst = true)
     {

@@ -1,4 +1,4 @@
-comment: "training hard, all light settings, nsteps 512, now testing with an event reward bonus for finishing, continue 2"
+comment: "training hard, all light settings, nsteps 512, spawnOrientation veryRandom"
 # "Trying with fixed light settings and variable timesteps, we want to see learning progress again. Did something break?"
 # we should also try it with the fixed spawn to be closer to the evaluation scenario, maybe the differential can do it 
 
@@ -8,7 +8,7 @@ n_envs: 10
 copy_model_from: models/hard_distanceReward_plus5FinishLineReward_continue-rollout_model_success_rate-0_timestep-1684480
 # copy_model_from can be False or a string (filename without .zip suffix)
 
-total_timesteps: 3000000
+total_timesteps: 4000000
 
 seed: 2048
 
@@ -57,7 +57,7 @@ algo_settings:
 
 env_kwargs:
   jetbot: DifferentialJetBot
-  spawnOrientation: Random
+  spawnOrientation: VeryRandom
   # spawnOrientation can be Fixed, Random, VeryRandom
   frame_stacking: 10
   image_preprocessing:
