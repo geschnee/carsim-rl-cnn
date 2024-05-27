@@ -927,7 +927,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
             env.env_method(
                 method_name="setVideoFilename",
                 indices=[i],
-                video_filename = f'{os.getcwd()}\\videos_iter_{iteration}\\{difficulty}_{light_setting.name}_env_{i}_video_'
+                video_filename = f'{os.getcwd()}\\videos_iter_{iteration}\\{difficulty}_{light_setting.name}_{jetbot_name}_env_{i}_video_'
             )
         
 
@@ -940,7 +940,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
                 lightSetting=light_setting,
                 evalMode=True,
                 spawnRot = map_and_rotations[map_and_rotations_counter][1],
-                jetbot_name = jetbot_name
+                jetBotName = jetbot_name
             )
             map_and_rotations_counter += 1
 
@@ -1005,7 +1005,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
                                 lightSetting=light_setting,
                                 evalMode=True,
                                 spawnRot = map_and_rotations[map_and_rotations_counter][1],
-                                jetbot_name = jetbot_name
+                                jetBotName = jetbot_name
                             )
                             map_and_rotations_counter += 1
             
@@ -1083,11 +1083,12 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
             self.num_timesteps = step # for proper logging we need to manipulate this, very dirty!!!
 
             eval_time = time.time()
+            self.test_jetbot_generalization(n_episodes=n_eval_episodes, iteration=iteration, light_setting=LightSetting.standard, log=True)
             self.eval_model(iteration=step, n_eval_episodes=n_eval_episodes)
             self.test_episodes_identical_start_conditions(n_episodes=n_eval_episodes, iteration=step, light_setting=LightSetting.standard, deterministic=True, log=True)
             self.test_deterministic_improves(n_episodes=n_eval_episodes, iteration=step, eval_light_settings=False, log=True)
             self.test_fresh_obs_improves(n_episodes=n_eval_episodes, difficulty = "medium", iteration=step, light_setting=LightSetting.standard, log=True)
-            self.test_jetbot_generalization(n_episodes=n_eval_episodes, iteration=iteration, light_setting=LightSetting.standard, log=True)
+            
 
 
             eval_time = time.time() - eval_time

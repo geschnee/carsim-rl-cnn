@@ -103,6 +103,7 @@ MonoBehaviour:
   step: 0
   centerIndicators: []
   arenaRecorder: {fileID: 0}
+  topViewRecorder: {fileID: 0}
   jetBotRecorder: {fileID: 0}
 --- !u!114 &1495485468968361062
 MonoBehaviour:
@@ -117,11 +118,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   episodeManager: {fileID: 0}
-  cam: {fileID: 0}
+  cam: {fileID: 5665677670532686738}
   video_filename: 
   fileCounter: 0
+  maxFiles: 3
   isRecording: 0
-  renderTexture: {fileID: 0}
+  renderTexture: {fileID: 8400000, guid: 0674fa9e6a7077a4e94e8a963de8c014, type: 2}
 --- !u!114 &8088950759316295360
 MonoBehaviour:
   m_ObjectHideFlags: 0

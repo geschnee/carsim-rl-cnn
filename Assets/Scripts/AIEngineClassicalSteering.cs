@@ -34,7 +34,7 @@ public class AIEngineClassicalSteering : AIEngineBase
 
         float steeringAngle = maxSteeringAngle * accelerationDiff;
 
-        Debug.Log($"right {this.inputAccelerationRight} left {this.inputAccelerationLeft} Steering angle: " + steeringAngle);
+        //Debug.Log($"right {this.inputAccelerationRight} left {this.inputAccelerationLeft} Steering angle: " + steeringAngle);
 
 
         float torque = (inputAccelerationLeft + inputAccelerationRight) / 2;

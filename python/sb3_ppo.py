@@ -129,7 +129,7 @@ def run_ppo(cfg):
     
     if cfg.copy_model_from:
         string = f"{HydraConfig.get().runtime.cwd}/{cfg.copy_model_from}"
-        print(f'loading model from {string} before learning')
+        print(f'loading model from {string} before learning', flush=True)
         model = algo.load(string, env=vec_env, tensorboard_log="./tmp",
                         n_epochs=cfg.algo_settings.n_epochs, batch_size=cfg.algo_settings.batch_size)
 
@@ -147,14 +147,16 @@ def run_ppo(cfg):
         model.use_bundled_calls = cfg.algo_settings.use_bundled_calls
         model.use_fresh_obs=cfg.algo_settings.use_fresh_obs
 
+    
+    
+    # run more evals here after training completed or when eval only
+    model.eval_only(total_eval_runs=cfg.eval_settings.number_eval_runs, n_eval_episodes = cfg.eval_settings.n_eval_episodes, eval_light_settings=cfg.eval_settings.eval_light_settings, offset=model.num_timesteps)
+
     if not cfg.episode_record_replay_settings.replay_folder:
         model.record_episodes(cfg.episode_record_replay_settings, seed, cfg)
     else:
         print(f"replaying episodes from {cfg.episode_record_replay_settings.replay_folder}")
     model.replay_episodes(cfg.episode_record_replay_settings, seed, cfg.env_kwargs.fixedTimestepsLength)
-    
-    # run more evals here after training completed or when eval only
-    model.eval_only(total_eval_runs=cfg.eval_settings.number_eval_runs, n_eval_episodes = cfg.eval_settings.n_eval_episodes, eval_light_settings=cfg.eval_settings.eval_light_settings, offset=model.num_timesteps)
     
 
 
