@@ -50,10 +50,10 @@ net_arch:
 
 
 env_kwargs:
-  jetbot: DifferentialJetBot
-  # can be DifferentialJetBot or StandardJetBot
-  spawn_point: Fixed
-  # spawn_point can be Fixed, OrientationRandom, OrientationVeryRandom and FullyRandom
+  jetBotName: DifferentialJetBot
+  # can be DifferentialJetBot or FourWheelJetBot
+  spawnOrientation: Fixed
+  # spawnOrientation can be Fixed, Random and VeryRandom
   frame_stacking: 10
   image_preprocessing:
     downsampling_factor: 2

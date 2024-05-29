@@ -86,6 +86,14 @@ Das LAN-Kabel wird nur zum ersten Start benötigt.
     ```
 2. Logge dich mit dem Passwort `jetbot` ein
 
+IP-ADRESSE_JETBOT kann man mit nmcli anzeigen lassen.
+eth0: inet4
+192.168.1.3
+
+### Copy Files to JetBot
+
+scp -r myfile jetbot@192.168.1.3:/home/jetbot/myfile
+
 ### Tastaturkonfiguration zu Deutsch ändern
 
 ```
@@ -249,3 +257,6 @@ Note the IP address displayed on the _piOLED_ and navigate in your browser to `h
 <br>
 <br>
 The password is `jetbot`
+
+
+

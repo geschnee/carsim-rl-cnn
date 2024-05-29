@@ -13,8 +13,8 @@ public class EpisodeManager : MonoBehaviour
     public float fixedTimestepsLength;
     public bool stepFinished;
 
-    private float allowedTimeDefault = 20f; // was 10f
-    private float allowedTimePerGoal = 20f; // was 10f
+    private float allowedTimeDefault = 30f; // was 10f
+    private float allowedTimePerGoal = 30f; // was 10f
 
     // multiply by some constant, the reward is very small
     public float distanceCoefficient;// = 10f;
@@ -498,10 +498,9 @@ public class EpisodeManager : MonoBehaviour
         Transform t = goal.transform;
         for (int i = 0; i < t.childCount; i++)
         {
-            string tag = t.GetChild(i).gameObject.tag;
-            if (tag == "GoalBall")
-            {
-                t.GetChild(i).GetComponent<BallColor>().SetGreen();
+            BallColor script = t.GetChild(i).GetComponent<BallColor>();
+            if (script != null){
+                script.SetGreen();
             }
         }
     }
@@ -511,10 +510,9 @@ public class EpisodeManager : MonoBehaviour
         Transform t = goal.transform;
         for (int i = 0; i < t.childCount; i++)
         {
-            string tag = t.GetChild(i).gameObject.tag;
-            if (tag == "GoalBall")
-            {
-                t.GetChild(i).GetComponent<BallColor>().SetRed();
+            BallColor script = t.GetChild(i).GetComponent<BallColor>();
+            if (script != null){
+                script.SetRed();
             }
         }
     }

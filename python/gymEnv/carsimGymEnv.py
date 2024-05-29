@@ -45,7 +45,7 @@ class StepReturnObjectList:
 
 class BaseCarsimEnv(gym.Env):
 
-    unity_comms: UnityComms = None
+    unity_comms = None
     instancenumber = 0
 
     def __init__(self, width=336, height=168, port=9000, log=False, jetBotName=None, spawnOrientation=None, fixedTimestepsLength=None, trainingMapType=MapType.randomEval, trainingLightSetting=LightSetting.random, image_preprocessing={}, frame_stacking=5, coefficients=None, collisionMode=None, use_unity=True):
@@ -138,7 +138,7 @@ class BaseCarsimEnv(gym.Env):
             print(f'action space shape {self.action_space.shape}', flush=True)
         
 
-        if BaseCarsimEnv.unity_comms is None:
+        if BaseCarsimEnv.unity_comms is None and self.use_unity:
             # all instances of this class share the same UnityComms instance
             # they use their self.instancenumber to differentiate between them
             BaseCarsimEnv.unity_comms = UnityComms(port=port)

@@ -14,7 +14,7 @@ import numpy as np
 
 from gymEnv.myEnums import MapType
 from gymEnv.myEnums import LightSetting
-from gymEnv.myEnums import Spawn
+from gymEnv.myEnums import SpawnOrientation
 
 
 def gray(im):
@@ -46,7 +46,7 @@ def run(cfg) -> None:
     env_kwargs = OmegaConf.to_container(cfg.env_kwargs)
     env_kwargs["trainingMapType"] = MapType[cfg.env_kwargs.trainingMapType]
     env_kwargs["trainingLightSetting"] = LightSetting[cfg.env_kwargs.trainingLightSetting]
-    env_kwargs["spawn_point"] = Spawn[cfg.env_kwargs.spawn_point]
+    env_kwargs["spawnOrientation"] = SpawnOrientation[cfg.env_kwargs.spawnOrientation]
 
 
 
