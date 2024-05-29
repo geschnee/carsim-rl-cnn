@@ -7,7 +7,7 @@ import torch as th
 from gymnasium import spaces
 
 from stable_baselines3.common.base_class import BaseAlgorithm
-from stable_baselines3.common.buffers import DictRolloutBuffer, RolloutBuffer
+from stable_baselines3.common.buffers import DictRolloutBuffer
 from stable_baselines3.common.callbacks import BaseCallback
 from stable_baselines3.common.policies import ActorCriticPolicy
 from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback, Schedule
@@ -690,8 +690,8 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
 
             for difficulty in difficulties:
 
-                deter_success_rate, deter_collision_rate = self.eval_model_track(n_episodes, difficulty, iteration, light_setting, deterministic=True, log=False)
-                nondeter_success_rate, nondeter_collision_rate = self.eval_model_track(n_episodes, difficulty, iteration, light_setting, deterministic=False, log=False)
+                deter_success_rate, deter_collision_rate = self.eval_model_track(n_episodes, difficulty, iteration, light_setting, deterministic=True)
+                nondeter_success_rate, nondeter_collision_rate = self.eval_model_track(n_episodes, difficulty, iteration, light_setting, deterministic=False)
 
                 total_deter_success_rate += deter_success_rate
                 total_deter_collision_rate += deter_collision_rate
@@ -736,9 +736,9 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
 
 
         self.use_fresh_obs = True
-        fresh_obs_success_rate, fresh_obs_collision_rate = self.eval_model_track(n_episodes, difficulty, iteration, light_setting, deterministic=True, log=False)
+        fresh_obs_success_rate, fresh_obs_collision_rate = self.eval_model_track(n_episodes, difficulty, iteration, light_setting)
         self.use_fresh_obs = False
-        nonfresh_obs_success_rate, nonfresh_obs_collision_rate = self.eval_model_track(n_episodes, difficulty, iteration, light_setting, deterministic=False, log=False)
+        nonfresh_obs_success_rate, nonfresh_obs_collision_rate = self.eval_model_track(n_episodes, difficulty, iteration, light_setting)
 
         self.use_fresh_obs = fresh_obs_status
 
@@ -760,13 +760,25 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
 
         difficulties = ["easy", "medium", "hard"]
 
-        for difficulty in difficulties:
-            fourwheel_success_rate, fourwheel_collision_rate = self.eval_model_track(n_episodes, difficulty, iteration, light_setting, deterministic=False, log=False, jetbot_name = "FourWheelJetBot")
+        trainJetBotName = self.env.env_method(
+            method_name="getJetBotName",
+            indices=[0]
+        )[0]
 
-            print(f'FourWheelJetBot success rate: {fourwheel_success_rate} collision rate: {fourwheel_collision_rate} for difficulty {difficulty} Light Setting {light_setting}', flush=True)
-            if log:
-                self.my_record(f"fourwheeljetbot/success_{difficulty}_{light_setting.name}", fourwheel_success_rate)
-                self.my_record(f"fourwheeljetbot/success_{difficulty}_{light_setting.name}", fourwheel_collision_rate)
+        jb_names = ["FourWheelJetBot", "DifferentialJetBot"]
+        assert trainJetBotName in jb_names
+
+        # jetBot names that were not used for training
+        jetBotNames= [name for name in jb_names if name != trainJetBotName]
+
+        for jetBotName in jetBotNames:
+            for difficulty in difficulties:
+                jb_success_rate, jb_collision_rate = self.eval_model_track(n_episodes, difficulty, iteration, light_setting, jetbot_name = jetBotName)
+
+                print(f'{jetBotName} success rate: {jb_success_rate} collision rate: {jb_collision_rate} for difficulty {difficulty} Light Setting {light_setting}', flush=True)
+                if log:
+                    self.my_record(f"{jetBotName}/success_{difficulty}_{light_setting.name}", jb_success_rate)
+                    self.my_record(f"{jetBotName}/success_{difficulty}_{light_setting.name}", jb_collision_rate)
            
 
 
@@ -792,10 +804,10 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
             print(f'running eval for light setting {light_setting.name}', flush=True)
             
             time_easy = time.time()
-            easy_success_rate, easy_collision_rate = self.eval_model_track(n_eval_episodes = n_eval_episodes, difficulty ="easy", iteration=iteration, light_setting=light_setting)
+            easy_success_rate, easy_collision_rate = self.eval_model_track(n_eval_episodes = n_eval_episodes, difficulty ="easy", iteration=iteration, light_setting=light_setting, log=True)
             print(f'eval_model_track easy done in {(time.time() - time_easy)/60} minutes', flush=True)
-            medium_success_rate, medium_collision_rate = self.eval_model_track(n_eval_episodes =n_eval_episodes, difficulty="medium", iteration=iteration, light_setting=light_setting)
-            hard_success_rate, hard_collision_rate = self.eval_model_track(n_eval_episodes =n_eval_episodes, difficulty="hard", iteration=iteration, light_setting=light_setting)
+            medium_success_rate, medium_collision_rate = self.eval_model_track(n_eval_episodes =n_eval_episodes, difficulty="medium", iteration=iteration, light_setting=light_setting, log=True)
+            hard_success_rate, hard_collision_rate = self.eval_model_track(n_eval_episodes =n_eval_episodes, difficulty="hard", iteration=iteration, light_setting=light_setting, log=True)
             total_success_rate += easy_success_rate + medium_success_rate + hard_success_rate
             light_success_rate = (easy_success_rate + medium_success_rate + hard_success_rate) / 3
             
@@ -820,18 +832,18 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
             avg_medium_collision_rate += medium_collision_rate
             avg_hard_collision_rate += hard_collision_rate
 
-        if eval_light_settings:
-            self.my_record(f"eval/success_easy", avg_easy_success_rate / len(light_settings))
-            self.my_record(f"eval/success_medium", avg_medium_success_rate / len(light_settings))
-            self.my_record(f"eval/success_hard", avg_hard_success_rate / len(light_settings))
+        #if eval_light_settings:
+        self.my_record(f"eval/success_easy", avg_easy_success_rate / len(light_settings))
+        self.my_record(f"eval/success_medium", avg_medium_success_rate / len(light_settings))
+        self.my_record(f"eval/success_hard", avg_hard_success_rate / len(light_settings))
 
-            self.my_record(f"eval_important/success_easy", avg_easy_success_rate / len(light_settings))
-            self.my_record(f"eval_important/success_medium", avg_medium_success_rate / len(light_settings))
-            self.my_record(f"eval_important/success_hard", avg_hard_success_rate / len(light_settings))
+        self.my_record(f"eval_important/success_easy", avg_easy_success_rate / len(light_settings))
+        self.my_record(f"eval_important/success_medium", avg_medium_success_rate / len(light_settings))
+        self.my_record(f"eval_important/success_hard", avg_hard_success_rate / len(light_settings))
 
-            self.my_record(f"eval_collision_rates/collision_rate_easy", avg_easy_collision_rate / len(light_settings))
-            self.my_record(f"eval_collision_rates/collision_rate_medium", avg_medium_collision_rate / len(light_settings))
-            self.my_record(f"eval_collision_rates/collision_rate_hard", avg_hard_collision_rate / len(light_settings))
+        self.my_record(f"eval_collision_rates/collision_rate_easy", avg_easy_collision_rate / len(light_settings))
+        self.my_record(f"eval_collision_rates/collision_rate_medium", avg_medium_collision_rate / len(light_settings))
+        self.my_record(f"eval_collision_rates/collision_rate_hard", avg_hard_collision_rate / len(light_settings))
 
         total_success_rate = total_success_rate / (3 * len(light_settings))
         if total_success_rate > self.max_total_success_rate:
@@ -889,7 +901,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         iteration: int = 0,
         light_setting: LightSetting = LightSetting.standard,
         deterministic: bool = False,
-        log: bool = True,
+        log: bool = False,
         jetbot_name: str = "DifferentialJetBot",
     ):
         # all maps from the difficulty setting are selected with the same proportion
@@ -1085,7 +1097,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
             eval_time = time.time()
             self.test_jetbot_generalization(n_episodes=n_eval_episodes, iteration=iteration, light_setting=LightSetting.standard, log=True)
             self.eval_model(iteration=step, n_eval_episodes=n_eval_episodes)
-            self.test_episodes_identical_start_conditions(n_episodes=n_eval_episodes, iteration=step, light_setting=LightSetting.standard, deterministic=True, log=True)
+            self.test_episodes_identical_start_conditions(n_episodes=n_eval_episodes, iteration=step, light_setting=LightSetting.standard, log=True)
             self.test_deterministic_improves(n_episodes=n_eval_episodes, iteration=step, eval_light_settings=False, log=True)
             self.test_fresh_obs_improves(n_episodes=n_eval_episodes, difficulty = "medium", iteration=step, light_setting=LightSetting.standard, log=True)
             
@@ -1132,7 +1144,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         n_episodes: int = 10,
         iteration: int = 0,
         light_setting: LightSetting = LightSetting.standard,
-        deterministic: bool = True,
+        deterministic: bool = False,
         log=False
     ):
         # TODO make the mapType a parameter??
@@ -1274,8 +1286,6 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
                 indices=[index],
                 video_filename = ""
             )
-
-        print(f'test_episodes_identical_start_conditions finished', flush=True)
 
         if log:
             self.my_record(f'identicalStartConditions/most_common_episode_result_rate', most_common_episode_result_rate)
@@ -1481,8 +1491,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         light_settings = [LightSetting.bright, LightSetting.standard, LightSetting.dark]
         
 
-        
-
+    
         preprocessing_plus_infer_times = []
 
         for difficulty in difficulties:
@@ -1519,9 +1528,8 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         else:
             # timestepLength can also be false (unrestricted)
             # not sure what to log for that case
+            print(f'WARNING: timestepLength is false for replay episodes. max_prepro_infer_time is {max_prepro_infer_time} seconds')
             pass
-
-
     
 
     def replay_episode(self, episode_path, deterministic):
@@ -1530,8 +1538,8 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         # this uses the first environment exclusively
 
         # reset to initialize all envs (required for bundled calls)
-        env.reset()
-
+        # env.reset()
+        print(f'TODO do we need the env.reset?')
         
         env.envs[0].resetMemory()
 

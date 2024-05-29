@@ -7,7 +7,6 @@ from stable_baselines3.common.env_checker import check_env as check_env_sb3
 
 import numpy as np
 
-from peaceful_pie.unity_comms import UnityComms
 
 from skimage import color
 from skimage.measure import block_reduce
@@ -49,12 +48,17 @@ class BaseCarsimEnv(gym.Env):
     unity_comms: UnityComms = None
     instancenumber = 0
 
-    def __init__(self, width=336, height=168, port=9000, log=False, jetbot=None, spawnOrientation=None, fixedTimestepsLength=None, trainingMapType=MapType.randomEval, trainingLightSetting=LightSetting.random, image_preprocessing={}, frame_stacking=5, coefficients=None, collisionMode=None):
+    def __init__(self, width=336, height=168, port=9000, log=False, jetBotName=None, spawnOrientation=None, fixedTimestepsLength=None, trainingMapType=MapType.randomEval, trainingLightSetting=LightSetting.random, image_preprocessing={}, frame_stacking=5, coefficients=None, collisionMode=None, use_unity=True):
         # height and width was previous 168, that way we could downsample and reach the same dimensions as the nature paper of 84 x 84
 
+        self.use_unity = use_unity # this is used for testing the environment without unity, e.g. for replaying episodes
+        if self.use_unity:
+            from peaceful_pie.unity_comms import UnityComms
+
+
         self.instancenumber = BaseCarsimEnv.instancenumber
-        assert jetbot is not None
-        self.jetbot = jetbot
+        assert jetBotName is not None
+        self.jetBotName = jetBotName
 
         self.fixedTimestepsLength = fixedTimestepsLength
 
@@ -123,13 +127,15 @@ class BaseCarsimEnv(gym.Env):
                                     shape=(self.height, self.width, self.channels_total),
                                     dtype=self.obs_dtype)
 
-        if self.instancenumber == 0:
-            print(f'Observation space shape {self.observation_space.shape}', flush=True)
+        
 
         self.action_space = spaces.Box(
             low=-1.0, high=1.0, shape=(2, 1), dtype=np.float32)
         # this box is essentially an array
 
+        if self.instancenumber == 0:
+            print(f'Observation space shape {self.observation_space.shape}', flush=True)
+            print(f'action space shape {self.action_space.shape}', flush=True)
         
 
         if BaseCarsimEnv.unity_comms is None:
@@ -270,11 +276,14 @@ class BaseCarsimEnv(gym.Env):
         return BaseCarsimEnv.unity_comms.ping(id=self.instancenumber)
 
     def unityStartArena(self, width, height, fixedTimesteps, fixedTimestepsLength):
-
+        if not self.use_unity:
+            return
         return BaseCarsimEnv.unity_comms.startArena(
             id=self.instancenumber, distanceCoefficient=self.distanceCoefficient, orientationCoefficient=self.orientationCoefficient, velocityCoefficient=self.velocityCoefficient, eventCoefficient=self.eventCoefficient, resWidth=width, resHeight=height, fixedTimesteps=fixedTimesteps, fixedTimestepsLength=fixedTimestepsLength, collisionMode=self.collisionMode)
         
     def unityDeleteAllArenas(self):
+        if not self.use_unity:
+            return
         BaseCarsimEnv.unity_comms.deleteAllArenas()
 
     def unityGetArenaScreenshot(self):
@@ -306,7 +315,7 @@ class BaseCarsimEnv(gym.Env):
         self.current_spawn_rot = spawn_rot
 
         if jetBotName is None:
-            jetBotName = self.jetbot
+            jetBotName = self.jetBotName
 
         obsstring = self.unityReset(mp_name, spawn_rot, video_filename=self.video_filename, lightSettingName=lightSettingName, evalMode=evalMode, jetbot_name=jetBotName)
 
@@ -357,6 +366,9 @@ class BaseCarsimEnv(gym.Env):
     
     def getSpawnMode(self):
         return self.spawnOrientation
+    
+    def getJetBotName(self):
+        return self.jetBotName
     
     def reset_with_mapType_spawnrotation(self, mapType, lightSetting=None, evalMode=False, spawnRot=None):
         return self.reset(mapType=mapType, lightSetting=lightSetting, evalMode=evalMode, spawnRot=spawnRot)

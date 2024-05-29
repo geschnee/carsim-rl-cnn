@@ -1,10 +1,11 @@
-comment: "training hard, standard light settings, fresh_obs, no extra finishLineReward"
+comment: "training medium, all light settings, nsteps 512, now testing with an event reward bonus for finishing"
 # "Trying with fixed light settings and variable timesteps, we want to see learning progress again. Did something break?"
 # we should also try it with the fixed spawn to be closer to the evaluation scenario, maybe the differential can do it 
 
 # reducing n_envs results in higher fps (per env)
 n_envs: 10
 copy_model_from: False
+# copy_model_from can be False or a string (filename without .zip suffix)
 
 total_timesteps: 5000000
 
@@ -37,7 +38,7 @@ algo_settings:
 
   policy: "CnnPolicy"
   use_bundled_calls: True
-  use_fresh_obs: True
+  use_fresh_obs: False
 
   print_network_and_loss_structure: False
 
@@ -54,8 +55,9 @@ algo_settings:
 
 
 env_kwargs:
-  jetBotName: DifferentialJetBot
-  spawnOrientation: Random
+  use_unity: False
+  jetbot: DifferentialJetBot
+  spawn_point: OrientationRandom
   # spawn_point can be Fixed, OrientationRandom, OrientationVeryRandom and FullyRandom
   frame_stacking: 10
   image_preprocessing:
@@ -72,8 +74,8 @@ env_kwargs:
     eventCoefficient: 0
   collisionMode: oncePerTimestep
   # unrestricted, oncePerTimestep, oncePerEpisode, resetUponCollision, ignoreCollisions
-  trainingMapType: randomEvalHard
-  trainingLightSetting: standard
+  trainingMapType: randomEvalMedium
+  trainingLightSetting: random
   # random, bright, standard, dark
   fixedTimestepsLength: 0.3
   # non fixed with 10 envs takes 0.5 seconds for vecenv_step --> this results in 1 fps (per env)

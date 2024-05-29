@@ -455,7 +455,7 @@ public class EpisodeManager : MonoBehaviour
             AddEventReward(finishLineReward);
 
             // add an event reward independent of the scaling, we want to avoid timeouts
-            AddReward(5);
+            // AddReward(5);
             // this was tested with the medium setting to see if the agent then learns to move to the finishLine
 
 
