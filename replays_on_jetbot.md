@@ -1,10 +1,21 @@
 # connect to jetbot
 
+on jetbot exceute:
+nmcli
+
+ssh jetbot@ip
+
+ip = ipv4 aus nmcli
+
+
 check space on device
 df -h
 
 check size of files 
 ls -lh
+
+sorted ascending order:
+du -hs * | sort -h
 
 check size of directories in current folder
 du -sh *
@@ -26,6 +37,14 @@ tmpfs           397M     0  397M   0% /run/user/1000
 ## check usb drive is connected
 
 lsblk
+
+## create filesystem on the usb drive
+
+sudo mkfs -t ext4 /dev/sda1
+
+## create mount directory
+
+mkdir /mnt/usb_drive
 
 ## mount usb drive
 
@@ -50,6 +69,9 @@ reload config:
 
 sudo systemctl daemon-reload && sudo systemctl restart local-fs.target
 
+
+sudo reboot
+
 # copy carsim repo to JetBot
 
 scp -r carsim_no_mlagents jetbot@192.168.1.3:/mnt/usb_drive/carsim_no_mlagents
@@ -58,6 +80,60 @@ scp -r carsim_no_mlagents jetbot@192.168.1.3:/mnt/usb_drive/carsim_no_mlagents
 
 scp -r episode_recordings jetbot@192.168.1.3:/mnt/usb_drive/carsim_no_mlagents/python/episode_recordings
 
+# install openssl
+
+wget https://www.openssl.org/source/openssl-1.1.1k.tar.gz
+tar -xf openssl-1.1.1k.tar.gz
+
+mkdir /mnt/usb_drive/.localssl
+
+cd /mnt/usb_drive/openssl-1.1.1k
+./config --prefix=/mnt/usb_drive/.localssl --openssldir=/mnt/usb_drive/.localssl shared zlib
+make
+make install
+
+
+# install _ctypes
+
+TODO
+https://github.com/yaml/pyyaml/issues/742
+
+
+
+# install a new python (due to no space on default installation)
+
+packages cannot be installed with apt
+https://unix.stackexchange.com/questions/167231/installing-python-without-package-manager
+
+
+source python_download.sh
+
+The ./configure should show the following:
+checking for openssl/ssl.h in /mnt/usb_drive/.localssl... yes
+checking whether compiling and linking against OpenSSL works... yes
+checking for --with-openssl-rpath...
+checking whether OpenSSL provides required ssl module APIs... yes
+checking whether OpenSSL provides required hashlib module APIs... yes
+checking for --with-ssl-default-suites... python
+
+
+
+python ist nun in localpython installiert
+executable: /mnt/usb_drive/.localpython/bin/python3.11
+
+## python installation als standard python setzen
+wo ist python installiert?
+
+python -c "import sys; print(sys.executable)"
+
+neuen Link
+
+ln -sf /mnt/usb_drive/.localpython/bin/python3.11 /usr/bin/python
+
+
+## mit virtual env
+
+https://pages.github.nceas.ucsb.edu/NCEAS/Computing/local_install_python_on_a_server.html
 
 # create virtual env for python
 
@@ -66,16 +142,19 @@ https://docs.python.org/3/library/venv.html
 cd /mnt/usb_drive
 python -m venv sb3_env
 
+
 ## activate virtual env
 
 cd /mnt/usb_drive
 source sb3_env/bin/activate
 
+## python requires ssl module
+
 ## install packages
 
-python3 -m pip install -r minimal_requirements.txt
+python -m pip install -r minimal_requirements.txt
 
 
 # run replay
 
-python3 sb3_ppo_replay_only.py > replay_output.txt
+python sb3_ppo_replay_only.py > replay_output.txt
