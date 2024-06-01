@@ -1,5 +1,5 @@
 # these requirements are for running the training alone
-# no jupyter notebook, no tensorboard, no visualization
+# no jupyter notebooks
 
 #absl-py==1.2.0
 #accelerate==0.15.0
@@ -161,7 +161,7 @@ PyYAML==6.0
 #rfc3986-validator==0.1.1
 #rich==13.5.2
 #rsa==4.9
-#scikit-image==0.22.0
+scikit-image==0.22.0
 #scikit-learn==1.2.2
 #scipy==1.9.3
 #selenium==4.15.2
@@ -174,7 +174,7 @@ stable-baselines3==2.2.1
 #stack-data==0.6.2
 #stopit==1.1.2
 #swig==4.0.2
-#tensorboard==2.10.0
+tensorboard==2.10.0
 #tensorboard-data-server==0.6.1
 #tensorboard-plugin-wit==1.8.1
 #tensorflow==2.10.0

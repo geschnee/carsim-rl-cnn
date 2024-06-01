@@ -95,6 +95,29 @@ make install
 
 # install _ctypes
 
+download tar.gz
+https://github.com/libffi/libffi/releases
+
+./configure --prefix=/mnt/usb_drive/.localffi
+make
+sudo make install
+
+Libraries have been installed in:
+   /mnt/usb_drive/.localffi/lib/../lib
+
+If you ever happen to want to link against installed libraries
+in a given directory, LIBDIR, you must either use libtool, and
+specify the full pathname of the library, or use the '-LLIBDIR'
+flag during linking and do at least one of the following:
+   - add LIBDIR to the 'LD_LIBRARY_PATH' environment variable
+     during execution
+   - add LIBDIR to the 'LD_RUN_PATH' environment variable
+     during linking
+   - use the '-Wl,-rpath -Wl,LIBDIR' linker flag
+   - have your system administrator add LIBDIR to '/etc/ld.so.conf'
+
+https://stackoverflow.com/questions/65691539/locally-compiled-libffi-files-not-getting-picked-up-while-recompiling-python-3-p
+
 TODO
 https://github.com/yaml/pyyaml/issues/742
 
@@ -148,12 +171,19 @@ python -m venv sb3_env
 cd /mnt/usb_drive
 source sb3_env/bin/activate
 
-## python requires ssl module
 
 ## install packages
 
-python -m pip install -r minimal_requirements.txt
+python -m pip install -r carsim_no_mlagents-main/python/replay_only_requirements.txt
 
+
+# copy recordings
+
+scp -r episode_recordings jetbot@192.168.1.2:/mnt/usb_drive/carsim_no_mlagents-main/python/episode_recordings
+
+scp -r episode_recordings/episode_recordings_laptop_for_testing_on_linux_deterministic jetbot@192.168.1.2:/mnt/usb_drive/carsim_no_mlagents-main/python/episode_recordings/episode_recordings_laptop_for_testing_on_linux_deterministic
+
+scp -r myPPO jetbot@192.168.1.2:/mnt/usb_drive/carsim_no_mlagents-main/python/myPPO
 
 # run replay
 
