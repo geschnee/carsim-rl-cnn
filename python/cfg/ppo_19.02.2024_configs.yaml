@@ -40,8 +40,8 @@ net_arch:
   vf: []
 
 env_kwargs: 
-  jetbot: DifferentialJetBot
-  spawn_point: OrientationRandom
+  jetBotName: DifferentialJetBot
+  spawnOrientation: OrientationRandom
   frame_stacking: 10
   image_preprocessing: 
     downsampling_factor: 1

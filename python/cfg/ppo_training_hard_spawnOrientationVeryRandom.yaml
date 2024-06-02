@@ -56,7 +56,7 @@ algo_settings:
 
 
 env_kwargs:
-  jetbot: DifferentialJetBot
+  jetBotName: DifferentialJetBot
   spawnOrientation: VeryRandom
   # spawnOrientation can be Fixed, Random, VeryRandom
   frame_stacking: 10

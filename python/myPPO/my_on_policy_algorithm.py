@@ -1192,7 +1192,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
             mapType=MapType.mediumBlueFirstRight,
             lightSetting=light_setting,
             evalMode=True,
-            spawnRot=0
+            spawnRot=0.0
         ) 
 
         # switch to eval mode
@@ -1257,7 +1257,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
                             mapType=MapType.mediumBlueFirstRight,
                             lightSetting=light_setting,
                             evalMode=True,
-                            spawnRot=0
+                            spawnRot=0.0
                         )
             
             self._last_obs = observations
@@ -1540,7 +1540,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
 
         # reset to initialize all envs (required for bundled calls)
         # env.reset()
-        print(f'TODO do we need the env.reset?')
+        # print(f'TODO do we need the env.reset?')
         
         env.envs[0].resetMemory()
 
