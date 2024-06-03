@@ -94,12 +94,6 @@ def run_replay(cfg):
     # CnnPolicy network architecture can be seen in sb3.common.torch_layers.py
 
     
-    if cfg.copy_model_from:
-        string = f"{HydraConfig.get().runtime.cwd}/{cfg.copy_model_from}"
-        print(f'loading model from {string} before replay', flush=True)
-        model = algo.load(string, env=vec_env, tensorboard_log="./tmp",
-                        n_epochs=cfg.algo_settings.n_epochs, batch_size=cfg.algo_settings.batch_size)
-
  
     model.replay_episodes(cfg.episode_record_replay_settings, seed, cfg.env_kwargs.fixedTimestepsLength)
 

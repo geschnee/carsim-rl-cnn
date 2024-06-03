@@ -1627,6 +1627,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
 
         if deterministic:
             for i in range(recorded_episode_length):
+                print(f'actions: {recorded_actions[i]} == {reproduced_actions[i]}')
                 assert np.allclose(recorded_actions[i], reproduced_actions[i], atol=1e-1), f'actions are not the same {recorded_actions[i]} != {reproduced_actions[i]}'
                 assert np.allclose(recorded_values[i], reproduced_values[i].cpu().numpy(), atol=1e+2), f'values are not the same {recorded_values[i]} != {reproduced_values[i]}'
                 assert np.allclose(recorded_log_probs[i], reproduced_log_probs[i].cpu().numpy(), atol=1e-3), f'log_probs are not the same {recorded_log_probs[i]} != {reproduced_log_probs[i]}'

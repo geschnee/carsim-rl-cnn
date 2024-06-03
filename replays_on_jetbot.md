@@ -188,3 +188,21 @@ scp -r myPPO jetbot@192.168.1.2:/mnt/usb_drive/carsim_no_mlagents-main/python/my
 # run replay
 
 python sb3_ppo_replay_only.py > replay_output.txt
+
+
+# replay results
+
+model loaded from /mnt/usb_drive/carsim_no_mlagents-main/python/episode_recordings/episode_recordings_laptop_for_testing_on_linux_deterministic/model.zip
+replay episode results:
+avg time for preprocessing and infer: 0.0659334439328306
+max time for preprocessing and infer: 0.20029616355895996
+preprocessing and infer times (maximum 0.20029616355895996) are below the timestep length of 0.3 seconds
+this would leave 0.09970383644104003 seconds for the camera to take an image and send it to python
+
+
+## TODO 
+
+retry replaying a recording from desktop PC
+it did not work on jetbot and laptop
+  - is the recording corrupt?
+  - is it not possible to transfer from a cuda to non-cuda device?

@@ -42,7 +42,7 @@ net_arch:
 
 env_kwargs: 
   jetBotName: DifferentialJetBot
-  spawnOrientation: OrientationRandom
+  spawnOrientation: Random
   frame_stacking: 10
   image_preprocessing: 
     grayscale: True

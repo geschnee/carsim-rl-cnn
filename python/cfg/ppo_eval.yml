@@ -14,8 +14,8 @@ copy_model_from: False #models_and_dumps/best_model_episode_70
 
 env_kwargs:
   jetBotName: DifferentialJetBot
-  spawnOrientation: OrientationRandom
-  # spawnOrientation can be Fixed, OrientationRandom, OrientationVeryRandom and FullyRandom
+  spawnOrientation: Random
+  # spawnOrientation can be Fixed, Random, OrientationVeryRandom and FullyRandom
   frame_stacking: 10
   image_preprocessing:
     downsampling_factor: 2
