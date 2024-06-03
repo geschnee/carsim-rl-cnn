@@ -64,8 +64,6 @@ env_kwargs:
     downsampling_factor: 2
     grayscale: True
     equalize: True
-    contrast_increase: "TODO"
-    # vielleicht eine art Mode variable hier reinpacken contrast increase s equalize
     normalize_images: False
   coefficients:
     distanceCoefficient: 1

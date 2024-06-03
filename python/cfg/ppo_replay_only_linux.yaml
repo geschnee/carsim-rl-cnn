@@ -19,7 +19,7 @@ eval_settings:
 episode_record_replay_settings:
   n_episodes_per_setting: 2
   deterministic_sampling: True
-  replay_folder: episode_recordings/episode_recordings_from_laptop_nondeter
+  replay_folder: episode_recordings/episode_recordings_eval_medium_desktop_02.06.2024
   # replay_folder can be False to replay the previously recorded episodes
 
 algo_settings:
@@ -61,8 +61,6 @@ env_kwargs:
     downsampling_factor: 2
     grayscale: True
     equalize: True
-    contrast_increase: "TODO"
-    # vielleicht eine art Mode variable hier reinpacken contrast increase s equalize
     normalize_images: False
   coefficients:
     distanceCoefficient: 1

@@ -39,7 +39,7 @@ coefficients = {"distanceCoefficient": 0.5,
     "eventCoefficient": 1.0}
 
 env_kwargs = {"fixedTimestepsLength": fixedTimestepsLength, 
-              "jetbot": "DifferentialJetBot",
+              "jetBotName": "DifferentialJetBot",
               "spawnOrientation": myEnums.SpawnOrientation.Fixed,
               "frame_stacking": 3, 
               "image_preprocessing": {
@@ -115,8 +115,6 @@ def saveAugmentedImages(env, name):
 # instead i only use the directional lights with different intensities
 
 env.mapType = carsimGymEnv.MapType.hardBlueFirstLeft
-
-# TODO images with and without histogram equalization
 
 # agent vision with standard lighting
 env.reset(lightSetting=myEnums.LightSetting.standard)
@@ -214,3 +212,62 @@ env.reset(mapType = MapType.hardBlueFirstRight, lightSetting=LightSetting.standa
 time.sleep(1) # wait for the car to spawn
 env.get_arena_topview("latex_images/spawnOrientation_VeryRandom_max.png")
 env.saveObservationNoPreprocessing(f"latex_images/spawnOrientation_VeryRandom_max_pov.png")
+
+
+
+
+# images of histograms
+filename = "latex_images/preprocessingSteps/fixedSpawnPoint_hardBlueFirstLeft_standard_grayscale.png"
+from PIL import Image
+image = Image.open(filename)
+
+
+from gymEnv.histogram_equilization import hist_eq
+import numpy as np
+
+image = np.array(image)
+# print(f'image shape {image.shape}')
+
+pixels_equalized, histOrig, histEq = hist_eq(image)
+
+pixels_equalized_uint8 = pixels_equalized.astype(np.uint8)
+
+if not os.path.exists("latex_images/histogram"):
+    os.mkdir("latex_images/histogram")
+
+env.saveImageGrayscale(image, "latex_images/histogram/original_image.png")
+env.saveImageGrayscale(pixels_equalized_uint8, "latex_images/histogram/equalized_image.png")
+
+
+def save_histogram(img, filename):
+
+    hist, bins = np.histogram(img.flatten(), 256, [0, 255])
+    # print(f'hist shape: {hist.shape}')
+    # print(f'bins shape: {bins.shape}')
+    # print(f'hist: {hist}')
+    # print(f'bins: {bins}')
+
+    cdf = hist.cumsum()
+
+
+    import matplotlib.pyplot as plt
+
+    fig, ax1 = plt.subplots()
+    ax1.bar(bins[:-1], hist, width=1, label="Histogram", color="red")
+    ax1.set_ylabel("Histogram")
+
+    ax2 = ax1.twinx()
+
+    # TODO insert the cdf in graph
+    # https://matplotlib.org/stable/gallery/statistics/histogram_cumulative.html#sphx-glr-gallery-statistics-histogram-cumulative-py
+    
+    ax2.plot(range(256), cdf, "k--", linewidth=1.5, label="Cumulative Histogram")
+    ax2.set_ylabel("Cumulative Histogram")
+
+    fig.tight_layout()
+    plt.savefig(filename)
+
+    plt.close()
+
+save_histogram(image, "latex_images/histogram/original_histogram.png")
+save_histogram(pixels_equalized_uint8, "latex_images/histogram/equalized_histogram.png")

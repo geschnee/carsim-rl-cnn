@@ -520,7 +520,7 @@ class BaseCarsimEnv(gym.Env):
         img.save(filename)
 
 
-    def saveImageGreyscale(self, array, filename):
+    def saveImageGrayscale(self, array, filename):
         img = Image.fromarray(array, 'L')
         img.save(filename)
 
@@ -541,10 +541,11 @@ class BaseCarsimEnv(gym.Env):
             assert self.obs_dtype == np.float32, f'normalize_images=True requires dtype float32 (int cannot store 0-1 range, only 0-255 range)'
 
 
-    def preprocessDownsample(self, pixels, log):
+    def preprocessDownsample(self, pixels, log=False):
         x, y = self.downsampling_factor, self.downsampling_factor
         pixels_downsampled = block_reduce(pixels, block_size=(x, y, 1), func=np.mean)
         # if x==y==2 it halves the size along each dim
+        
 
         if log:
             pixels_downsampled_uint8 = pixels_downsampled.astype(np.uint8)
@@ -562,11 +563,11 @@ class BaseCarsimEnv(gym.Env):
 
         if log:
             pixels_gray_uint8 = pixels_gray.astype(np.uint8)
-            self.saveImageGreyscale(pixels_gray_uint8, "imagelog/image_from_unity_grey.png")
-            self.saveImageGreyscale(pixels_gray_uint8, "latex_images/agent_grey.png")
+            self.saveImageGrayscale(pixels_gray_uint8, "imagelog/image_from_unity_gray.png")
+            self.saveImageGrayscale(pixels_gray_uint8, "latex_images/agent_gray.png")
 
             if type(log) == str:
-                self.saveImageGreyscale(pixels_gray_uint8, f"{log}_greyscale.png")
+                self.saveImageGrayscale(pixels_gray_uint8, f"{log}_grayscale.png")
 
         return pixels_gray
     
@@ -576,11 +577,11 @@ class BaseCarsimEnv(gym.Env):
 
         if log:
             pixels_equalized_uint8 = pixels_equalized.astype(np.uint8)
-            self.saveImageGreyscale(pixels_equalized_uint8, "imagelog/images_from_unity_equalized.png")
-            self.saveImageGreyscale(pixels_equalized_uint8, "latex_images/agent_equalized.png")
+            self.saveImageGrayscale(pixels_equalized_uint8, "imagelog/images_from_unity_equalized.png")
+            self.saveImageGrayscale(pixels_equalized_uint8, "latex_images/agent_equalized.png")
 
             if type(log) == str:
-                self.saveImageGreyscale(pixels_equalized_uint8, f"{log}_equalized.png")
+                self.saveImageGrayscale(pixels_equalized_uint8, f"{log}_equalized.png")
 
         return pixels_equalized
 

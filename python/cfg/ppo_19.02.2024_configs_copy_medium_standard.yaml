@@ -47,7 +47,6 @@ env_kwargs:
   image_preprocessing: 
     grayscale: True
     equalize: True
-    contrast_increase: "TODO"
     normalize_images: False
   coefficients: 
     distanceCoefficient: 0.5
