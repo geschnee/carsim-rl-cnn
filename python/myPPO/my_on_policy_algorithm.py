@@ -163,7 +163,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         # pytype:enable=not-instantiable
         self.policy = self.policy.to(self.device)
 
-    def inferFromObservations(self, env, deterministic = False):
+    def inferFromObservations(self, env, deterministic):
         # moved to its own function to be able to profile the forward passes (during rollout collection and evaluation) easily
 
 
@@ -192,7 +192,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         
         return actions, values, log_probs, obs
     
-    def inferFromObservationsForRecording(self, env, deterministic = False):
+    def inferFromObservationsForRecording(self, env, deterministic):
 
         with th.no_grad():
             # Convert to pytorch tensor or to TensorDict
@@ -302,7 +302,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
 
             
 
-            actions, values, log_probs, obs = self.inferFromObservations(env)
+            actions, values, log_probs, obs = self.inferFromObservations(env, deterministic=False)
 
             actions = actions.cpu().numpy()
 
@@ -973,7 +973,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
 
         while (episode_counts < episode_count_targets).any():
     
-            #assert False, "do we have to use deteministic forward here?"
+            
             actions, values, log_probs, obs = self.inferFromObservations(env, deterministic)
             actions = actions.cpu().numpy()
 

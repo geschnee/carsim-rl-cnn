@@ -102,12 +102,7 @@ def run_ppo(cfg):
 
     algo = myPPO
 
-    policy_kwargs = {"normalize_images": cfg.env_kwargs.image_preprocessing.normalize_images, "net_arch": OmegaConf.to_container(cfg.algo_settings.net_arch)}
-
-    # normalize_imagess=True scales the images to 0-1 range
-    # requires dtype float32
-    # kwarg to both the env (ObsSpace) and the policy
-
+    policy_kwargs = {"net_arch": OmegaConf.to_container(cfg.algo_settings.net_arch)}
 
     model = algo(cfg.algo_settings.policy, vec_env, verbose=1,
                 tensorboard_log="./tmp", n_epochs=cfg.algo_settings.n_epochs, batch_size=cfg.algo_settings.batch_size, n_steps=cfg.algo_settings.n_steps, policy_kwargs=policy_kwargs, seed = seed, use_bundled_calls=cfg.algo_settings.use_bundled_calls, use_fresh_obs=cfg.algo_settings.use_fresh_obs, print_network_and_loss_structure=cfg.algo_settings.print_network_and_loss_structure)
@@ -119,12 +114,6 @@ def run_ppo(cfg):
     # TODO wo ist epsilon definiert?
     # nimmt epsilon mit der Zeit ab?
     # es gibt einen ent_coef was exploration fördert
-
-    # TODO preprocessing steps help?
-    # increase contrast of images?
-    # https://stackoverflow.com/questions/39308030/how-do-i-increase-the-contrast-of-an-image-in-python-opencv
-
-
 
     
     if cfg.copy_model_from:

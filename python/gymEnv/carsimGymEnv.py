@@ -144,7 +144,7 @@ class BaseCarsimEnv(gym.Env):
 
         self.collisionMode = collisionMode
 
-        self.unityStartArena(self.width, self.height, fixedTimesteps, fixedTimestepsLength)
+        self.unityStartArena(agentImageWidth, agentImageHeight, fixedTimesteps, fixedTimestepsLength)
         BaseCarsimEnv.instancenumber += 1
 
         self.spawnOrientation = spawnOrientation
@@ -520,6 +520,7 @@ class BaseCarsimEnv(gym.Env):
 
 
     def preprocessDownsample(self, pixels, log=False):
+
         x, y = self.downsampling_factor, self.downsampling_factor
         pixels_downsampled = block_reduce(pixels, block_size=(x, y, 1), func=np.mean)
         # if x==y==2 it halves the size along each dim
