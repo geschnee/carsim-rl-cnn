@@ -48,7 +48,7 @@ class BaseCarsimEnv(gym.Env):
     unity_comms = None
     instancenumber = 0
 
-    def __init__(self, width=336, height=168, port=9000, log=False, jetBotName=None, spawnOrientation=None, fixedTimestepsLength=None, trainingMapType=MapType.randomEval, trainingLightSetting=LightSetting.random, image_preprocessing={}, frame_stacking=5, coefficients=None, collisionMode=None, use_unity=True):
+    def __init__(self, agentImageWidth=336, agentImageHeight=168, port=9000, log=False, jetBotName=None, spawnOrientation=None, fixedTimestepsLength=None, trainingMapType=MapType.randomEval, trainingLightSetting=LightSetting.random, image_preprocessing={}, frame_stacking=5, coefficients=None, collisionMode=None, use_unity=True):
         # height and width was previous 168, that way we could downsample and reach the same dimensions as the nature paper of 84 x 84
 
         self.use_unity = use_unity # this is used for testing the environment without unity, e.g. for replaying episodes
@@ -71,8 +71,8 @@ class BaseCarsimEnv(gym.Env):
 
         self.log = log
 
-        self.width = int(width / self.downsampling_factor)
-        self.height = int(height / self.downsampling_factor)
+        self.width = int(agentImageWidth / self.downsampling_factor)
+        self.height = int(agentImageHeight / self.downsampling_factor)
         # width and height in pixels of the screen
 
         # how are RL algos trained for continuous action spaces?
@@ -109,18 +109,9 @@ class BaseCarsimEnv(gym.Env):
                 print(f'channels total {self.channels_total}', flush=True)
         
         
-        if self.normalize_images:
-            high = 1
-
-            # sb3 does not do the normalization itself, we can do it here
-            # TODO we also need to set the parameter normalize_images=True in the CnnPolicy
-            # see https://github.com/DLR-RM/stable-baselines3/blob/b413f4c285bc3bfafa382559b08ce9d64a551d26/stable_baselines3/common/torch_layers.py#L48
-            self.obs_dtype =  np.float32
-
-            assert False, f'not implemented yet, did you set normalize_images=True in the CnnPolicy?'
-        else:
-            high = 255
-            self.obs_dtype = np.uint8
+        
+        high = 255
+        self.obs_dtype = np.uint8
             
         self.observation_space = spaces.Box(low=0,
                                     high=high,
@@ -134,8 +125,8 @@ class BaseCarsimEnv(gym.Env):
         # this box is essentially an array
 
         if self.instancenumber == 0:
-            print(f'Observation space shape {self.observation_space.shape}', flush=True)
-            print(f'action space shape {self.action_space.shape}', flush=True)
+            print(f'Observation space shape {self.observation_space.shape}, low {self.observation_space.low}, high {self.observation_space.high}', flush=True)
+            print(f'action space shape {self.action_space.shape}, low {self.action_space.low}, high {self.action_space.high}', flush=True)
         
 
         if BaseCarsimEnv.unity_comms is None and self.use_unity:
@@ -153,7 +144,7 @@ class BaseCarsimEnv(gym.Env):
 
         self.collisionMode = collisionMode
 
-        self.unityStartArena(width, height, fixedTimesteps, fixedTimestepsLength)
+        self.unityStartArena(self.width, self.height, fixedTimesteps, fixedTimestepsLength)
         BaseCarsimEnv.instancenumber += 1
 
         self.spawnOrientation = spawnOrientation
@@ -379,8 +370,6 @@ class BaseCarsimEnv(gym.Env):
                 os.makedirs('imagelog')
 
         d = new_obs
-        if self.normalize_images:
-            d = d * 255.0
         if channels== 3:
             img = Image.fromarray(d, 'RGB')
             img.save(f'imagelog/{self.step_nr}_new_obs.png')
@@ -391,8 +380,6 @@ class BaseCarsimEnv(gym.Env):
 
         for i in range(self.frame_stacking):
             data = self.memory[:,:,i*channels:i*channels+channels]
-            if self.normalize_images:
-                data = data * 255.0
 
             if channels== 3:
                 img = Image.fromarray(data, 'RGB')
@@ -405,8 +392,6 @@ class BaseCarsimEnv(gym.Env):
     def rollover_log_post_rollover(self, channels):
         for i in range(self.frame_stacking):
             data = self.memory[:,:,i*channels:i*channels+channels]
-            if self.normalize_images:
-                data = data * 255.0
             if channels== 3:
                 img = Image.fromarray(data, 'RGB')
                 img.save(f'imagelog/{self.step_nr}_post_rollover{i}.png')
@@ -418,8 +403,6 @@ class BaseCarsimEnv(gym.Env):
     def rollover_log_post_replace(self, channels):
         for i in range(self.frame_stacking):
             data = self.memory[:,:,i*channels:i*channels+channels]
-            if self.normalize_images:
-                data = data * 255.0
             if channels== 3:
                 img = Image.fromarray(data, 'RGB')
                 img.save(f'imagelog/{self.step_nr}_post_replace{i}.png')
@@ -431,10 +414,7 @@ class BaseCarsimEnv(gym.Env):
     def memory_rolloverStep(self, new_obs, log = None):
         return self.memory_rollover(new_obs, log) 
 
-    # TODO try this wrapper instead: https://github.com/DLR-RM/stable-baselines3/blob/b413f4c285bc3bfafa382559b08ce9d64a551d26/stable_baselines3/common/vec_env/vec_frame_stack.py#L12
     def memory_rollover(self, new_obs, log = None):
-        # was verified with an RGB example
-        # see all the commented out lines
 
         if log is None:
             log = self.log
@@ -536,9 +516,7 @@ class BaseCarsimEnv(gym.Env):
         self.grayscale = image_preprocessing["grayscale"]
 
         self.equalize = image_preprocessing["equalize"]
-        self.normalize_images = image_preprocessing["normalize_images"]
-        if self.normalize_images:
-            assert self.obs_dtype == np.float32, f'normalize_images=True requires dtype float32 (int cannot store 0-1 range, only 0-255 range)'
+        
 
 
     def preprocessDownsample(self, pixels, log=False):
@@ -585,15 +563,6 @@ class BaseCarsimEnv(gym.Env):
 
         return pixels_equalized
 
-    def preprocessNormalizeImages(self, pixels, log):
-        # this just makes the pixel values in the range [0, 1]
-        # this can help learn quicker
-
-        return pixels / 255.0
-    
-
-
-
     def stringToObservationStep(self, obsstring, log=None):
         return self.stringToObservation(obsstring, log)
 
@@ -609,7 +578,7 @@ class BaseCarsimEnv(gym.Env):
         return pixels_result
     
     def preprocessing(self, im, log=None):
-        preprocessing_priority = ["downsample", "grayscale", "equalize", "normalize_images"]
+        preprocessing_priority = ["downsample", "grayscale", "equalize"]
 
         pixels_rgb = np.array(im, dtype=np.uint8)
         # it looks like this switches the height and width
@@ -641,9 +610,6 @@ class BaseCarsimEnv(gym.Env):
             elif step == "equalize":
                 if self.equalize:
                     pixels_result = self.preprocessEqualize(pixels_result, log)
-            elif step == "normalize_images": 
-                if self.normalize_images:
-                    pixels_result = self.preprocessNormalizeImages(pixels_result, log)
             else:
                 assert False, f'unknown step {step}'
         

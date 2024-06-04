@@ -3,7 +3,7 @@ comment: "base for isolated training runs"
 # we should also try it with the fixed spawn to be closer to the evaluation scenario, maybe the differential can do it 
 
 
-n_envs: 1
+n_envs: 10
 seed: 2048
 copy_model_from: False #models_and_dumps/best_model_episode_70
 # copy_model_from can be False or a string (filename without .zip suffix)
@@ -15,7 +15,7 @@ eval_settings:
   interval_during_learn: False
   n_eval_episodes: 20
   eval_light_settings: True
-  eval_only: True
+  eval_only: False
   number_eval_runs: 3
 
 episode_record_replay_settings:
@@ -37,7 +37,7 @@ algo_settings:
   use_bundled_calls: True
   use_fresh_obs: False
   policy: "CnnPolicy"
-  print_network_and_loss_structure: False
+  print_network_and_loss_structure: True
   net_arch:
     pi: []
     vf: []
@@ -59,7 +59,6 @@ env_kwargs:
     downsampling_factor: 2
     grayscale: True
     equalize: True
-    normalize_images: False
   coefficients:
     distanceCoefficient: 1
     orientationCoefficient: 0
@@ -76,6 +75,6 @@ env_kwargs:
   # 2024-02-04/11-56-53 used non-fixed timesteps and had 0.4 fps per environment
   # this run achgieved the highest accuracies yet --> we can increase the duration of fixed timesteps to above a second
 
-  width: 500 #800 #500 #336
-  height: 168
+  agentImageWidth: 500 #800 #500 #336
+  agentImageHeight: 168
 

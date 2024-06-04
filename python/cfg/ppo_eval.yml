@@ -21,7 +21,6 @@ env_kwargs:
     downsampling_factor: 2
     grayscale: True
     equalize: True
-    normalize_images: False
   coefficients:
     distanceCoefficient: 0.5
     orientationCoefficient: 0.0
@@ -29,6 +28,6 @@ env_kwargs:
     eventCoefficient: 1.0
   fixedTimestepsLength: 0.3
   # fixedTimestepsLength can either be False or a number (seconds that each timestep contains)
-  width: 500 #336
-  height: 168
+  agentImageWidth: 500 #336
+  agentImageHeight: 168
 

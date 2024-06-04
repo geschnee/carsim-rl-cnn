@@ -58,7 +58,6 @@ env_kwargs:
     downsampling_factor: 2
     grayscale: True
     equalize: True
-    normalize_images: False
   coefficients:
     distanceCoefficient: 0
     orientationCoefficient: 0
@@ -76,5 +75,5 @@ env_kwargs:
   # 2024-02-04/11-56-53 used non-fixed timesteps and had 0.4 fps per environment
   # this run achgieved the highest accuracies yet --> we can increase the duration of fixed timesteps to above a second
 
-  width: 500 #800 #500 #336
-  height: 168
+  agentImageWidth: 500 #800 #500 #336
+  agentImageHeight: 168

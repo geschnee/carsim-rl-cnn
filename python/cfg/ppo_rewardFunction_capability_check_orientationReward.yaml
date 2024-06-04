@@ -53,7 +53,6 @@ env_kwargs:
     downsampling_factor: 2
     grayscale: True
     equalize: True
-    normalize_images: False
   coefficients:
     distanceCoefficient: 0
     orientationCoefficient: 1
@@ -64,6 +63,6 @@ env_kwargs:
   trainingLightSetting: standard
   fixedTimestepsLength: 0.3
 
-  width: 500 #800 #500 #336
-  height: 168
+  agentImageWidth: 500 #800 #500 #336
+  agentImageHeight: 168
 

@@ -271,3 +271,31 @@ def save_histogram(img, filename):
 
 save_histogram(image, "latex_images/histogram/original_histogram.png")
 save_histogram(pixels_equalized_uint8, "latex_images/histogram/equalized_histogram.png")
+
+
+
+
+
+# memory mechanism
+
+print("memory mechanism loggin started", flush=True)
+
+if not os.path.exists("latex_images/memory_mechanism"):
+    os.mkdir("latex_images/memory_mechanism")
+
+env.reset(mapType = MapType.hardBlueFirstLeft, lightSetting=LightSetting.standard, spawnRot=0.0)
+
+action = (0.8, 0.1)
+
+for i in range(20):
+    stepReturnObject = env.step(action)
+    time.sleep(0.3)
+    prefix = f'latex_images/memory_mechanism/preprocessed_image_step_{env.step_nr}'
+    env.saveObservation(prefix)
+
+    os.remove(f'{prefix}_downsampled.png')
+    os.remove(f'{prefix}_grayscale.png')
+    os.remove(f'{prefix}_equalized.png')
+    os.remove(f'{prefix}_image_from_unity.png')
+
+

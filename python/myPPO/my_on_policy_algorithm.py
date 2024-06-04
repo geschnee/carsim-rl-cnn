@@ -232,6 +232,9 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         make_dot(actions).render(
             "action_graph", format="png")
         
+        make_dot(values).render(
+            "value_graph", format="png")
+        
         print("network printed", flush= True)
 
         # die graphen sind in den working directories (outputs/.../... zu finden)
