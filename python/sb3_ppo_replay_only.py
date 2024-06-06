@@ -82,11 +82,8 @@ def run_replay(cfg):
 
     algo = myPPO
 
-    policy_kwargs = {"normalize_images": cfg.env_kwargs.image_preprocessing.normalize_images, "net_arch": OmegaConf.to_container(cfg.algo_settings.net_arch)}
+    policy_kwargs = {"net_arch": OmegaConf.to_container(cfg.algo_settings.net_arch)}
 
-    # normalize_imagess=True scales the images to 0-1 range
-    # requires dtype float32
-    # kwarg to both the env (ObsSpace) and the policy
 
 
     model = algo(cfg.algo_settings.policy, vec_env, verbose=1,
