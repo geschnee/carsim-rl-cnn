@@ -80,17 +80,20 @@ def run_replay(cfg):
     # the n_envs can quickly be too much since the replay buffer will grow
     # the observations are quite big (float32)
 
+
     algo = myPPO
 
     policy_kwargs = {"net_arch": OmegaConf.to_container(cfg.algo_settings.net_arch)}
-
-
 
     model = algo(cfg.algo_settings.policy, vec_env, verbose=1,
                 tensorboard_log="./tmp", n_epochs=cfg.algo_settings.n_epochs, batch_size=cfg.algo_settings.batch_size, n_steps=cfg.algo_settings.n_steps, policy_kwargs=policy_kwargs, seed = seed, use_bundled_calls=cfg.algo_settings.use_bundled_calls, use_fresh_obs=cfg.algo_settings.use_fresh_obs, print_network_and_loss_structure=cfg.algo_settings.print_network_and_loss_structure)
     # CnnPolicy network architecture can be seen in sb3.common.torch_layers.py
 
-    
+
+    # I am not sure why but without this model load it does not produce the right outputs
+    string = f'{HydraConfig.get().runtime.cwd}/{cfg.episode_record_replay_settings.replay_folder}/model'
+    print(f'loading model from {string} before replay', flush=True)
+    model = algo.load(string, env=vec_env, tensorboard_log="./tmp", n_epochs=cfg.algo_settings.n_epochs, batch_size=cfg.algo_settings.batch_size)
  
     model.replay_episodes(cfg.episode_record_replay_settings, seed, cfg.env_kwargs.fixedTimestepsLength)
 

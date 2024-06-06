@@ -38,14 +38,14 @@ class EpisodesResults:
         if self.is_success(infos):
             self.successfully_completed_episodes += 1
 
-        if infos["endEvent"] == "OutOfTime":
+        if infos["endEvent"] == "Timeout":
             self.timeouts += 1
         else:
             #print(f'end event is {infos["endEvent"]}')
             # FinishMissed
             pass
 
-        if infos["endEvent"] == "OutOfTime" and int(infos["numberOfGoals"]) == int(infos["passedGoals"]):
+        if infos["endEvent"] == "Timeout" and int(infos["numberOfGoals"]) == int(infos["passedGoals"]):
             self.episodes_timeout_all_goals_successful += 1
 
         self.successfully_passed_goals += int(infos["passedGoals"])

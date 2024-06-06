@@ -389,7 +389,7 @@ public class EpisodeManager : MonoBehaviour
         if (this.duration >= this.allowedTime && this.episodeStatus == EpisodeStatus.Running)
         {
             AddEventReward(timeoutReward);
-            EndEpisode(EpisodeStatus.OutOfTime);
+            EndEpisode(EpisodeStatus.Timeout);
             return;
         }
 
@@ -476,7 +476,7 @@ public class EpisodeManager : MonoBehaviour
     public void hitWall(GameObject obstacle)
     {
         this.wallHit = true;
-        handleCollision(obstacle, wallHitReward, EpisodeStatus.WallHit);
+        handleCollision(obstacle, wallHitReward, EpisodeStatus.Collision);
     }
 
     public void destroyCheckpoint(GameObject goal)
@@ -617,13 +617,13 @@ public class EpisodeManager : MonoBehaviour
     public void redObstacleHit(GameObject obstacle)
     {
         obstacleHit = true;
-        handleCollision(obstacle, obstacleHitReward, EpisodeStatus.RedObstacle);
+        handleCollision(obstacle, obstacleHitReward, EpisodeStatus.Collision);
     }
 
     public void blueObstacleHit(GameObject obstacle)
     {
         obstacleHit = true;
-        handleCollision(obstacle, obstacleHitReward, EpisodeStatus.BlueObstacle);
+        handleCollision(obstacle, obstacleHitReward, EpisodeStatus.Collision);
     }
 
     private void OnTriggerStay(Collider coll)

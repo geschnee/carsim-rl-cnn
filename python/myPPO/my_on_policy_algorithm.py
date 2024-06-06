@@ -1462,7 +1462,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
             return 0
 
     def replay_episodes(self, episode_replay_settings, seed, timestepLength):
-        n_episodes = episode_replay_settings.n_episodes_per_setting
+        # n_episodes = episode_replay_settings.n_episodes_per_setting
 
 
         if episode_replay_settings.replay_folder:
@@ -1471,15 +1471,17 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
             # replay the ones that were previously recorded in this same run
             base_path = os.path.join(os.getcwd(), "episode_recordings")
         
+        print(f'replaying episodes from {base_path}', flush=True)
+
         n_envs_recording = np.load(os.path.join(base_path,'n_envs.npy'))
         #if not episode_replay_settings.deterministic_sampling:
         #    assert self.env.num_envs == n_envs_recording, f'number of envs in recording {n_envs_recording} does not match the number of envs in the current environment {self.env.num_envs}, this is an issue only when sampling non_deterministically'
     
         n_episodes_recording = np.load(os.path.join(base_path,'n_episodes.npy'))
-        assert n_episodes == n_episodes_recording, f'number of episodes in recording {n_episodes_recording} does not match the number of episodes to replay {n_episodes}'
+        # assert n_episodes == n_episodes_recording, f'number of episodes in recording {n_episodes_recording} does not match the number of episodes to replay {n_episodes}'
 
         # find model
-        model_path = os.path.join(base_path,'model.zip')
+        model_path = os.path.join(base_path,'model.zip') # TODO can we remove the .zip here?
         self.load(model_path)
         print(f'model loaded from {model_path}', flush=True)
         
@@ -1494,7 +1496,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
             for light_setting in light_settings:
                 settings_path = os.path.join(base_path,f'{difficulty}_{light_setting.name}')
 
-                for idx in range(n_episodes):
+                for idx in range(n_episodes_recording):
                     episode_path = os.path.join(settings_path,f'episode_{idx}')
                     
                     set_random_seed(seed, using_cuda=True)
@@ -1531,10 +1533,15 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
     def replay_episode(self, episode_path, deterministic):
         env = self.env
 
+        print(f'replay {episode_path}', flush=True)
+
+
+
+
         # this uses the first environment exclusively
 
         # reset to initialize all envs (required for bundled calls)
-        # env.reset()
+        env.reset()
         # print(f'TODO do we need the env.reset?')
         
         env.envs[0].resetMemory()
@@ -1558,6 +1565,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
 
         recorded_episode_length = np.load(os.path.join(episode_path,'episode_length.npy'))
         for i in range(recorded_episode_length):
+            
             recorded_actions.append(np.load(os.path.join(episode_path,f'sampled_action_{i}.npy')))
             recorded_values.append(np.load(os.path.join(episode_path,f'obtained_value_{i}.npy')))
             recorded_log_probs.append(np.load(os.path.join(episode_path,f'obtained_log_prob_{i}.npy')))
@@ -1623,6 +1631,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         if deterministic:
             for i in range(recorded_episode_length):
                 #print(f'actions: {recorded_actions[i]} == {reproduced_actions[i]}')
+                
                 assert np.allclose(recorded_actions[i], reproduced_actions[i], atol=1e-1), f'actions are not the same {recorded_actions[i]} != {reproduced_actions[i]}'
                 assert np.allclose(recorded_values[i], reproduced_values[i].cpu().numpy(), atol=1e+2), f'values are not the same {recorded_values[i]} != {reproduced_values[i]}'
                 assert np.allclose(recorded_log_probs[i], reproduced_log_probs[i].cpu().numpy(), atol=1e-3), f'log_probs are not the same {recorded_log_probs[i]} != {reproduced_log_probs[i]}'

@@ -13,13 +13,10 @@ public enum EpisodeStatus
 {
     Running = 0,
     Success = 1,
-    OutOfTime = 2,
-    WallHit = 3,
-    GoalMissed = 4,
-    RedObstacle = 5,
-    BlueObstacle = 6,
-    FinishWithoutAllGoals = 7,
-    WaitingForStep = 8,
+    Timeout = 2,
+    Collision = 3,
+    FinishWithoutAllGoals = 4,
+    WaitingForStep = 5,
 }
 
 public enum LightSetting

@@ -142,14 +142,11 @@ class MapType(Enum):
         elif difficulty == 2:
             return myEnum.getRandomHard()
 
-        
-    
 
 class EndEvent(Enum):
-    NotEnded = 0
+    Running = 0
     Success = 1
-    OutOfTime = 2
-    WallHit = 3
-    GoalMissed = 4
-    RedObstacle = 5
-    BlueObstacle = 6
+    Timeout = 2
+    Collision = 3
+    FinishWithoutAllGoals = 4
+    WaitingForStep = 5
