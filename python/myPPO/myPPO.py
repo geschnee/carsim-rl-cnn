@@ -188,7 +188,7 @@ class myPPO(MyOnPolicyAlgorithm):
 
 
 
-    def print_loss_structure(self, loss):
+    def print_loss_structure(self, loss, policy_loss, value_loss):
         if self.loss_printed:
             return
 
@@ -199,6 +199,10 @@ class myPPO(MyOnPolicyAlgorithm):
         # die graphen sind in den working directories (outputs/.../... zu finden)
 
         make_dot(loss).render("loss_graph", format="png")
+
+        make_dot(policy_loss).render("policy_loss_graph", format="png")
+        make_dot(value_loss).render("value_loss_graph", format="png")
+
 
         print("loss printed")
 
@@ -247,6 +251,7 @@ class myPPO(MyOnPolicyAlgorithm):
 
                 # ratio between old and new policy, should be one at the first iteration
                 ratio = th.exp(log_prob - rollout_data.old_log_prob)
+                print(f'ratio: {ratio}')
 
                 # clipped surrogate loss
                 policy_loss_1 = advantages * ratio
@@ -280,6 +285,12 @@ class myPPO(MyOnPolicyAlgorithm):
 
                 entropy_losses.append(entropy_loss.item())
 
+                #print(f'ent_coef: {self.ent_coef}')
+                #print(f'vf_coef: {self.vf_coef}')
+                # ent_coef: 0.0
+                # vf_coef: 0.5
+
+                
                 loss = policy_loss + self.ent_coef * entropy_loss + self.vf_coef * value_loss
 
                 # Calculate approximate form of reverse KL Divergence for early stopping
@@ -307,7 +318,7 @@ class myPPO(MyOnPolicyAlgorithm):
                 self.policy.optimizer.step()
 
                 if self.print_network_and_loss_structure:
-                    self.print_loss_structure(loss)
+                    self.print_loss_structure(loss, policy_loss, value_loss)
 
             self._n_updates += 1
             if not continue_training:

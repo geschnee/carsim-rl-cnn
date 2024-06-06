@@ -214,7 +214,6 @@ public class Arena : MonoBehaviour
         }
 
 
-        // Debug.LogWarning($"immediateStep {step} {inputAccelerationLeft} {inputAccelerationRight} for {this.car.name}");
         // when the error happens is the other input the same?
         aIEngine.SetInput(inputAccelerationLeft, inputAccelerationRight);
         episodeManager.IncreaseSteps(step);

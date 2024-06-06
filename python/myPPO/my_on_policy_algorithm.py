@@ -387,8 +387,6 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
                     self.collected_episodes += 1
 
                 if done or n_steps >= n_rollout_steps:
-                    # playout finished or cancelling due to enough collected datapoints
-                    # TODO it would be better to remove the ones prematurely terminated from the replay buffer
 
                     env_id = idx
                     rewards = infos[env_id]['rewards']
@@ -498,7 +496,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         else: 
             self.logger.record(key, value, exclude=exclude)
 
-    def my_dump(self, step: int, extralog: bool=False) -> None:
+    def my_dump(self, step: int) -> None:
         for metric, dictionary in self.my_logs.items():
 
             prefix = metric.split("/")[0]
@@ -507,16 +505,11 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
                 os.makedirs(prefix)
 
             file_path = f'{metric}.csv'
-            #if extralog:
-            #    print(f'print to {file_path}')
 
             with open(file_path, 'w', newline='') as file:
                 writer = csv.writer(file)
                 for timestep, value in dictionary.items():
                     writer.writerow([timestep, value])
-
-                    #if extralog:
-                    #    print(f'{timestep}: {value}')
 
         self.logger.dump(step=step)
 
@@ -718,8 +711,9 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         print(f'overall nondeter success rate: {total_nondeter_success_rate} collision rate: {total_nondeter_collision_rate}')
         print(f'overall deter better than nondeter: {total_deter_success_rate > total_nondeter_success_rate}')
 
-        # TODO atari/human_level_control paper uses epsilon greedy during evaluation to avoid overfitting, see paragraph Evaluation procedure. 
+        # atari/human_level_control paper uses epsilon greedy during evaluation to avoid overfitting, see paragraph Evaluation procedure. 
         # it might not be needed for our task, as we have different start rotations
+        # ----> we use non-determinsitc
 
         self.my_record(f"deter_nondeter_comparison/success_deter", total_deter_success_rate)
         self.my_record(f"deter_nondeter_comparison/success_nondeter", total_nondeter_success_rate)
@@ -1098,8 +1092,9 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
             self.num_timesteps = step # for proper logging we need to manipulate this, very dirty!!!
 
             eval_time = time.time()
-            self.test_jetbot_generalization(n_episodes=n_eval_episodes, iteration=iteration, light_setting=LightSetting.standard, log=True)
             self.eval_model(iteration=step, n_eval_episodes=n_eval_episodes)
+            self.my_dump(step=step)
+            self.test_jetbot_generalization(n_episodes=n_eval_episodes, iteration=iteration, light_setting=LightSetting.standard, log=True)
             self.test_episodes_identical_start_conditions(n_episodes=n_eval_episodes, iteration=step, light_setting=LightSetting.standard, log=True)
             self.test_deterministic_improves(n_episodes=n_eval_episodes, iteration=step, eval_light_settings=False, log=True)
             self.test_fresh_obs_improves(n_episodes=n_eval_episodes, difficulty = "medium", iteration=step, light_setting=LightSetting.standard, log=True)
@@ -1112,7 +1107,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
             print(f'eval finished minutes: {eval_time / 60}')
             total_eval_time += eval_time
 
-            self.my_dump(step=step, extralog=False)
+            self.my_dump(step=step)
 
             print(f'total_eval_time: {total_eval_time}', flush=True)
 
@@ -1150,7 +1145,6 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         deterministic: bool = False,
         log=False
     ):
-        # TODO make the mapType a parameter??
 
 
         # same initialization of envs, does the agent traverse the env in the same way?
@@ -1386,8 +1380,6 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
     
             actions, values, log_probs, obs, all_obsstrings = self.inferFromObservationsForRecording(env, deterministic=deterministic)
             actions = actions.cpu().numpy()
-
-            
 
             # Rescale and perform action
             clipped_actions = actions
@@ -1630,13 +1622,14 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
 
         if deterministic:
             for i in range(recorded_episode_length):
-                print(f'actions: {recorded_actions[i]} == {reproduced_actions[i]}')
+                #print(f'actions: {recorded_actions[i]} == {reproduced_actions[i]}')
                 assert np.allclose(recorded_actions[i], reproduced_actions[i], atol=1e-1), f'actions are not the same {recorded_actions[i]} != {reproduced_actions[i]}'
                 assert np.allclose(recorded_values[i], reproduced_values[i].cpu().numpy(), atol=1e+2), f'values are not the same {recorded_values[i]} != {reproduced_values[i]}'
                 assert np.allclose(recorded_log_probs[i], reproduced_log_probs[i].cpu().numpy(), atol=1e-3), f'log_probs are not the same {recorded_log_probs[i]} != {reproduced_log_probs[i]}'
         else:
             # non deterministic does not always allow for exact reproduction of the actions (even with the same given seed) across computers
             # since they might use different devices (cpu or cuda)
+            # it works for single env recordings and single env replays
 
             # https://github.com/pytorch/pytorch/issues/47347
 

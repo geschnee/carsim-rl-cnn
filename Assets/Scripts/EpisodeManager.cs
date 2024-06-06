@@ -271,7 +271,11 @@ public class EpisodeManager : MonoBehaviour
 
     public bool isEpisodeRunning()
     {
-        return this.episodeStatus == EpisodeStatus.Running;
+        if (this.fixedTimesteps) {
+            return this.episodeStatus == EpisodeStatus.Running;
+        } else {
+            return this.episodeStatus == EpisodeStatus.Running || (this.episodeStatus == EpisodeStatus.WaitingForStep && this.step != -1);
+        }
     }
 
 

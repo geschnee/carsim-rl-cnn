@@ -8,7 +8,7 @@ public class AIEngineClassicalSteering : AIEngineBase
 
     private float currentSteerAngle;
 
-    private float maxTorque = 100f;
+    private float maxTorque = 200f; // was 100, this agent needs more speed, it reaches timeouts in jetbot generalization test
     private float maxSteeringAngle = 75f;
 
     public WheelCollider frontLeftWheelCollider;

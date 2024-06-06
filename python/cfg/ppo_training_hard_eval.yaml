@@ -5,7 +5,7 @@ comment: "training hard, all light settings, nsteps 512, now testing with an eve
 
 # reducing n_envs results in higher fps (per env)
 n_envs: 10
-copy_model_from: models/hard_distanceReward_plus_extraReward_finishLine_5-rollout_model_success_rate-100_timestep-2001920
+copy_model_from: models/hardDistance_success-best_model_episode_2200
 # copy_model_from can be False or a string (filename without .zip suffix)
 
 total_timesteps: 2000000
