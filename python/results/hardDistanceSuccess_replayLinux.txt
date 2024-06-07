@@ -1,0 +1,120 @@
+[2024-06-07 06:35:25,180][root][INFO] - cfg {'cfg': {'comment': 'replay only linux', 'n_envs': 1, 'copy_model_from': False, 'total_timesteps': 5000000, 'seed': 2048, 'eval_settings': {'interval_during_learn': False, 'n_eval_episodes': 100, 'eval_light_settings': True, 'eval_only': False, 'number_eval_runs': 1}, 'episode_record_replay_settings': {'deterministic_sampling': True, 'replay_folder': 'episode_recordings/hardDistanceSuccess_recordings_desktop'}, 'algo_settings': {'n_epochs': 5, 'batch_size': 64, 'n_steps': 512, 'policy': 'CnnPolicy', 'use_bundled_calls': True, 'use_fresh_obs': False, 'print_network_and_loss_structure': False, 'net_arch': {'pi': [], 'vf': []}}, 'env_kwargs': {'use_unity': False, 'jetBotName': 'DifferentialJetBot', 'spawnOrientation': 'Random', 'frame_stacking': 10, 'image_preprocessing': {'downsampling_factor': 2, 'grayscale': True, 'equalize': True}, 'coefficients': {'distanceCoefficient': 1, 'orientationCoefficient': 0, 'velocityCoefficient': 0, 'eventCoefficient': 0}, 'collisionMode': 'oncePerTimestep', 'trainingMapType': 'randomEvalMedium', 'trainingLightSetting': 'random', 'fixedTimestepsLength': 0.3, 'agentImageWidth': 500, 'agentImageHeight': 168}}}
+Torch Seed before tensor([100, 177, 208,  ...,   0,   0,   0], dtype=torch.uint8)
+a random torch int tensor([49])
+a random torch int2 tensor([41])
+a random int 36
+a random int2 63
+Torch Seed after tensor([0, 8, 0,  ..., 0, 0, 0], dtype=torch.uint8)
+Working directory : /mnt/usb_drive/carsim_no_mlagents-main/python/outputs/2024-06-07/06-35-24
+Output directory  : /mnt/usb_drive/carsim_no_mlagents-main/python/outputs/2024-06-07/06-35-24
+channels total 10
+Observation space shape (84, 250, 10), low [[[0 0 0 ... 0 0 0]
+  [0 0 0 ... 0 0 0]
+  [0 0 0 ... 0 0 0]
+  ...
+  [0 0 0 ... 0 0 0]
+  [0 0 0 ... 0 0 0]
+  [0 0 0 ... 0 0 0]]
+
+ [[0 0 0 ... 0 0 0]
+  [0 0 0 ... 0 0 0]
+  [0 0 0 ... 0 0 0]
+  ...
+  [0 0 0 ... 0 0 0]
+  [0 0 0 ... 0 0 0]
+  [0 0 0 ... 0 0 0]]
+
+ [[0 0 0 ... 0 0 0]
+  [0 0 0 ... 0 0 0]
+  [0 0 0 ... 0 0 0]
+  ...
+  [0 0 0 ... 0 0 0]
+  [0 0 0 ... 0 0 0]
+  [0 0 0 ... 0 0 0]]
+
+ ...
+
+ [[0 0 0 ... 0 0 0]
+  [0 0 0 ... 0 0 0]
+  [0 0 0 ... 0 0 0]
+  ...
+  [0 0 0 ... 0 0 0]
+  [0 0 0 ... 0 0 0]
+  [0 0 0 ... 0 0 0]]
+
+ [[0 0 0 ... 0 0 0]
+  [0 0 0 ... 0 0 0]
+  [0 0 0 ... 0 0 0]
+  ...
+  [0 0 0 ... 0 0 0]
+  [0 0 0 ... 0 0 0]
+  [0 0 0 ... 0 0 0]]
+
+ [[0 0 0 ... 0 0 0]
+  [0 0 0 ... 0 0 0]
+  [0 0 0 ... 0 0 0]
+  ...
+  [0 0 0 ... 0 0 0]
+  [0 0 0 ... 0 0 0]
+  [0 0 0 ... 0 0 0]]], high [[[255 255 255 ... 255 255 255]
+  [255 255 255 ... 255 255 255]
+  [255 255 255 ... 255 255 255]
+  ...
+  [255 255 255 ... 255 255 255]
+  [255 255 255 ... 255 255 255]
+  [255 255 255 ... 255 255 255]]
+
+ [[255 255 255 ... 255 255 255]
+  [255 255 255 ... 255 255 255]
+  [255 255 255 ... 255 255 255]
+  ...
+  [255 255 255 ... 255 255 255]
+  [255 255 255 ... 255 255 255]
+  [255 255 255 ... 255 255 255]]
+
+ [[255 255 255 ... 255 255 255]
+  [255 255 255 ... 255 255 255]
+  [255 255 255 ... 255 255 255]
+  ...
+  [255 255 255 ... 255 255 255]
+  [255 255 255 ... 255 255 255]
+  [255 255 255 ... 255 255 255]]
+
+ ...
+
+ [[255 255 255 ... 255 255 255]
+  [255 255 255 ... 255 255 255]
+  [255 255 255 ... 255 255 255]
+  ...
+  [255 255 255 ... 255 255 255]
+  [255 255 255 ... 255 255 255]
+  [255 255 255 ... 255 255 255]]
+
+ [[255 255 255 ... 255 255 255]
+  [255 255 255 ... 255 255 255]
+  [255 255 255 ... 255 255 255]
+  ...
+  [255 255 255 ... 255 255 255]
+  [255 255 255 ... 255 255 255]
+  [255 255 255 ... 255 255 255]]
+
+ [[255 255 255 ... 255 255 255]
+  [255 255 255 ... 255 255 255]
+  [255 255 255 ... 255 255 255]
+  ...
+  [255 255 255 ... 255 255 255]
+  [255 255 255 ... 255 255 255]
+  [255 255 255 ... 255 255 255]]]
+action space shape (2, 1), low [[-1.]
+ [-1.]], high [[1.]
+ [1.]]
+Using cpu device
+Wrapping the env in a VecTransposeImage.
+loading model from /mnt/usb_drive/carsim_no_mlagents-main/python/episode_recordings/hardDistanceSuccess_recordings_desktop/model before replay
+Wrapping the env in a VecTransposeImage.
+replaying episodes from /mnt/usb_drive/carsim_no_mlagents-main/python/episode_recordings/hardDistanceSuccess_recordings_desktop
+replay episode results:
+avg time for preprocessing and infer: 0.06583681669864026
+max time for preprocessing and infer: 0.20911359786987305
+preprocessing and infer times (maximum 0.20911359786987305) are below the timestep length of 0.3 seconds
+this would leave 0.09088640213012694 seconds for the camera to take an image and send it to python

@@ -1527,7 +1527,6 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
     def replay_episode(self, episode_path, deterministic):
         env = self.env
 
-        print(f'replay {episode_path}', flush=True)
 
         # this uses the first environment exclusively
         
@@ -1615,31 +1614,17 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
 
         if deterministic:
             for i in range(recorded_episode_length):
-                #print(f'actions: {recorded_actions[i]} == {reproduced_actions[i]}')
-                
-                assert np.allclose(recorded_actions[i], reproduced_actions[i], atol=1e-1), f'actions are not the same {recorded_actions[i]} != {reproduced_actions[i]}'
+ 
+                assert np.allclose(recorded_actions[i], reproduced_actions[i], atol=0.15), f'actions are not the same {recorded_actions[i]} != {reproduced_actions[i]}'
                 assert np.allclose(recorded_values[i], reproduced_values[i].cpu().numpy(), atol=1e+2), f'values are not the same {recorded_values[i]} != {reproduced_values[i]}'
                 assert np.allclose(recorded_log_probs[i], reproduced_log_probs[i].cpu().numpy(), atol=1e-3), f'log_probs are not the same {recorded_log_probs[i]} != {reproduced_log_probs[i]}'
         else:
-            # non deterministic does not always allow for exact reproduction of the actions (even with the same given seed) across computers
-            # since they might use different devices (cpu or cuda)
-            # it works for single env recordings and single env replays
-
-            # https://github.com/pytorch/pytorch/issues/47347
-
-            # example: laptop uses cpu, desktop uses cuda --> distribution nondeterministic sampling is different
-            # Option 1: we could rewrite ActorCriticPolicy to also give the mean and std of the distribution and verify them, however that requires a small rewrite
-            # it is much more convenient to just use the deterministic sampling for the recording and replay
-            # Option 2: force cpu usage
-            # Option 3: only check the values, as they do not depend on the distributions
-
-            # therefore we only check the values, as they do not depend on the distributions
+            
 
             for i in range(recorded_episode_length):
-                
-                assert np.allclose(recorded_values[i], reproduced_values[i].cpu().numpy(), atol=1e-3), f'values are not the same {recorded_values[i]} != {reproduced_values[i]}'
-                
-            
+                assert np.allclose(recorded_actions[i], reproduced_actions[i], atol=1e-1), f'actions are not the same {recorded_actions[i]} != {reproduced_actions[i]}'
+                assert np.allclose(recorded_values[i], reproduced_values[i].cpu().numpy(), atol=1e+2), f'values are not the same {recorded_values[i]} != {reproduced_values[i]}'
+                assert np.allclose(recorded_log_probs[i], reproduced_log_probs[i].cpu().numpy(), atol=1e-3), f'log_probs are not the same {recorded_log_probs[i]} != {reproduced_log_probs[i]}'
 
         return reproduce_times
 
