@@ -19,7 +19,7 @@ eval_settings:
 episode_record_replay_settings:
   n_episodes_per_setting: 2
   deterministic_sampling: True
-  replay_folder: episode_recordings/deterministic
+  replay_folder: episode_recordings/hardDistanceSuccess_recordings_desktop
   # replay_folder can be False to replay the previously recorded episodes
 
 algo_settings:

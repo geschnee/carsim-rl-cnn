@@ -90,6 +90,8 @@ def run_replay(cfg):
     # CnnPolicy network architecture can be seen in sb3.common.torch_layers.py
 
 
+    assert cfg.episode_record_replay_settings.replay_folder, "replay_folder must be set in the config file"
+
     # I am not sure why but without this model load it does not produce the right outputs
     string = f'{HydraConfig.get().runtime.cwd}/{cfg.episode_record_replay_settings.replay_folder}/model'
     print(f'loading model from {string} before replay', flush=True)

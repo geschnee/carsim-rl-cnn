@@ -144,9 +144,14 @@ def run_ppo(cfg):
     # run more evals here after training completed or when eval only
     model.eval_only(total_eval_runs=cfg.eval_settings.number_eval_runs, n_eval_episodes = cfg.eval_settings.n_eval_episodes, eval_light_settings=cfg.eval_settings.eval_light_settings, offset=model.num_timesteps)
 
-    string = f'{HydraConfig.get().runtime.cwd}/{cfg.episode_record_replay_settings.replay_folder}/model'
-    print(f'loading model from {string} before replay', flush=True)
-    model = algo.load(string, env=vec_env, tensorboard_log="./tmp", n_epochs=cfg.algo_settings.n_epochs, batch_size=cfg.algo_settings.batch_size)
+    if cfg.episode_record_replay_settings.replay_folder:
+        model_path = os.path.join(HydraConfig.get().runtime.cwd, cfg.episode_record_replay_settings.replay_folder, "model")
+    else:
+        # replay the ones that were previously recorded in this same run
+        model_path = os.path.join(os.getcwd(), "episode_recordings", "model")
+
+    print(f'loading model from {model_path} before replay', flush=True)
+    model = algo.load(model_path, env=vec_env, tensorboard_log="./tmp", n_epochs=cfg.algo_settings.n_epochs, batch_size=cfg.algo_settings.batch_size)
 
     model.replay_episodes(cfg.episode_record_replay_settings, seed, cfg.env_kwargs.fixedTimestepsLength)
     

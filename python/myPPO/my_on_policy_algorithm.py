@@ -1292,8 +1292,8 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
     def record_episodes(self, episode_record_settings, seed, cfg):
         n_episodes = episode_record_settings.n_episodes_per_setting
 
-        if not episode_record_settings.deterministic_sampling:
-            print(f'WARNING, non deterministic sampling might not provide the same results acorss different computers, as they might use different devices (cpu or cuda) for sampling from the distributions. Please use deterministic sampling for recordings.', flush=True)
+        if not episode_record_settings.deterministic_sampling and self.env.num_envs != 1:
+            print(f'WARNING, non deterministic sampling can only be reproduced when a single env is used for the recording (and replay)', flush=True)
 
         print(f'episode recording started', flush=True)
 
@@ -1405,7 +1405,6 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
 
                 if episode_repr.endEvent == "Success":
                     success=True
-
             
 
         def saveImg(string, filename):
@@ -1423,7 +1422,6 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
             )
 
 
-
         for i in range(len(step_obstrings)):
             saveImg(step_obstrings[i], os.path.join(episode_path, f'step_image_{i}.png'))
             # images from step are also needed to reproduce the observations (since there is a memory_rolloer in processStepReturnObject)
@@ -1434,8 +1432,6 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         for i in range(len(sampled_actions)):
             np.save(os.path.join(episode_path,f'sampled_action_{i}.npy'), sampled_actions[i])
 
-        #print(f'type sampled_actions[i]: {type(sampled_actions[0])}')
-        #print(f'type of obtained_values[i]: {type(obtained_values[0])}')
 
         for i in range(len(obtained_values)):
             np.save(os.path.join(episode_path, f'obtained_value_{i}.npy'), obtained_values[i].cpu().numpy())
@@ -1462,8 +1458,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
             return 0
 
     def replay_episodes(self, episode_replay_settings, seed, timestepLength):
-        # n_episodes = episode_replay_settings.n_episodes_per_setting
-
+        # model has to be loaded before this function is called
 
         if episode_replay_settings.replay_folder:
             base_path = os.path.join(HydraConfig.get().runtime.cwd, episode_replay_settings.replay_folder)
@@ -1473,23 +1468,22 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         
         print(f'replaying episodes from {base_path}', flush=True)
 
-        n_envs_recording = np.load(os.path.join(base_path,'n_envs.npy'))
-        #if not episode_replay_settings.deterministic_sampling:
-        #    assert self.env.num_envs == n_envs_recording, f'number of envs in recording {n_envs_recording} does not match the number of envs in the current environment {self.env.num_envs}, this is an issue only when sampling non_deterministically'
+        with open(os.path.join(base_path,'record_config.yaml'), 'r') as f:
+            record_cfg = OmegaConf.load(f)
+
+        # use same sampling settings as in recording
+        deter = record_cfg.deterministic_sampling
+
+        if not deter:
+            assert self.env.num_envs == 1, f'Error, non deterministic sampling can only be reproduced when a single env is used for the recording (and replay)'
+        
     
         n_episodes_recording = np.load(os.path.join(base_path,'n_episodes.npy'))
-        # assert n_episodes == n_episodes_recording, f'number of episodes in recording {n_episodes_recording} does not match the number of episodes to replay {n_episodes}'
-
-        # find model
-        model_path = os.path.join(base_path,'model.zip') # TODO can we remove the .zip here?
-        self.load(model_path)
-        print(f'model loaded from {model_path}', flush=True)
         
         difficulties = ["easy", "medium", "hard"]
         light_settings = [LightSetting.bright, LightSetting.standard, LightSetting.dark]
         
 
-    
         preprocessing_plus_infer_times = []
 
         for difficulty in difficulties:
@@ -1500,7 +1494,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
                     episode_path = os.path.join(settings_path,f'episode_{idx}')
                     
                     set_random_seed(seed, using_cuda=True)
-                    times = self.replay_episode(episode_path, deterministic=episode_replay_settings.deterministic_sampling)
+                    times = self.replay_episode(episode_path, deterministic=deter)
                     
                     preprocessing_plus_infer_times.extend(times)
         
@@ -1535,14 +1529,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
 
         print(f'replay {episode_path}', flush=True)
 
-
-
-
         # this uses the first environment exclusively
-
-        # reset to initialize all envs (required for bundled calls)
-        env.reset()
-        # print(f'TODO do we need the env.reset?')
         
         env.envs[0].resetMemory()
 
@@ -1550,8 +1537,6 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         self.policy.set_training_mode(False)
 
         # we always use fresh obs for recorded episodes, easier to implement and more reliable
-
-
 
         infer_obs_unity_images, step_obs_unity_images = [], []
 
