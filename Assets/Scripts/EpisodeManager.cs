@@ -204,27 +204,9 @@ public class EpisodeManager : MonoBehaviour
 
     }
 
-    public float GetReward()
-    {
-        float r = this.step_rewards[this.step];
-
-        return r;
-    }
-
     public bool IsTerminated()
     {
         return (this.episodeStatus != EpisodeStatus.Running) && (this.episodeStatus != EpisodeStatus.WaitingForStep);
-    }
-
-    private string GetEndEvent()
-    {
-        if (IsTerminated() == false)
-        {
-            Debug.LogWarning($"GetEndEvent called but episode is still running {this.episodeStatus}");
-            Debug.Log("GetEndEvent called but episode is still running");
-        }
-
-        return this.episodeStatus.ToString();
     }
 
     public Dictionary<string, string> GetInfo()
@@ -271,9 +253,12 @@ public class EpisodeManager : MonoBehaviour
 
     public bool isEpisodeRunning()
     {
-        if (this.fixedTimesteps) {
+        if (this.fixedTimesteps)
+        {
             return this.episodeStatus == EpisodeStatus.Running;
-        } else {
+        }
+        else
+        {
             return this.episodeStatus == EpisodeStatus.Running || (this.episodeStatus == EpisodeStatus.WaitingForStep && this.step != -1);
         }
     }
@@ -437,11 +422,6 @@ public class EpisodeManager : MonoBehaviour
         this.allowedTime += time;
     }
 
-    public float getTimeSinceEpisodeStart()
-    {
-        return this.duration;
-    }
-
     public void IncreasePassedGoals(GameObject goalMiddle)
     {
         GameObject goal = goalMiddle.transform.parent.gameObject;
@@ -457,10 +437,6 @@ public class EpisodeManager : MonoBehaviour
         if (this.passedGoals.Count == this.numberOfGoals)
         {
             AddEventReward(finishLineReward);
-
-            // add an event reward independent of the scaling, we want to avoid timeouts
-            // AddReward(5);
-            // this was tested with the medium setting to see if the agent then learns to move to the finishLine
 
 
             EndEpisode(EpisodeStatus.Success);
@@ -503,7 +479,8 @@ public class EpisodeManager : MonoBehaviour
         for (int i = 0; i < t.childCount; i++)
         {
             BallColor script = t.GetChild(i).GetComponent<BallColor>();
-            if (script != null){
+            if (script != null)
+            {
                 script.SetGreen();
             }
         }
@@ -515,7 +492,8 @@ public class EpisodeManager : MonoBehaviour
         for (int i = 0; i < t.childCount; i++)
         {
             BallColor script = t.GetChild(i).GetComponent<BallColor>();
-            if (script != null){
+            if (script != null)
+            {
                 script.SetRed();
             }
         }

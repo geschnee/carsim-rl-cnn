@@ -9,7 +9,6 @@ using System;
 using System.IO;
 using System.Linq;
 
-
 public class StepReturnObject
 {
     public bool previousStepNotFinished;
@@ -123,12 +122,6 @@ public class PeacefulPieCarCommandReceiver : MonoBehaviour
         }
 
         [JsonRpcMethod]
-        void forwardInputsToCar(int id, float inputAccelerationLeft, float inputAccelerationRight)
-        {
-            arenas[id].forwardInputsToCar(inputAccelerationLeft, inputAccelerationRight);
-        }
-
-        [JsonRpcMethod]
         StepReturnObject immediateStep(int id, int step, float inputAccelerationLeft, float inputAccelerationRight)
         {
             float beforeTime = Time.realtimeSinceStartup;
@@ -185,7 +178,7 @@ public class PeacefulPieCarCommandReceiver : MonoBehaviour
             arena.setCollisionMode(cm);
 
             arenas.Add(arena);
-            
+
 
             arena.distanceCoefficient = distanceCoefficient;
             arena.orientationCoefficient = orientationCoefficient;
@@ -211,12 +204,6 @@ public class PeacefulPieCarCommandReceiver : MonoBehaviour
             }
 
             return observations.ToArray();
-        }
-
-        [JsonRpcMethod]
-        System.Byte[] getObservationBytes(int id)
-        {
-            return arenas[id].getObservationBytes();
         }
 
         [JsonRpcMethod]

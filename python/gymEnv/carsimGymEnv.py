@@ -155,7 +155,6 @@ class BaseCarsimEnv(gym.Env):
     def step(self, action: Any) -> tuple[Any, SupportsFloat, bool, bool, dict[str, Any]]:
         """Perform step, return observation, reward, terminated, false, info."""
 
-        #_ = self.unityPing()
 
         left_acceleration, right_acceleration = action
 
@@ -260,9 +259,6 @@ class BaseCarsimEnv(gym.Env):
     def unityGetObservationAllEnvs(self):
         return BaseCarsimEnv.unity_comms.getObservationAllEnvs()
     
-    def unityGetObservationBytes(self):
-        return BaseCarsimEnv.unity_comms.getObservationBytes(id=self.instancenumber)
-    
     def unityPing(self):
         return BaseCarsimEnv.unity_comms.ping(id=self.instancenumber)
 
@@ -285,7 +281,6 @@ class BaseCarsimEnv(gym.Env):
 
     def setVideoFilename(self, video_filename):
         self.video_filename = video_filename
-        #print(f'{self.instancenumber} video filename {self.video_filename}', flush=True)
 
     def reset(self, seed = None, mapType = None, lightSetting = None, evalMode = False, spawnRot=None, jetBotName=None):
         super().reset(seed=seed)  # gynasium migration guide https://gymnasium.farama.org/content/migration-guide/
@@ -453,22 +448,14 @@ class BaseCarsimEnv(gym.Env):
         obs_string = self.unityGetObservation()
         obs = self.stringToObservation(obs_string, log)
 
-        #obs_bytes = self.unityGetObservationBytes()
-        #obs_from_bytes = self.byteArrayToImg(obs_bytes)
-
-        #assert np.array_equal(obs, obs_from_bytes), f'obs and obs_from_bytes are not equal'
-
+        
         if self.frame_stacking > 1:
             obs = self.memory_rollover(obs, log)
         return obs
     
     def get_obsstrings_with_single_request(self, log = False):
-        # TODO refactoring later on when the speed improvement is shown
-        # or rather fixing (for the different envs)
 
-        all_obsstrings = self.unityGetObservationAllEnvs()
-
-        return all_obsstrings
+        return self.unityGetObservationAllEnvs()
         
     def setSeedUnity(self, seed):
         BaseCarsimEnv.unity_comms.setSeed(seed=seed)
