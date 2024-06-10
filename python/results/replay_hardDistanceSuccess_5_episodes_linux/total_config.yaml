@@ -1,0 +1,46 @@
+comment: training hard, all light settings, nsteps 512, now testing with an event
+  reward bonus for finishing, eval
+n_envs: 10
+copy_model_from: models/hardDistance_success-best_model_episode_2200
+total_timesteps: 2000000
+seed: 2048
+eval_settings:
+  interval_during_learn: false
+  n_eval_episodes: 100
+  eval_light_settings: true
+  eval_only: true
+  number_eval_runs: 1
+episode_record_replay_settings:
+  n_episodes_per_setting: 5
+  deterministic_sampling: true
+  replay_folder: false
+algo_settings:
+  n_epochs: 5
+  batch_size: 64
+  n_steps: 512
+  policy: CnnPolicy
+  use_bundled_calls: true
+  use_fresh_obs: false
+  print_network_and_loss_structure: false
+  net_arch:
+    pi: []
+    vf: []
+env_kwargs:
+  jetBotName: DifferentialJetBot
+  spawnOrientation: Random
+  frame_stacking: 10
+  image_preprocessing:
+    downsampling_factor: 2
+    grayscale: true
+    equalize: true
+  coefficients:
+    distanceCoefficient: 1
+    orientationCoefficient: 0
+    velocityCoefficient: 0
+    eventCoefficient: 0
+  collisionMode: oncePerTimestep
+  trainingMapType: randomEvalMedium
+  trainingLightSetting: random
+  fixedTimestepsLength: 0.3
+  agentImageWidth: 500
+  agentImageHeight: 168
