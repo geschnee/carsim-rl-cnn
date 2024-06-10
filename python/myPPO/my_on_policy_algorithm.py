@@ -1485,6 +1485,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         
 
         preprocessing_plus_infer_times = []
+        recorded_actions, reproduced_actions = [], []
 
         for difficulty in difficulties:
             for light_setting in light_settings:
@@ -1494,9 +1495,11 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
                     episode_path = os.path.join(settings_path,f'episode_{idx}')
                     
                     set_random_seed(seed, using_cuda=True)
-                    times = self.replay_episode(episode_path, deterministic=deter)
+                    times, recorded_actions_episode, reproduced_actions_episode = self.replay_episode(episode_path, deterministic=deter)
                     
                     preprocessing_plus_infer_times.extend(times)
+                    recorded_actions.extend(recorded_actions_episode)
+                    reproduced_actions.extend(reproduced_actions_episode)
         
         max_prepro_infer_time = np.max(preprocessing_plus_infer_times)
 
@@ -1505,8 +1508,9 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         print(f'max time for preprocessing and infer: {max_prepro_infer_time}')
 
         np.save(os.path.join(base_path,'preprocessing_plus_infer_times.npy'), preprocessing_plus_infer_times)
-        # TODO we could plot these times to analyse if it really would be an issue
-        # it does not seem to be an issue for n_envs == 1
+        np.save(os.path.join(base_path,'recorded_actions.npy'), recorded_actions)
+        np.save(os.path.join(base_path,'reproduced_actions.npy'), reproduced_actions)
+
 
         if timestepLength:
             
@@ -1626,7 +1630,9 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
                 assert np.allclose(recorded_values[i], reproduced_values[i].cpu().numpy(), atol=1e+2), f'values are not the same {recorded_values[i]} != {reproduced_values[i]}'
                 assert np.allclose(recorded_log_probs[i], reproduced_log_probs[i].cpu().numpy(), atol=1e-3), f'log_probs are not the same {recorded_log_probs[i]} != {reproduced_log_probs[i]}'
 
-        return reproduce_times
+        
+
+        return reproduce_times, recorded_actions, reproduced_actions
 
 
 def get_obs_single_calls(env):
