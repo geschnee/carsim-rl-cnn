@@ -78,6 +78,7 @@ python/episode_recordings
 python/models
 python/results
 python/image_printer_images
+python/notebook_images
 
 
 *.pyc
