@@ -16,7 +16,6 @@ total_timesteps: 6500000
 seed: 2048
 
 eval_settings:
-  interval_during_learn: 1000
   n_eval_episodes: 20
   eval_light_settings: True
   eval_only: False

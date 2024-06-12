@@ -1,16 +1,3 @@
-# CarController
-This repo houses the project for Unity for the self-driving vehicle trained by evolutionary network training.
-
-Parent repo: https://github.com/jonaskonig/BachelorNN
-
-
-# Json RPC
-
-https://de.wikipedia.org/wiki/JSON-RPC
-
-# THis repo takes the code from Maddi97
-
-https://github.com/Maddi97/master_thesis
 
 # install instructions on fresh windows machine
 
@@ -29,26 +16,26 @@ https://github.com/Maddi97/master_thesis
     - AustinHarrisJsonRpc.dll
     - PeacefulPie.dll
 
+# running the code
 
-# Slack
+## training
 
-https://scads-workspace.slack.com/team
+## evaluation
 
-https://app.slack.com/client/TCZPCS29E/D06BRHAHT40
+## episode replays only
+
+see replay_on_jetbot.md for instructions
+
+# trained model
+
+todo upload to huggingface
+https://huggingface.co/geschnee/carsim-rl-cnn
 
 
-# dedicated server
 
-./carsim_no_mlagents.exe -batchmode -nographics
 
-it does not yet work, it looks like it does not properly render the scene
+# Acknowledgements
 
-possibly due to some kind of configs for the server
-
-https://docs.unity3d.com/Manual/dedicated-server-optimizations.html
-
-seems like some fundamental problem (no rendering --> camera has no good image)
-
-# Windows Standalone
-
-works well (windows_build directory)
+## This repo and thesis builds upon previous work at the Scads.AI
+https://github.com/jonaskonig/BachelorNN
+https://github.com/Maddi97/master_thesis

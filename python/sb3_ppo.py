@@ -109,11 +109,7 @@ def run_ppo(cfg):
     # CnnPolicy network architecture can be seen in sb3.common.torch_layers.py
 
     print(f"model weights for seed verification: {model.policy.value_net.weight[0][0:5]}")
-    # [-0.0591, -0.0703,  0.0513, -0.1466,  0.0055]
-
-    # TODO wo ist epsilon definiert?
-    # nimmt epsilon mit der Zeit ab?
-    # es gibt einen ent_coef was exploration fördert
+    # [-0.0591, -0.0703,  0.0513, -0.1466,  0.0055] for seed 2048
 
     
     if cfg.copy_model_from:
@@ -123,7 +119,7 @@ def run_ppo(cfg):
                         n_epochs=cfg.algo_settings.n_epochs, batch_size=cfg.algo_settings.batch_size)
 
     if not cfg.eval_settings.eval_only:
-        model.learn(total_timesteps=cfg.total_timesteps, log_interval=cfg.eval_settings.interval_during_learn, n_eval_episodes = cfg.eval_settings.n_eval_episodes, eval_light_settings=cfg.eval_settings.eval_light_settings)
+        model.learn(total_timesteps=cfg.total_timesteps, n_eval_episodes = cfg.eval_settings.n_eval_episodes, eval_light_settings=cfg.eval_settings.eval_light_settings)
         model.save("finished_ppo")
         print("finished learning without issues")
 

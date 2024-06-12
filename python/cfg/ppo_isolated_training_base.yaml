@@ -12,7 +12,6 @@ total_timesteps: 6500000 # restricted to 650000 due to real time limit (about 5 
 seed: 2048
 
 eval_settings:
-  interval_during_learn: False
   n_eval_episodes: 100
   eval_light_settings: True
   eval_only: False
@@ -51,11 +50,6 @@ algo_settings:
   # if we do not define pi and vf, there are no layers after the (cnn) extractor
   # https://github.com/DLR-RM/stable-baselines3/blob/8b3723c6d8420bb978f4d68409ff5189f87fe107/stable_baselines3/common/policies.py#L496-L502
   # we cannot define the cnn structure ourselves if we use the NatureCnn class
-
-
-
-
-
 
 
 

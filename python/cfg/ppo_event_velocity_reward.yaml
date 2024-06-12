@@ -4,7 +4,6 @@ comment: "event velocity reward test"
 
 
 eval_settings:
-  log_interval: 5
   n_eval_episodes: 20
   eval_light_settings: True
 

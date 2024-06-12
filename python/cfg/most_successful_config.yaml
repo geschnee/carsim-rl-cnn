@@ -1,0 +1,77 @@
+comment: "best settings overall"
+
+
+n_envs: 10
+seed: 2048
+copy_model_from: False #models_and_dumps/best_model_episode_70
+# copy_model_from can be False or a string (filename without .zip suffix)
+
+total_timesteps: 6500000
+
+
+eval_settings:
+  n_eval_episodes: 100
+  eval_light_settings: True
+  eval_only: False
+  number_eval_runs: 3
+
+episode_record_replay_settings:
+  n_episodes_per_setting: 1
+  deterministic_sampling: True
+  replay_folder: False
+  # replay_folder can be False to replay the previously recorded episodes
+
+
+
+algo_settings:
+  n_epochs: 5 # amount of training passes over the replay buffer per timestep
+
+  batch_size: 64
+
+  n_steps: 256 # 64 
+  # amount of steps to collect per collect_rollouts per environment
+
+  use_bundled_calls: True
+  use_fresh_obs: False
+  policy: "CnnPolicy"
+  print_network_and_loss_structure: False
+  net_arch:
+    pi: []
+    vf: []
+  # set pi and vf to [] to use the default CNN policy without fully connected layers
+  # since we use the CNN Policy the extractor consists of the nature CNN
+  # if we do not define pi and vf, there are no layers after the (cnn) extractor
+  # https://github.com/DLR-RM/stable-baselines3/blob/8b3723c6d8420bb978f4d68409ff5189f87fe107/stable_baselines3/common/policies.py#L496-L502
+  # we cannot define the cnn structure ourselves if we use the NatureCnn class
+
+
+
+env_kwargs:
+  jetBotName: DifferentialJetBot
+  # can be DifferentialJetBot or StandardJetBot
+  spawnOrientation: Random
+  # spawnOrientation can be Fixed, Random, OrientationVeryRandom and FullyRandom
+  frame_stacking: 10
+  image_preprocessing:
+    downsampling_factor: 2
+    grayscale: True
+    equalize: True
+  coefficients:
+    distanceCoefficient: 1
+    orientationCoefficient: 0
+    velocityCoefficient: 0
+    eventCoefficient: 0
+  collisionMode: oncePerTimestep
+  trainingMapType: randomEvalHard
+  trainingLightSetting: standard
+  # random, bright, standard, dark
+  fixedTimestepsLength: 0.3
+  # non fixed with 10 envs takes 0.5 seconds for vecenv_step --> this results in 1 fps (per env)
+
+  # fixedTimestepsLength can either be False or a number (seconds that each timestep contains)
+  # 2024-02-04/11-56-53 used non-fixed timesteps and had 0.4 fps per environment
+  # this run achgieved the highest accuracies yet --> we can increase the duration of fixed timesteps to above a second
+
+  agentImageWidth: 500 #800 #500 #336
+  agentImageHeight: 168
+

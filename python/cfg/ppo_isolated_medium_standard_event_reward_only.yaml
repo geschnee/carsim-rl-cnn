@@ -11,7 +11,6 @@ total_timesteps: 6500000 # restricted to 650000 due to real time limit (about 5 
 seed: 2048
 
 eval_settings:
-  interval_during_learn: 1000
   n_eval_episodes: 100
   eval_light_settings: True
   eval_only: False

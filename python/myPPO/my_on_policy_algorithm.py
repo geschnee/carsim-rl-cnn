@@ -525,7 +525,6 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         self: SelfOnPolicyAlgorithm,
         total_timesteps: int,
         callback: MaybeCallback = None,
-        log_interval: int = 1,
         tb_log_name: str = "OnPolicyAlgorithm",
         reset_num_timesteps: bool = True,
         progress_bar: bool = False,
@@ -534,6 +533,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
     ) -> SelfOnPolicyAlgorithm:
         iteration = 0
         
+        print(f'Type of optimizer {type(self.policy.optimizer)}')
 
         print(f'n_eval_episodes {n_eval_episodes} eval_light_settings {eval_light_settings}')
 
@@ -585,10 +585,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
 
 
             # Display training infos
-            if True: #log_interval is not None and iteration % log_interval == 0:
-                # log interval is 0, thus after every ollect rollouts the tb logging is done
-                # the log x axis is self.num_timesteps, which is modified in collect_rollouts
-
+            if True: 
 
                 assert self.ep_info_buffer is not None
                 time_elapsed = max(
@@ -635,27 +632,8 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
             
             total_train_time += train_time
 
-            # model eval 
-            if type(log_interval)==int and iteration % log_interval == 0:
-                print(f'Will eval now as after every {log_interval} collect and trains', flush=True)
-                eval_time = time.time()
-                self.eval_model(iteration=iteration, n_eval_episodes=n_eval_episodes)
-                self.test_episodes_identical_start_conditions(n_episodes=n_eval_episodes, iteration=iteration, light_setting=LightSetting.standard, log=True)
-                self.test_deterministic_improves(n_episodes=n_eval_episodes, iteration=iteration, eval_light_settings=False, log=True)
-                self.test_fresh_obs_improves(n_episodes=n_eval_episodes, difficulty = "medium", iteration=iteration, light_setting=LightSetting.standard, log=True)
-                self.test_jetbot_generalization(n_episodes=n_eval_episodes, iteration=iteration, light_setting=LightSetting.standard, log=True)
-
-                eval_time = time.time() - eval_time
-                self.my_record("time/eval_time_seconds", eval_time)
-
-                print(f'eval finished minutes: {eval_time / 60}')
-                total_eval_time += eval_time
-                
-                self.my_dump(step=self.num_timesteps)
-
-                print(f'total_cr_time: {total_cr_time}')
-                print(f'total_train_time: {total_train_time}')
-                print(f'total_eval_time: {total_eval_time}', flush=True)
+            print(f'total_cr_time in minutes: {total_cr_time / 60}')
+            print(f'total_train_time in minutes: {total_train_time / 60}')
 
         callback.on_training_end()
 
@@ -1068,7 +1046,6 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         self: SelfOnPolicyAlgorithm,
         total_eval_runs: int,
         callback: MaybeCallback = None,
-        log_interval: int = 1,
         tb_log_name: str = "OnPolicyAlgorithm",
         reset_num_timesteps: bool = True,
         progress_bar: bool = False,
@@ -1619,7 +1596,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         if deterministic:
             for i in range(recorded_episode_length):
  
-                assert np.allclose(recorded_actions[i], reproduced_actions[i], atol=0.15), f'actions are not the same {recorded_actions[i]} != {reproduced_actions[i]}'
+                assert np.allclose(recorded_actions[i], reproduced_actions[i], atol=1e-5), f'actions are not the same {recorded_actions[i]} != {reproduced_actions[i]}'
                 assert np.allclose(recorded_values[i], reproduced_values[i].cpu().numpy(), atol=1e+2), f'values are not the same {recorded_values[i]} != {reproduced_values[i]}'
                 assert np.allclose(recorded_log_probs[i], reproduced_log_probs[i].cpu().numpy(), atol=1e-3), f'log_probs are not the same {recorded_log_probs[i]} != {reproduced_log_probs[i]}'
         else:

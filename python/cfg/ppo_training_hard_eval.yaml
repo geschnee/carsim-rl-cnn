@@ -13,7 +13,6 @@ total_timesteps: 2000000
 seed: 2048
 
 eval_settings:
-  interval_during_learn: False
   n_eval_episodes: 100
   eval_light_settings: True
   eval_only: True
@@ -71,7 +70,7 @@ env_kwargs:
     eventCoefficient: 0
   collisionMode: oncePerTimestep
   # unrestricted, oncePerTimestep, oncePerEpisode, resetUponCollision, ignoreCollisions
-  trainingMapType: randomEvalMedium
+  trainingMapType: randomEvalHard
   trainingLightSetting: random
   # random, bright, standard, dark
   fixedTimestepsLength: 0.3

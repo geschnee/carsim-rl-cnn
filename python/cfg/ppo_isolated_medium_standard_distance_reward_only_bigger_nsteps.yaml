@@ -4,7 +4,6 @@ comment: "isolated training config medium standard, distance reward only, bigger
 
 
 eval_settings:
-  log_interval: 25
   n_eval_episodes: 20
   eval_light_settings: True
 
