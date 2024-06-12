@@ -132,14 +132,15 @@ def run_ppo(cfg):
         model.use_bundled_calls = cfg.algo_settings.use_bundled_calls
         model.use_fresh_obs=cfg.algo_settings.use_fresh_obs
 
+    
+    # run more evals here after training completed or when eval only
+    model.eval_only(total_eval_runs=cfg.eval_settings.number_eval_runs, n_eval_episodes = cfg.eval_settings.n_eval_episodes, eval_light_settings=cfg.eval_settings.eval_light_settings, offset=model.num_timesteps)
+
     if not cfg.episode_record_replay_settings.replay_folder:
         model.record_episodes(cfg.episode_record_replay_settings, seed, cfg)
     else:
         print(f"replaying episodes from {cfg.episode_record_replay_settings.replay_folder}")
     
-
-    # run more evals here after training completed or when eval only
-    model.eval_only(total_eval_runs=cfg.eval_settings.number_eval_runs, n_eval_episodes = cfg.eval_settings.n_eval_episodes, eval_light_settings=cfg.eval_settings.eval_light_settings, offset=model.num_timesteps)
 
     if cfg.episode_record_replay_settings.replay_folder:
         model_path = os.path.join(HydraConfig.get().runtime.cwd, cfg.episode_record_replay_settings.replay_folder, "model")

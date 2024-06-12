@@ -366,7 +366,6 @@ class myPPO(MyOnPolicyAlgorithm):
         self: SelfPPO,
         total_eval_runs: int,
         callback: MaybeCallback = None,
-        log_interval: int = 1,
         tb_log_name: str = "PPO",
         reset_num_timesteps: bool = True,
         progress_bar: bool = False,
@@ -377,7 +376,6 @@ class myPPO(MyOnPolicyAlgorithm):
         return super().eval_only(
             total_eval_runs=total_eval_runs,
             callback=callback,
-            log_interval=log_interval,
             tb_log_name=tb_log_name,
             reset_num_timesteps=reset_num_timesteps,
             progress_bar=progress_bar,

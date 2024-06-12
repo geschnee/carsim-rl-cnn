@@ -1,4 +1,4 @@
-comment: "best settings overall"
+comment: "best settings overall, execute again but with mixed light"
 
 
 n_envs: 10
@@ -63,7 +63,7 @@ env_kwargs:
     eventCoefficient: 0
   collisionMode: oncePerTimestep
   trainingMapType: randomEvalHard
-  trainingLightSetting: standard
+  trainingLightSetting: random
   # random, bright, standard, dark
   fixedTimestepsLength: 0.3
   # non fixed with 10 envs takes 0.5 seconds for vecenv_step --> this results in 1 fps (per env)

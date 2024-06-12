@@ -759,7 +759,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
 
     def eval_model(self: SelfOnPolicyAlgorithm, iteration: int = 0, n_eval_episodes: int = 20) -> float:
         print(f'eval started', flush=True)
-
+        eval_time = time.time()
 
         light_settings = [LightSetting.bright, LightSetting.standard, LightSetting.dark]
         
@@ -835,6 +835,8 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
 
         self.my_record("eval/collision_rate", total_collision_rate)
         self.my_record("eval_collision_rates/collision_rate", total_collision_rate)
+
+        print(f'basic eval (question 1 and 2) finished in {(time.time() - eval_time)/60} minutes', flush=True)
 
         return total_success_rate
     
@@ -1069,14 +1071,15 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
             self.num_timesteps = step # for proper logging we need to manipulate this, very dirty!!!
 
             eval_time = time.time()
+            
+
             self.eval_model(iteration=step, n_eval_episodes=n_eval_episodes)
             self.my_dump(step=step)
+            self.test_episodes_identical_start_conditions(n_episodes=n_eval_episodes, iteration=step, light_setting=LightSetting.standard, log=True)
             self.test_jetbot_generalization(n_episodes=n_eval_episodes, iteration=iteration, light_setting=LightSetting.standard, log=True)
             self.test_episodes_identical_start_conditions(n_episodes=n_eval_episodes, iteration=step, light_setting=LightSetting.standard, log=True)
             self.test_deterministic_improves(n_episodes=n_eval_episodes, iteration=step, eval_light_settings=False, log=True)
             self.test_fresh_obs_improves(n_episodes=n_eval_episodes, difficulty = "medium", iteration=step, light_setting=LightSetting.standard, log=True)
-            
-
 
             eval_time = time.time() - eval_time
             self.my_record("time/eval_time_seconds", eval_time)
@@ -1122,6 +1125,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         deterministic: bool = False,
         log=False
     ):
+        # TODO besser wenn der test nicht eine config nimmt sondern stattdessen mehrmals eval_model_track_ausführt???
 
 
         # same initialization of envs, does the agent traverse the env in the same way?
