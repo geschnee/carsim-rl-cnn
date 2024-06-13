@@ -911,9 +911,11 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         current_rewards = np.zeros(n_envs)
         current_lengths = np.zeros(n_envs, dtype="int")
 
-
-        # reset environment 0 to record the videos
-        log_indices = [0] # these indices will record videos
+        if log:
+            # reset environment 0 to record the videos
+            log_indices = [0] # these indices will record videos
+        else:
+            log_indices = []
         for i in log_indices:
             env.env_method(
                 method_name="setVideoFilename",
@@ -921,7 +923,6 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
                 video_filename = f'{os.getcwd()}\\videos_iter_{iteration}\\{difficulty}_{light_setting.name}_{jetbot_name}_env_{i}_video_'
             )
         
-        env_episode_counters = np.zeros(n_envs, dtype="int")
 
         amount_of_envs_first_run = min(n_envs, n_eval_episodes)
         for i in range(amount_of_envs_first_run):
@@ -984,7 +985,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
 
                         if i in log_indices:
                             if episode_counts[i] <= episode_count_targets[i]:
-                                with open(os.path.join(f'{os.getcwd()}\\videos_iter_{iteration}\\{difficulty}_{light_setting.name}_{jetbot_name}_env_{i}_episode_{episode_counts[i]}_endInfo.yml'), 'w') as outfile:
+                                with open(os.path.join(f'{os.getcwd()}\\videos_iter_{iteration}\\{difficulty}_{light_setting.name}_{jetbot_name}_env_{i}_episode_{episode_counts[i]-1}_endInfo.yml'), 'w') as outfile:
                                     yaml.dump(infos[0], outfile, default_flow_style=False)
 
 

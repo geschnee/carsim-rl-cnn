@@ -44,11 +44,6 @@ public class VideoRecorder : MonoBehaviour
 
     public Camera cam;
 
-    public string video_filename = "";
-
-    public int fileCounter = 0;
-    public int maxFiles = 3;
-
     float lastRecordTime;
 
     public bool isRecording;
@@ -59,29 +54,19 @@ public class VideoRecorder : MonoBehaviour
     public void StartVideo(string video_filename_in)
     {
 
-        if (video_filename_in != this.video_filename)
-        {
-            this.fileCounter = 0;
-            this.video_filename = video_filename_in;
-            // filename changed --> reset fileCounter
-        }
 
         lastRecordTime = -1; // this will result in an immediate Capture in Update
 
-        this.fileCounter++;
-        if (this.fileCounter > this.maxFiles)
-        {
-            // we do not want to record more files, this bloats the memory
-            return;
-        }
 
-        videoData = new VideoData(video_filename_in + this.fileCounter, new List<float>(), new List<byte[]>(), 0);
-        
+
+        videoData = new VideoData(video_filename_in, new List<float>(), new List<byte[]>(), 0);
+
 
         this.cam.targetTexture = renderTexture;
 
 
         this.isRecording = true;
+
     }
 
     public void Capture()
