@@ -54,6 +54,12 @@ public class Arena : MonoBehaviour
 
     public CollisionMode collisionMode;
 
+    public string video_filename = "";
+
+    public int fileCounter = 0;
+    public int maxFiles = 10;
+
+
     void Awake()
     {
         // initialize new arena at the correct position
@@ -84,7 +90,7 @@ public class Arena : MonoBehaviour
         mapManager.DestroyMap();
     }
 
-    public string reset(MapType mt, float spawn_rot, LightSetting lightSetting, bool evalMode, string video_filename, string jetbot_name)
+    public string reset(MapType mt, float spawn_rot, LightSetting lightSetting, bool evalMode, string video_filename_in, string jetbot_name)
     {
         if (this.car != null)
         {
@@ -132,16 +138,31 @@ public class Arena : MonoBehaviour
         episodeManager.jetBotRecorder = jetBotRecorder;
 
 
-        if (video_filename != "")
+        if (video_filename_in != "")
         {
-            arenaRecorder.episodeManager = episodeManager;
-            arenaRecorder.StartVideo(video_filename);
 
-            jetBotRecorder.episodeManager = episodeManager;
-            jetBotRecorder.StartVideo(video_filename + "_jetbot");
+            if (video_filename_in != this.video_filename)
+            {
+                this.fileCounter = 0;
+                this.video_filename = video_filename_in;
+                // filename changed --> reset fileCounter
+            }
 
-            topViewRecorder.episodeManager = episodeManager;
-            topViewRecorder.StartVideo(video_filename + "_topview");
+            if (this.fileCounter < this.maxFiles)
+            {
+                arenaRecorder.episodeManager = episodeManager;
+                arenaRecorder.StartVideo(video_filename + fileCounter + "_arena");
+
+                jetBotRecorder.episodeManager = episodeManager;
+                jetBotRecorder.StartVideo(video_filename + fileCounter + "_jetbot");
+
+                topViewRecorder.episodeManager = episodeManager;
+                topViewRecorder.StartVideo(video_filename + fileCounter + "_topview");
+
+                this.fileCounter++;
+            }
+
+
         }
 
         return this.getObservation();
