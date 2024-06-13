@@ -35,6 +35,8 @@ from omegaconf import OmegaConf
 import os
 import csv
 
+import yaml
+
 SelfOnPolicyAlgorithm = TypeVar(
     "SelfOnPolicyAlgorithm", bound="MyOnPolicyAlgorithm")
 
@@ -1381,6 +1383,9 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
             if dones[0]:
                 done = True
                 episode_repr = EpisodeRepresentation(infos[0])
+
+                with open(os.path.join(episode_path,'endInfo.yml'), 'w') as outfile:
+                    yaml.dump(infos[0], outfile, default_flow_style=False)
 
                 #print(f'record episode end status: {episode_repr.endEvent}', flush=True)
 

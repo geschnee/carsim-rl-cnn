@@ -374,7 +374,14 @@ public class EpisodeManager : MonoBehaviour
         if (this.duration >= this.allowedTime && this.episodeStatus == EpisodeStatus.Running)
         {
             AddEventReward(timeoutReward);
-            EndEpisode(EpisodeStatus.Timeout);
+            if (this.numberOfGoals == this.passedGoals.Count)
+            {
+                EndEpisode(EpisodeStatus.Success);
+            }
+            else
+            {
+                EndEpisode(EpisodeStatus.Timeout);
+            }
             return;
         }
 
