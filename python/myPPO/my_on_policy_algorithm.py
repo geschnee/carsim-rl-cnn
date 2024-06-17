@@ -1458,15 +1458,10 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         for i in range(len(infer_obsstrings)):
             saveImg(infer_obsstrings[i], os.path.join(episode_path, f'infer_image_{i}.png'))
 
-        for i in range(len(sampled_actions)):
-            np.save(os.path.join(episode_path,f'sampled_action_{i}.npy'), sampled_actions[i])
 
-
-        for i in range(len(obtained_values)):
-            np.save(os.path.join(episode_path, f'obtained_value_{i}.npy'), obtained_values[i].cpu().numpy())
-
-        for i in range(len(obtained_log_probs)):
-            np.save(os.path.join(episode_path, f'obtained_log_prob_{i}.npy'), obtained_log_probs[i].cpu().numpy())
+        np.save(os.path.join(episode_path,f'sampled_actions.npy'), sampled_actions)
+        np.save(os.path.join(episode_path, f'obtained_values.npy'), obtained_values.cpu().numpy())
+        np.save(os.path.join(episode_path, f'obtained_log_probs.npy'), obtained_log_probs.cpu().numpy())
 
         # save episode length
         np.save(os.path.join(episode_path,'episode_length.npy'), len(infer_obsstrings))
@@ -1585,11 +1580,13 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
             return pixels_rgb
 
         recorded_episode_length = np.load(os.path.join(episode_path,'episode_length.npy'))
+
+        recorded_actions = np.load(os.path.join(episode_path,f'sampled_actions.npy'))
+        recorded_values = np.load(os.path.join(episode_path,f'obtained_values.npy'))
+        recorded_log_probs = np.load(os.path.join(episode_path,f'obtained_log_probs.npy'))
+        assert len(recorded_actions) == recorded_episode_length, f'length of recorded actions does not match the episode length {len(recorded_actions)} != {recorded_episode_length}'
+
         for i in range(recorded_episode_length):
-            
-            recorded_actions.append(np.load(os.path.join(episode_path,f'sampled_action_{i}.npy')))
-            recorded_values.append(np.load(os.path.join(episode_path,f'obtained_value_{i}.npy')))
-            recorded_log_probs.append(np.load(os.path.join(episode_path,f'obtained_log_prob_{i}.npy')))
 
             infer_obs_unity_images.append(loadImage(os.path.join(episode_path,f'infer_image_{i}.png')))
             step_obs_unity_images.append(loadImage(os.path.join(episode_path,f'step_image_{i}.png')))
