@@ -1458,10 +1458,15 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         for i in range(len(infer_obsstrings)):
             saveImg(infer_obsstrings[i], os.path.join(episode_path, f'infer_image_{i}.png'))
 
+        sampled_actions = np.array(sampled_actions)
+        for i in range(len(obtained_values)):
+            obtained_values[i] = obtained_values[i].cpu().numpy()
+        obtained_values = np.array(obtained_values)
+        obtained_log_probs = np.array(obtained_log_probs)
 
         np.save(os.path.join(episode_path,f'sampled_actions.npy'), sampled_actions)
-        np.save(os.path.join(episode_path, f'obtained_values.npy'), obtained_values.cpu().numpy())
-        np.save(os.path.join(episode_path, f'obtained_log_probs.npy'), obtained_log_probs.cpu().numpy())
+        np.save(os.path.join(episode_path, f'obtained_values.npy'), obtained_values)
+        np.save(os.path.join(episode_path, f'obtained_log_probs.npy'), obtained_log_probs)
 
         # save episode length
         np.save(os.path.join(episode_path,'episode_length.npy'), len(infer_obsstrings))
