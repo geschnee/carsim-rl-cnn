@@ -13,7 +13,6 @@ def hist_eq(img: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     :return: imgnew -> image after equalization, hist-> original histogram, histnew -> new histogram
     """
 
-    
 
     # Flattning the image and converting it into a histogram
     histOrig, bins = np.histogram(img.flatten(), 256, [0, 255])
@@ -32,21 +31,5 @@ def hist_eq(img: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     # Creating the new image based on the new cdf
     imgEq = cdf[img.astype('uint8')]
     histEq, bins2 = np.histogram(imgEq.flatten(), 256, [0, 256])
-
-    '''
-    print(f'histOrig.cumsum: {histOrig.cumsum()}')
-    print(f'cdf_new: {histEq.cumsum()}')
-    print(f'histOrig.cumsum shape: {histOrig.cumsum().shape}')
-    print(f'cdf_new shape: {histEq.cumsum().shape}')
-    print(f'cdf: {cdf}')
-    print(f'cdf shape: {cdf.shape}')
-
-    print(f'num pixels with value 0 in original image: {np.sum(img == 0)}')
-    print(f'num pixels with value 0 in equalized image: {np.sum(imgEq == 0)}')
-
-    print(f'imgEq cumsum: {imgEq.sum() / 255}')
-    print(f'img cumsum: {img.sum() / 255}')
-    assert imgEq.sum() == img.sum(), 'final cumsum (overall image intensity) is equal'
-    '''
 
     return imgEq, histOrig, histEq

@@ -1,9 +1,8 @@
-comment: "best settings overall, execute again but with mixed light, increased nsteps to account for the mix"
-
+comment: "best settings overall, execute again but with mixed light, increased nsteps to account for the mix, eval only"
 
 n_envs: 10
 seed: 2048
-copy_model_from: False #models_and_dumps/best_model_episode_70
+copy_model_from: models/hard_random_success_rate-100_timestep-1095680
 # copy_model_from can be False or a string (filename without .zip suffix)
 
 total_timesteps: 6500000
@@ -12,15 +11,14 @@ total_timesteps: 6500000
 eval_settings:
   n_eval_episodes: 100
   eval_light_settings: True
-  eval_only: False
+  eval_only: True
   number_eval_runs: 1
 
 episode_record_replay_settings:
-  n_episodes_per_setting: 1
+  n_episodes_per_setting: 5
   deterministic_sampling: True
   replay_folder: False
   # replay_folder can be False to replay the previously recorded episodes
-
 
 
 algo_settings:

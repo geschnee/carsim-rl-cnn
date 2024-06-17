@@ -980,9 +980,6 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
 
                         episodes_results.processInfoDictEpisodeFinished(infos[i])
 
-                        
-
-
                         if i in log_indices:
                             if episode_counts[i] <= episode_count_targets[i]:
                                 with open(os.path.join(f'{os.getcwd()}\\videos_iter_{iteration}\\{difficulty}_{light_setting.name}_{jetbot_name}_env_{i}_episode_{episode_counts[i]-1}_endInfo.yml'), 'w') as outfile:
@@ -1084,7 +1081,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
 
             eval_time = time.time()
             
-
+            self.test_identical_results_eval_model_track(iteration=step, n_episodes=n_eval_episodes, difficulty="hard", light_setting=LightSetting.standard, deterministic=False, log=False)
             self.eval_model(iteration=step, n_eval_episodes=n_eval_episodes)
             self.my_dump(step=step)
             self.test_episodes_identical_start_conditions(n_episodes=n_eval_episodes, iteration=step, light_setting=LightSetting.standard, log=True)
@@ -1128,17 +1125,45 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
             assert th.allclose(actions[0:1], first_actions), f'actions are not invariant to the batch size/samples {actions[0:1]} != {first_actions}'
             print(f'actions are invariant to the batch size/samples')
 
+    def test_identical_results_eval_model_track(
+        self: SelfOnPolicyAlgorithm,
+        n_episodes: int = 10,
+        iteration: int = 0,
+        difficulty: str = "hard",
+        light_setting: LightSetting = LightSetting.standard,
+        deterministic: bool = False,
+        log=False
+    ):
+        # same initialization of envs, does the agent traverse the env in the same way?
+
+        nr_evals = 5
+
+        nr_eval_episodes_per_run = n_episodes
+
+        success_rates = []
+        collision_rates = []
+
+        for i in range(nr_evals):
+            success_rate, collision_rate = self.eval_model_track(nr_eval_episodes_per_run, difficulty, iteration, light_setting, deterministic, log=False)
+            success_rates.append(success_rate)
+            collision_rates.append(collision_rate)
+
+        print(f'test identical results eval model track for {difficulty} {light_setting.name} with {nr_eval_episodes_per_run} episodes per eval')
+        print(f'success rates: {success_rates}')
+        print(f'collision rates: {collision_rates}', flush=True)
+
 
     def test_episodes_identical_start_conditions(
         self: SelfOnPolicyAlgorithm,
         n_episodes: int = 10,
         iteration: int = 0,
+        difficulty: str = "hard",
         light_setting: LightSetting = LightSetting.standard,
         deterministic: bool = False,
         log=False
     ):
-        # TODO besser wenn der test nicht eine config nimmt sondern stattdessen mehrmals eval_model_track_ausführt???
-
+        # besser wenn der test nicht eine config nimmt sondern stattdessen mehrmals eval_model_track_ausführt???
+        # genau das mach der test_identical_results_eval_model_track
 
         # same initialization of envs, does the agent traverse the env in the same way?
 
@@ -1175,11 +1200,19 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
                 video_filename = f'{os.getcwd()}\\videos_identicalStartConditions_iter_{iteration}\\{light_setting.name}_env_{i}_video_'
             )
 
+        if difficulty == "easy":
+            map = MapType.easyBlueFirstRight
+        elif difficulty == "medium":
+            map = MapType.mediumBlueFirstRight
+        elif difficulty == "hard":
+            map = MapType.hardBlueFirstRight
+
+
         # reset all envs with one specific map and rotation
         env.env_method(
             method_name="reset_with_mapType_spawnrotation",
             indices=range(n_envs),
-            mapType=MapType.mediumBlueFirstRight,
+            mapType=map,
             lightSetting=light_setting,
             evalMode=True,
             spawnRot=0.0
@@ -1244,7 +1277,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
                         env.env_method(
                             method_name="reset_with_mapType_spawnrotation",
                             indices=[i],
-                            mapType=MapType.mediumBlueFirstRight,
+                            mapType=map,
                             lightSetting=light_setting,
                             evalMode=True,
                             spawnRot=0.0
@@ -1480,7 +1513,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         light_settings = [LightSetting.bright, LightSetting.standard, LightSetting.dark]
         
 
-        preprocessing_plus_infer_times = []
+        preprocessing_plus_infer_times, preprocessing_times = [], []
         recorded_actions, reproduced_actions = [], []
 
         for difficulty in difficulties:
@@ -1491,17 +1524,21 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
                     episode_path = os.path.join(settings_path,f'episode_{idx}')
                     
                     set_random_seed(seed, using_cuda=True)
-                    times, recorded_actions_episode, reproduced_actions_episode = self.replay_episode(episode_path, deterministic=deter)
+                    times, prepro_times, recorded_actions_episode, reproduced_actions_episode = self.replay_episode(episode_path, deterministic=deter)
                     
                     preprocessing_plus_infer_times.extend(times)
+                    preprocessing_times.extend(prepro_times)
                     recorded_actions.extend(recorded_actions_episode)
                     reproduced_actions.extend(reproduced_actions_episode)
         
         max_prepro_infer_time = np.max(preprocessing_plus_infer_times)
+        max_prepro_time = np.max(preprocessing_times)
 
         print(f'replay episode results:')
         print(f'avg time for preprocessing and infer: {np.mean(preprocessing_plus_infer_times)}')
         print(f'max time for preprocessing and infer: {max_prepro_infer_time}')
+        print(f'avg time for only preprocessing: {np.mean(preprocessing_times)}')
+        print(f'max time for only preprocessing: {max_prepro_time}')
 
         np.save(os.path.join(base_path,'preprocessing_plus_infer_times.npy'), preprocessing_plus_infer_times)
         np.save(os.path.join(base_path,'recorded_actions.npy'), recorded_actions)
@@ -1561,7 +1598,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         reproduced_actions, reproduced_values, reproduced_log_probs = [], [], []
 
         reproduce_times = []
-
+        preprocessing_times = []
 
         def take_image(env, image):
             new_obs = env.envs[0].preprocessing(image)
@@ -1586,6 +1623,8 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
                 obs = take_image(env, infer_obs_unity_images[i])
 
                 obs_tensor = obs_as_tensor(obs, self.device)
+                if i > 0:
+                    preprocessing_times.append(time.time() - replay_time_start)
 
                 '''
                 if i == 0:
@@ -1608,7 +1647,6 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
             reproduced_log_probs.append(log_probs[0])
 
             replay_time_start = time.time()            
-
             take_image(env, step_obs_unity_images[i])
 
 
@@ -1628,7 +1666,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
 
         
 
-        return reproduce_times, recorded_actions, reproduced_actions
+        return reproduce_times, preprocessing_times,  recorded_actions, reproduced_actions
 
 
 def get_obs_single_calls(env):
@@ -1636,8 +1674,7 @@ def get_obs_single_calls(env):
     # it is wrapped in a vec_transpose env for the CNN
 
     
-    # TODO this does a memory rollover, as well as the step function
-    # should one of them not do it? or does it not matter?
+    # this does a memory rollover, as well as the step function
     # the frequent rollovers might result in the history not being deep enough
 
     # I think the cleanest way to solve this is by simply increasing frame stacking n
@@ -1654,9 +1691,7 @@ def get_obs_bundled_calls(env, return_all_obsstrings=False):
     # env is a vectorized BaseCarsimEnv
     # it is wrapped in a vec_transpose env for the CNN
 
-    
-    # TODO this does a memory rollover, as well as the step function
-    # should one of them not do it? or does it not matter?
+    # this does a memory rollover, as well as the step function
     # the frequent rollovers might result in the history not being deep enough
 
     # I think the cleanest way to solve this is by simply increasing frame stacking n
@@ -1680,9 +1715,7 @@ def get_obs_bundled_calls(env, return_all_obsstrings=False):
         
         env._save_obs(idx, all_observations[idx])
 
-    #print(f'get_obs_bundled_calls observations shape: {all_observations[0].shape} {type(all_observations[0])}')
-    # TODO does the _save_obs change the dimensions?
-    # or the transpose_observations?
+    
 
     obs = env._obs_from_buf()
     #print(f'get_obs_bundled_calls observations from buf shape: {obs.shape} {type(obs)}')
@@ -1706,8 +1739,7 @@ def step_wrapper(env, clipped_actions, use_bundled_calls, return_step_return_obj
         stepReturnObjects = env.envs[0].bundledStep(step_nrs = step_nrs, left_actions=left_actions, right_actions=right_actions)
         # first do the bundled request to unity
 
-        # TODO new_obs muss ein Tensor sein, keine liste
-        #new_obs = []
+        
         rewards = []
         dones = []
         truncateds = []

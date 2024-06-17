@@ -6,13 +6,10 @@
 
 import gymnasium as gym
 
-from stable_baselines3 import PPO
 from stable_baselines3.common.env_util import make_vec_env
 
 from stable_baselines3.common.utils import set_random_seed
 
-
-from stable_baselines3.common.vec_env import DummyVecEnv
 
 import gymEnv.carsimGymEnv as carsimGymEnv
 
@@ -33,7 +30,6 @@ from omegaconf import OmegaConf
 
 import logging
 import os
-import random
 
 def run_ppo(cfg):
     logger = SummaryWriter(log_dir="./tmp")
@@ -50,23 +46,11 @@ def run_ppo(cfg):
     # https://stable-baselines3.readthedocs.io/en/master/guide/algos.html#reproducibility
     logger.add_text("Torch Seed", f"{torch.get_rng_state()}")
 
-    print(f'a random torch int {torch.randint(0, 100, (1,))}')
-    print(f'a random torch int2 {torch.randint(0, 100, (1,))}')
-
-    print(f'a random int {random.randint(0, 100)}')
-    print(f'a random int2 {random.randint(0, 100)}')
-    
-    print(f"Torch Seed after {torch.get_rng_state()}")
-
     # we use own replay buffer that saves the observation space as uint8 instead of float32
-    # int8 is 8bit, float32 is 32bit
+    # int8 is 8bit, float32 is 32bit --> this saves a lot of space
 
     print(f"Working directory : {os.getcwd()}")
     print(f"Output directory  : {hydra.core.hydra_config.HydraConfig.get().runtime.output_dir}")
-
-   
-    # TODO do we need some approaches from RL path/trajectory planning to complete the parcour?
-
 
     n_envs = cfg.n_envs
 
@@ -157,7 +141,6 @@ def run_ppo(cfg):
 
 @hydra.main(config_path=".", config_name="cfg/ppo.yaml")
 def main(cfg):
-
     # run specific config files with:
     # python sb3_ppo.py --config-name cfg/ppo_isolated_medium_standard.yaml
 

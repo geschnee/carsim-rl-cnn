@@ -109,7 +109,6 @@ class BaseCarsimEnv(gym.Env):
                 print(f'channels total {self.channels_total}', flush=True)
         
         
-        
         high = 255
         self.obs_dtype = np.uint8
             
@@ -168,7 +167,6 @@ class BaseCarsimEnv(gym.Env):
         waitTimeStart=time.time()
         waitTime=False
         while stepObj.previousStepNotFinished:
-            #print(f'waiting for previous step to finish', flush=True)
             waitTime = time.time() - waitTimeStart
             stepObj: StepReturnObject = self.unityImmediateStep(left_acceleration, right_acceleration)
 
@@ -180,7 +178,6 @@ class BaseCarsimEnv(gym.Env):
     
     def bundledStep(self, step_nrs, left_actions: list[float], right_actions: list[float]) -> list[StepReturnObject]:
         
-        starttime = time.time()
         stepObjList, step_script_realtime_duration = self.unityBundledStep(step_nrs, left_actions, right_actions)
 
         waitTimeStart=time.time()
@@ -193,12 +190,6 @@ class BaseCarsimEnv(gym.Env):
 
         if waitTime:
             self.episodeWaitTime += waitTime
-
-        #if waiting != 0:
-        #    print(f'waited {waiting} times for previous step to finish, total step call duration {time.time() -starttime}', flush=True)
-
-
-        # print(f'time recorded in c# step calls {step_script_realtime_duration}', flush=True) # with profiling (unityBundledStep) the last print of this can be used to determine the ratio of time between transmission time and c# processing time
 
         return stepObjList
 
@@ -283,8 +274,7 @@ class BaseCarsimEnv(gym.Env):
         self.video_filename = video_filename
 
     def reset(self, seed = None, mapType = None, lightSetting = None, evalMode = False, spawnRot=None, jetBotName=None):
-        super().reset(seed=seed)  # gynasium migration guide https://gymnasium.farama.org/content/migration-guide/
-
+        super().reset(seed=seed)
 
         self.step_nr = -1
         self.step_mistakes = 0
@@ -308,7 +298,7 @@ class BaseCarsimEnv(gym.Env):
         
         info = {"mapType": mp_name, "spawnRot": self.current_spawn_rot}
 
-        # do not take the observation from the reset, since the camera needs a frame to get sorted out
+        # do not take the observation from the reset, since the camera needs a frame to get "ready"
         new_obs = self.stringToObservation(self.unityGetObservation())
 
 
@@ -443,7 +433,7 @@ class BaseCarsimEnv(gym.Env):
         # get_observation_including_memory has 0.032 percall time
         # unityGetObservation has 0.023 percall time
         # stringToObservation has 0.009 percall time
-        # for stringTOObservation the time is mostly the preprocessing
+        # for stringToObservation the time is mostly the preprocessing
 
         obs_string = self.unityGetObservation()
         obs = self.stringToObservation(obs_string, log)
@@ -622,16 +612,6 @@ class BaseCarsimEnv(gym.Env):
         im = Image.open(io.BytesIO(message_bytes))
 
         return im
-    
-    '''
-    def byteArrayToImg(self, message_bytes):
-        print(f'type {type(message_bytes)}', flush=True)
-        print(f'length {len(message_bytes)}', flush=True)
-        print(f'first 10 bytes {message_bytes[:10]}', flush=True)
-
-        im = Image.open(io.BytesIO(message_bytes))
-
-        return im'''
 
     def get_arena_screenshot(self, savepath="arena_screenshot.png"):
         screenshot = self.unityGetArenaScreenshot()
