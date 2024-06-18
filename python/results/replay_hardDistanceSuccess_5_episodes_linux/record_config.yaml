@@ -1,3 +1,0 @@
-n_episodes_per_setting: 5
-deterministic_sampling: true
-replay_folder: false
