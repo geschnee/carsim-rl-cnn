@@ -1,0 +1,45 @@
+comment: best settings overall, execute again but with mixed light, increased nsteps
+  to account for the mix, eval only
+n_envs: 10
+seed: 2048
+copy_model_from: models/hardDistanceMixedLight_success_rate-100_timestep-1095680
+total_timesteps: 6500000
+eval_settings:
+  n_eval_episodes: 100
+  eval_light_settings: true
+  eval_only: true
+  number_eval_runs: 1
+episode_record_replay_settings:
+  n_episodes_per_setting: 1
+  deterministic_sampling: true
+  replay_folder: false
+algo_settings:
+  n_epochs: 5
+  batch_size: 64
+  n_steps: 1024
+  use_bundled_calls: true
+  use_fresh_obs: false
+  policy: CnnPolicy
+  print_network_and_loss_structure: false
+  net_arch:
+    pi: []
+    vf: []
+env_kwargs:
+  jetBotName: DifferentialJetBot
+  spawnOrientation: Random
+  frame_stacking: 10
+  image_preprocessing:
+    downsampling_factor: 2
+    grayscale: true
+    equalize: true
+  coefficients:
+    distanceCoefficient: 1
+    orientationCoefficient: 0
+    velocityCoefficient: 0
+    eventCoefficient: 0
+  collisionMode: oncePerTimestep
+  trainingMapType: randomEvalHard
+  trainingLightSetting: random
+  fixedTimestepsLength: 0.3
+  agentImageWidth: 500
+  agentImageHeight: 168
