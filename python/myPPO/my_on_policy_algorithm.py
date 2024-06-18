@@ -854,7 +854,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         range_width = rotation_range_max - rotation_range_min
 
         if n_eval_episodes == 1:
-            rotations = [float((rotation_range_min + range_width) / 2)]
+            rotations = [float(rotation_range_min + range_width / 2)]
         else:
             step = range_width / (n_eval_episodes-1)
 
@@ -1322,6 +1322,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
             print(f'WARNING, non deterministic sampling can only be reproduced when a single env is used for the recording (and replay)', flush=True)
 
         print(f'episode recording started', flush=True)
+        record_startTime = time.time()
 
         episode_recordings_path = os.path.join(os.getcwd(),"episode_recordings")
         os.mkdir(episode_recordings_path)
@@ -1357,6 +1358,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
                  
         
         print(f'recorded episodes:\ntotal_number_episodes: {total_number_episodes} succesful_episodes: {succesful_episodes}', flush=True)
+        print(f'recording took {(time.time() - record_startTime)/60} minutes', flush=True)
 
     def record_episode(self, light_setting, episode_path, map_and_rotation, deterministic):
         env = self.env
@@ -1451,17 +1453,22 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
             )
 
 
+        os.mkdir(os.path.join(episode_path,"step_images"))
+        os.mkdir(os.path.join(episode_path,"infer_images"))
+
         for i in range(len(step_obstrings)):
-            saveImg(step_obstrings[i], os.path.join(episode_path, f'step_image_{i}.png'))
+            saveImg(step_obstrings[i], os.path.join(episode_path, "step_images", f'step_image_{i}.png'))
             # images from step are also needed to reproduce the observations (since there is a memory_rolloer in processStepReturnObject)
             
         for i in range(len(infer_obsstrings)):
-            saveImg(infer_obsstrings[i], os.path.join(episode_path, f'infer_image_{i}.png'))
+            saveImg(infer_obsstrings[i], os.path.join(episode_path, "infer_images", f'infer_image_{i}.png'))
 
         sampled_actions = np.array(sampled_actions)
         for i in range(len(obtained_values)):
             obtained_values[i] = obtained_values[i].cpu().numpy()
         obtained_values = np.array(obtained_values)
+        for i in range(len(obtained_values)):
+            obtained_log_probs[i] = obtained_log_probs[i].cpu().numpy()
         obtained_log_probs = np.array(obtained_log_probs)
 
         np.save(os.path.join(episode_path,f'sampled_actions.npy'), sampled_actions)
@@ -1593,8 +1600,8 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
 
         for i in range(recorded_episode_length):
 
-            infer_obs_unity_images.append(loadImage(os.path.join(episode_path,f'infer_image_{i}.png')))
-            step_obs_unity_images.append(loadImage(os.path.join(episode_path,f'step_image_{i}.png')))
+            infer_obs_unity_images.append(loadImage(os.path.join(episode_path, "infer_images", f'infer_image_{i}.png')))
+            step_obs_unity_images.append(loadImage(os.path.join(episode_path,"step_images", f'step_image_{i}.png')))
 
 
         reproduced_actions, reproduced_values, reproduced_log_probs = [], [], []

@@ -17,7 +17,7 @@ eval_settings:
 
 episode_record_replay_settings:
   deterministic_sampling: True
-  replay_folder: episode_recordings/hardDistanceSuccess_recordings_desktop
+  replay_folder: episode_recordings/hardDistanceMixedLight_recordings_without_videos
   # replay_folder can be False to replay the previously recorded episodes
 
 algo_settings:

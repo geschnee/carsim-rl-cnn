@@ -1,4 +1,4 @@
-comment: "best settings overall, execute again but with mixed light, increased nsteps to account for the mix, eval only"
+comment: "best settings overall, execute again but with mixed light, increased nsteps to account for the mix, eval without hist equalization"
 
 n_envs: 10
 seed: 2048
@@ -53,7 +53,7 @@ env_kwargs:
   image_preprocessing:
     downsampling_factor: 2
     grayscale: True
-    equalize: True
+    equalize: False
   coefficients:
     distanceCoefficient: 1
     orientationCoefficient: 0
