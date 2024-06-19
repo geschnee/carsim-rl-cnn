@@ -1,0 +1,56 @@
+comment: "best setting overall"
+
+
+n_envs: 10
+seed: 2048
+copy_model_from: False
+
+total_timesteps: 6500000
+
+eval_settings:
+  n_eval_episodes: 100
+  eval_light_settings: True
+  eval_only: False
+  number_eval_runs: 1
+
+episode_record_replay_settings:
+  n_episodes_per_setting: 1
+  deterministic_sampling: True
+  replay_folder: False
+
+
+algo_settings:
+  n_epochs: 5
+
+  batch_size: 64
+
+  n_steps: 256
+
+  use_bundled_calls: True
+  use_fresh_obs: False
+  policy: "CnnPolicy"
+  print_network_and_loss_structure: False
+  net_arch:
+    pi: []
+    vf: []
+
+env_kwargs:
+  jetBotName: DifferentialJetBot
+  spawnOrientation: Random
+  frame_stacking: 10
+  image_preprocessing:
+    downsampling_factor: 2
+    grayscale: True
+    equalize: True
+  coefficients:
+    distanceCoefficient: 1
+    orientationCoefficient: 0
+    velocityCoefficient: 0
+    eventCoefficient: 0
+  collisionMode: oncePerTimestep
+  trainingMapType: randomEvalHard
+  trainingLightSetting: random
+  fixedTimestepsLength: 0.3
+  agentImageWidth: 500
+  agentImageHeight: 168
+
