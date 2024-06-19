@@ -1,0 +1,13 @@
+# these requirements are for running the training alone
+# no jupyter notebooks
+gymnasium==0.29.1
+hydra-core==1.2.0
+numpy==1.25.2
+omegaconf==2.2.3
+peaceful-pie==2.1.0
+pygame==2.1.0
+PyYAML==6.0
+scikit-image==0.22.0
+stable-baselines3==2.2.1
+tensorboard==2.10.0
+torch

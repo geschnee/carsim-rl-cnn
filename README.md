@@ -16,6 +16,19 @@
     - AustinHarrisJsonRpc.dll
     - PeacefulPie.dll
 
+## AustinHarrisJsonRpc.dll
+
+- download https://www.nuget.org/api/v2/package/AustinHarris.JsonRpc/1.2.3
+- rename to ".zip"
+- unzip file
+- copy lib/netstandard2.1/AustinHarris.JsonRpc.dll into Assets/Plugins
+- in Unity Editor select the file in the Plugins directory
+    - in the inspector select 'validate references' and apply
+
+## PeacefulPie.dll
+
+Download at https://github.com/hughperkins/peaceful-pie/releases/tag/v2.1.0
+
 # running the code
 
 ## training
