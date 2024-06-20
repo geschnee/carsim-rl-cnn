@@ -646,16 +646,13 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
 
         return state_dicts, []
     
-    def test_deterministic_improves(self, n_episodes: int = 10, iteration: int = 0, eval_light_settings: bool = False, log =False) -> float:
+    def test_deterministic_improves(self, n_episodes: int = 10, iteration: int = 0, log =False) -> float:
         dirpath=f'{os.getcwd()}\\videos_iter_{iteration}'
         if not os.path.exists(dirpath):
             os.mkdir(dirpath)
 
         
-        if eval_light_settings:
-            light_settings = [LightSetting.bright, LightSetting.standard, LightSetting.dark]
-        else: 
-            light_settings = [LightSetting.standard]
+        light_settings = [LightSetting.standard]
 
         difficulties = ["easy", "medium", "hard"]
 
@@ -750,12 +747,12 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
 
         for jetBotName in jetBotNames:
             for difficulty in difficulties:
-                jb_success_rate, jb_collision_rate = self.eval_model_track(n_episodes, difficulty, iteration, light_setting, jetbot_name = jetBotName)
+                jb_success_rate, jb_collision_rate = self.eval_model_track(n_episodes, difficulty, iteration, light_setting, jetbot_name = jetBotName, record_videos=True)
 
                 print(f'{jetBotName} success rate: {jb_success_rate} collision rate: {jb_collision_rate} for difficulty {difficulty} Light Setting {light_setting}', flush=True)
                 if log:
                     self.my_record(f"{jetBotName}/success_{difficulty}_{light_setting.name}", jb_success_rate)
-                    self.my_record(f"{jetBotName}/success_{difficulty}_{light_setting.name}", jb_collision_rate)
+                    self.my_record(f"{jetBotName}/collision_rate_{difficulty}_{light_setting.name}", jb_collision_rate)
            
 
 
@@ -882,6 +879,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         deterministic: bool = False,
         log: bool = False,
         jetbot_name: str = "DifferentialJetBot",
+        record_videos: bool = False
     ):
         # all maps from the difficulty setting are selected with the same proportion
         # the JetBot spawn rotation depends on the spawn_pos in the config, e.g. OrientationRandom
@@ -911,7 +909,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         current_rewards = np.zeros(n_envs)
         current_lengths = np.zeros(n_envs, dtype="int")
 
-        if log:
+        if log or record_videos:
             # reset environment 0 to record the videos
             log_indices = [0] # these indices will record videos
         else:
@@ -1087,7 +1085,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
             self.test_episodes_identical_start_conditions(n_episodes=n_eval_episodes, iteration=step, light_setting=LightSetting.standard, log=True)
             self.test_jetbot_generalization(n_episodes=n_eval_episodes, iteration=iteration, light_setting=LightSetting.standard, log=True)
             self.test_episodes_identical_start_conditions(n_episodes=n_eval_episodes, iteration=step, light_setting=LightSetting.standard, log=True)
-            self.test_deterministic_improves(n_episodes=n_eval_episodes, iteration=step, eval_light_settings=False, log=True)
+            self.test_deterministic_improves(n_episodes=n_eval_episodes, iteration=step, log=True)
             self.test_fresh_obs_improves(n_episodes=n_eval_episodes, difficulty = "medium", iteration=step, light_setting=LightSetting.standard, log=True)
 
             eval_time = time.time() - eval_time
