@@ -1,3 +1,38 @@
+- [connect to jetbot](#connect-to-jetbot)
+  - [there is not enough space on the JetBot](#there-is-not-enough-space-on-the-jetbot)
+    - [check space on device](#check-space-on-device)
+    - [check size of files](#check-size-of-files)
+    - [check size of files in current folder](#check-size-of-files-in-current-folder)
+    - [file sizes sorted ascending order:](#file-sizes-sorted-ascending-order)
+- [mount usb drive to jetBot](#mount-usb-drive-to-jetbot)
+  - [check usb drive is connected](#check-usb-drive-is-connected)
+  - [create filesystem on the usb drive](#create-filesystem-on-the-usb-drive)
+  - [create mount directory](#create-mount-directory)
+  - [mount usb drive](#mount-usb-drive)
+  - [make mount permanent](#make-mount-permanent)
+    - [get usb drive uuid](#get-usb-drive-uuid)
+    - [change /etc/fstab](#change-etcfstab)
+    - [reload config](#reload-config)
+- [install packages and python to mounted usb drive](#install-packages-and-python-to-mounted-usb-drive)
+  - [copy carsim repo to JetBot](#copy-carsim-repo-to-jetbot)
+  - [copy replay to JetBot](#copy-replay-to-jetbot)
+  - [install openssl](#install-openssl)
+  - [install \_ctypes module](#install-_ctypes-module)
+  - [install python](#install-python)
+    - [set new python installation as default](#set-new-python-installation-as-default)
+    - [create virtual env for python](#create-virtual-env-for-python)
+    - [activate virtual env](#activate-virtual-env)
+    - [install packages to virtual env](#install-packages-to-virtual-env)
+- [run replay](#run-replay)
+  - [use specific config file](#use-specific-config-file)
+- [replay results](#replay-results)
+- [encountered problems](#encountered-problems)
+  - [neural network accuracy](#neural-network-accuracy)
+  - [installation](#installation)
+    - [openssl is required for pip](#openssl-is-required-for-pip)
+    - [libffi is required for \_ctypes module](#libffi-is-required-for-_ctypes-module)
+
+
 # connect to jetbot
 
 on jetbot exceute:
@@ -223,7 +258,7 @@ The virtual env must be activated before running the replay!
 python sb3_ppo_replay_only.py
 ```
 
-## use specific onfig file
+## use specific config file
 
 ```
 python sb3_ppo_replay_only.py --config-name cfg/...

@@ -165,7 +165,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         # pytype:enable=not-instantiable
         self.policy = self.policy.to(self.device)
 
-    def inferFromObservations(self, env, deterministic):
+    def inferFromObservations(self, env, deterministic, use_fresh_obs):
         # moved to its own function to be able to profile the forward passes (during rollout collection and evaluation) easily
 
 
@@ -174,7 +174,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
 
             #print(f'using fresh obs: {self.use_fresh_obs} use_bundled_calls {self.use_bundled_calls}', flush=True)
             
-            if self.use_fresh_obs:
+            if use_fresh_obs:
 
                 if self.use_bundled_calls:
                     obs = get_obs_bundled_calls(env)
@@ -200,8 +200,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
             # Convert to pytorch tensor or to TensorDict
 
             obs, all_obsstrings = get_obs_bundled_calls(env, return_all_obsstrings=True)
-        
-            #print(f'fresh_obs shape: {fresh_obs.shape}', flush=True)
+
             obs_tensor = obs_as_tensor(obs, self.device)
 
             if self.second_obs is None and self.first_obs is not None:
@@ -210,9 +209,6 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
             if self.first_obs is None:
                 self.first_obs = obs_tensor[0]
             
-            
-            #print(f'obs_tensor shape: {obs_tensor.shape}', flush=True)
-
             actions, values, log_probs = self.policy(obs_tensor, deterministic=deterministic)
         
         return actions, values, log_probs, obs, all_obsstrings
@@ -304,7 +300,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
 
             
 
-            actions, values, log_probs, obs = self.inferFromObservations(env, deterministic=False)
+            actions, values, log_probs, obs = self.inferFromObservations(env, deterministic=False, use_fresh_obs=self.use_fresh_obs)
 
             actions = actions.cpu().numpy()
 
@@ -678,6 +674,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
                     self.my_record(f"deter_nondeter_comparison/collision_rate_nondeter_{difficulty}_{light_setting.name}", nondeter_collision_rate)
 
                     self.my_record(f"deter_nondeter_comparison/nondeter_better_by_{difficulty}_{light_setting.name}", nondeter_success_rate - deter_success_rate)
+                    
 
         total_deter_success_rate /= len(light_settings) * len(difficulties)
         total_deter_collision_rate /= len(light_settings) * len(difficulties)
@@ -697,35 +694,47 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         self.my_record(f"deter_nondeter_comparison/collision_rate_deter", total_deter_collision_rate)
         self.my_record(f"deter_nondeter_comparison/collision_rate_nondeter", total_nondeter_collision_rate)
         self.my_record(f"deter_nondeter_comparison/nondeter_success_rate_better", total_nondeter_success_rate - total_deter_success_rate)
+        self.my_record(f"deter_nondeter_comparison/nondeter_collision_rate_better", total_nondeter_collision_rate - total_deter_collision_rate)
 
+
+    def eval_model_track_wrapper_freshObs(self, n_episodes, difficulty, iteration, light_setting):
+        return self.eval_model_track(n_episodes, difficulty, iteration, light_setting, use_fresh_obs=True, record_videos=True)
+    
+    def eval_model_track_wrapper_noFreshObs(self, n_episodes, difficulty, iteration, light_setting):
+        return self.eval_model_track(n_episodes, difficulty, iteration, light_setting, use_fresh_obs=False, record_videos=True)
 
     def test_fresh_obs_improves(self, n_episodes: int = 10, difficulty: str = "easy", iteration: int = 0, light_setting: LightSetting = LightSetting.standard, log=False) -> float:
         dirpath=f'{os.getcwd()}\\videos_iter_{iteration}'
         if not os.path.exists(dirpath):
             os.mkdir(dirpath)
 
-        print(f'test_fresh_obs_improves started with difficulty {difficulty}', flush=True)
+        print(f'test_fresh_obs_improves started', flush=True)
 
         fresh_obs_status = self.use_fresh_obs
 
+        difficulties = ["easy", "medium", "hard"]
 
-        self.use_fresh_obs = True
-        fresh_obs_success_rate, fresh_obs_collision_rate = self.eval_model_track(n_episodes, difficulty, iteration, light_setting)
-        self.use_fresh_obs = False
-        nonfresh_obs_success_rate, nonfresh_obs_collision_rate = self.eval_model_track(n_episodes, difficulty, iteration, light_setting)
+        for difficulty in difficulties:
 
+            fresh_obs_success_rate, fresh_obs_collision_rate = self.eval_model_track_wrapper_freshObs(n_episodes, difficulty, iteration, light_setting)
+
+
+            nonfresh_obs_success_rate, nonfresh_obs_collision_rate = self.eval_model_track_wrapper_noFreshObs(n_episodes, difficulty, iteration, light_setting)
+
+
+            print(f'fresh obs success rate: {fresh_obs_success_rate} collision rate: {fresh_obs_collision_rate}')
+            print(f'nonfresh obs success rate: {nonfresh_obs_success_rate} collision rate: {nonfresh_obs_collision_rate}')
+            print(f'fresh better than nonfresh obs: {fresh_obs_success_rate > nonfresh_obs_success_rate}')
+            if log:
+                self.my_record(f"fresh_nonfresh_comparison/success_fresh_{difficulty}_{light_setting.name}", fresh_obs_success_rate)
+                self.my_record(f"fresh_nonfresh_comparison/success_nonfresh_{difficulty}_{light_setting.name}", nonfresh_obs_success_rate)
+                self.my_record(f"fresh_nonfresh_comparison/collision_rate_fresh_{difficulty}_{light_setting.name}", fresh_obs_collision_rate)
+                self.my_record(f"fresh_nonfresh_comparison/collision_rate_nonfresh_{difficulty}_{light_setting.name}", nonfresh_obs_collision_rate)
+
+                self.my_record(f"fresh_nonfresh_comparison/fresh_better_by_{difficulty}_{light_setting.name}", fresh_obs_success_rate - nonfresh_obs_success_rate)
+        
         self.use_fresh_obs = fresh_obs_status
 
-        print(f'fresh obs success rate: {fresh_obs_success_rate} collision rate: {fresh_obs_collision_rate}')
-        print(f'nonfresh obs success rate: {nonfresh_obs_success_rate} collision rate: {nonfresh_obs_collision_rate}')
-        print(f'fresh better than nonfresh obs: {fresh_obs_success_rate > nonfresh_obs_success_rate}')
-        if log:
-            self.my_record(f"fresh_nonfresh_comparison/success_fresh_{difficulty}_{light_setting.name}", fresh_obs_success_rate)
-            self.my_record(f"fresh_nonfresh_comparison/success_nonfresh_{difficulty}_{light_setting.name}", nonfresh_obs_success_rate)
-            self.my_record(f"fresh_nonfresh_comparison/collision_rate_fresh_{difficulty}_{light_setting.name}", fresh_obs_collision_rate)
-            self.my_record(f"fresh_nonfresh_comparison/collision_rate_nonfresh_{difficulty}_{light_setting.name}", nonfresh_obs_collision_rate)
-
-            self.my_record(f"fresh_nonfresh_comparison/fresh_better_by_{difficulty}_{light_setting.name}", fresh_obs_success_rate - nonfresh_obs_success_rate)
 
     def test_jetbot_generalization(self, n_episodes: int = 10, iteration: int = 0, light_setting: LightSetting = LightSetting.standard, log=False) -> float:
         dirpath=f'{os.getcwd()}\\videos_iter_{iteration}'
@@ -876,6 +885,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         difficulty: str = "easy",
         iteration: int = 0,
         light_setting: LightSetting = LightSetting.standard,
+        use_fresh_obs: bool = False,
         deterministic: bool = False,
         log: bool = False,
         jetbot_name: str = "DifferentialJetBot",
@@ -915,10 +925,15 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         else:
             log_indices = []
         for i in log_indices:
+            if use_fresh_obs:
+                x = "freshObs_"
+            else:
+                x = ""
+
             env.env_method(
                 method_name="setVideoFilename",
                 indices=[i],
-                video_filename = f'{os.getcwd()}\\videos_iter_{iteration}\\{difficulty}_{light_setting.name}_{jetbot_name}_env_{i}_video_'
+                video_filename = f'{os.getcwd()}\\videos_iter_{iteration}\\{x}{difficulty}_{light_setting.name}_{jetbot_name}_env_{i}_video_'
             )
         
 
@@ -939,7 +954,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         # switch to eval mode
         self.policy.set_training_mode(False)
 
-        if not self.use_fresh_obs:
+        if not use_fresh_obs:
             # get the first observations
             if self.use_bundled_calls:
                 obs = get_obs_bundled_calls(env)
@@ -950,7 +965,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         while (episode_counts < episode_count_targets).any():
     
             
-            actions, values, log_probs, obs = self.inferFromObservations(env, deterministic)
+            actions, values, log_probs, obs = self.inferFromObservations(env, deterministic, use_fresh_obs)
             actions = actions.cpu().numpy()
 
             # Rescale and perform action
@@ -960,8 +975,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
                 clipped_actions = np.clip(
                     actions, self.action_space.low, self.action_space.high)
             
-            observations, rewards, dones, infos = step_wrapper(env, clipped_actions, self.use_bundled_calls)
-
+            observations, _, dones, infos = step_wrapper(env, clipped_actions, self.use_bundled_calls)
             
             current_lengths += 1
             for i in range(n_envs):
@@ -1079,15 +1093,20 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
 
             eval_time = time.time()
             
+            self.test_fresh_obs_improves(n_episodes=n_eval_episodes, iteration=step, light_setting=LightSetting.standard, log=True)
+            self.test_episodes_identical_start_conditions(n_episodes=n_eval_episodes, iteration=step, light_setting=LightSetting.standard, log=True)
+            self.my_dump(step=step) 
+            assert False
+
+
             self.test_identical_results_eval_model_track(iteration=step, n_episodes=n_eval_episodes, difficulty="hard", light_setting=LightSetting.standard, deterministic=False, log=False)
             self.eval_model(iteration=step, n_eval_episodes=n_eval_episodes)
             self.my_dump(step=step)
-            self.test_episodes_identical_start_conditions(n_episodes=n_eval_episodes, iteration=step, light_setting=LightSetting.standard, log=True)
+            
             self.test_jetbot_generalization(n_episodes=n_eval_episodes, iteration=iteration, light_setting=LightSetting.standard, log=True)
-            self.test_episodes_identical_start_conditions(n_episodes=n_eval_episodes, iteration=step, light_setting=LightSetting.standard, log=True)
+            
             self.test_deterministic_improves(n_episodes=n_eval_episodes, iteration=step, log=True)
-            self.test_fresh_obs_improves(n_episodes=n_eval_episodes, difficulty = "medium", iteration=step, light_setting=LightSetting.standard, log=True)
-
+            
             eval_time = time.time() - eval_time
             self.my_record("time/eval_time_seconds", eval_time)
 
@@ -1199,7 +1218,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
             )
 
         if difficulty == "easy":
-            map = MapType.easyBlueFirstRight
+            map = MapType.easyBlueFirst
         elif difficulty == "medium":
             map = MapType.mediumBlueFirstRight
         elif difficulty == "hard":
@@ -1230,7 +1249,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
 
         while (episode_counts < episode_count_targets).any():
     
-            actions, values, log_probs, obs = self.inferFromObservations(env, deterministic=deterministic)
+            actions, values, log_probs, obs = self.inferFromObservations(env, deterministic=deterministic, use_fresh_obs=self.use_fresh_obs)
             actions = actions.cpu().numpy()
 
             # Rescale and perform action

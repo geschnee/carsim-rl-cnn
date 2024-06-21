@@ -30,7 +30,7 @@ algo_settings:
   # amount of steps to collect per collect_rollouts per environment
 
   use_bundled_calls: True
-  use_fresh_obs: False
+  use_fresh_obs: True
   policy: "CnnPolicy"
   print_network_and_loss_structure: False
   net_arch:
@@ -46,7 +46,7 @@ algo_settings:
 
 env_kwargs:
   jetBotName: DifferentialJetBot
-  # can be DifferentialJetBot or FourWheelJetBot
+  # can be DifferentialJetBot or StandardJetBot
   spawnOrientation: Random
   # spawnOrientation can be Fixed, Random, OrientationVeryRandom and FullyRandom
   frame_stacking: 10

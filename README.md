@@ -41,11 +41,12 @@ see replay_on_jetbot.md for instructions
 
 # trained model
 
-todo upload to huggingface
+trained models availible on huggingface:
 https://huggingface.co/geschnee/carsim-rl-cnn
 
+# Master's Thesis document
 
-
+https://github.com/geschnee/masterarbeit
 
 # Acknowledgements
 
