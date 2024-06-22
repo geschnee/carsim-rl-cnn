@@ -13,16 +13,15 @@ public class EpisodeManager : MonoBehaviour
     public float fixedTimestepsLength;
     public bool stepFinished;
 
-    private float allowedTimeDefault = 30f; // was 10f
-    private float allowedTimePerGoal = 30f; // was 10f
+    private float allowedTimeDefault = 30f;
+    private float allowedTimePerGoal = 30f;
 
-    // multiply by some constant, the reward is very small
-    public float distanceCoefficient;// = 10f;
-    public float velocityCoefficient;// = 0.1f;
-    public float orientationCoefficient;// = 0.1f;
-    public float eventCoefficient;// = 1f;
+    public float distanceCoefficient;
+    public float velocityCoefficient;
+    public float orientationCoefficient;
+    public float eventCoefficient;
 
-    private float finishLineReward = 100f; // = 100f;
+    private float finishLineReward = 100f;
     private float wallHitReward = -1f;
     private float obstacleHitReward = -1f;
     private float timeoutReward = -1f;

@@ -8,6 +8,8 @@
     - Python310/Scripts
         - this is for tensorboard
 - Install Unity version 2022.3.10f1
+- start Unity and import the project
+- open Scenes/Main.unity
 - use NuGet in Unity to install 
     - Magick.NET-Q16-AnyCPU
     - Magick.NET.Core
@@ -15,6 +17,7 @@
 - add to Assets/Plugins
     - AustinHarrisJsonRpc.dll
     - PeacefulPie.dll
+- add NetManager.cs Script from Assets/Packages/PeacefulPie to RpcCommunicator Object in the scene
 
 ## AustinHarrisJsonRpc.dll
 
@@ -31,9 +34,24 @@ Download at https://github.com/hughperkins/peaceful-pie/releases/tag/v2.1.0
 
 # running the code
 
+- model training and evaluation are done using the python script `sb3_ppo.py`
+- model training and evaluation configurations are stored in the `cfg` directory
+
 ## training
 
+- start unity scene
+- start python script
+    - `python sb3_ppo.py --config-name <config-filename>`
+    - `python sb3_ppo.py --config-name cfg/hardDistanceMixedLight.yaml`
+
+
 ## evaluation
+
+- copy model to `models` directory
+- start unity scene
+- start python script
+    - `python sb3_ppo.py --config-name <config-filename>`
+    - `python sb3_ppo.py --config-name cfg/hardDistanceMixedLight_eval.yaml`
 
 ## episode replays only
 

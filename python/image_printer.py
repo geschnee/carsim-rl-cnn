@@ -41,7 +41,7 @@ coefficients = {"distanceCoefficient": 0.5,
 env_kwargs = {"fixedTimestepsLength": fixedTimestepsLength, 
               "jetBotName": "DifferentialJetBot",
               "spawnOrientation": myEnums.SpawnOrientation.Fixed,
-              "frame_stacking": 3, 
+              "frame_stacking": 10, 
               "image_preprocessing": {
                     "downsampling_factor": 2,
                     "grayscale": True,
@@ -49,8 +49,8 @@ env_kwargs = {"fixedTimestepsLength": fixedTimestepsLength,
                     "contrast_increase": "TODO",
                     "normalize_images": False},
                 "coefficients": coefficients,
-                "width": 500,
-                "height": 168,
+                "agentImageWidth": 500,
+                "agentImageHeight": 168,
                 "collisionMode": "oncePerTimestep"}
 
 
@@ -185,17 +185,20 @@ env.saveObservation(prefix)
 
 # agent spawnOrientation
 
-env.reset(mapType = MapType.hardBlueFirstLeft, lightSetting=LightSetting.standard, spawnRot=0.0)
+env.reset(mapType = MapType.hardBlueFirstRight, lightSetting=LightSetting.standard, spawnRot=0.0)
 time.sleep(1) # wait for the car to spawn
 env.get_arena_topview("image_printer_images/spawnOrientation_Fixed_min.png")
+env.saveObservationNoPreprocessing(f"image_printer_images/spawnOrientation_Fixed_min_pov.png")
 
-env.reset(mapType = MapType.hardBlueFirstLeft, lightSetting=LightSetting.standard, spawnRot=SpawnOrientation.getOrientationRange(SpawnOrientation.Random)[0])
+env.reset(mapType = MapType.hardBlueFirstRight, lightSetting=LightSetting.standard, spawnRot=SpawnOrientation.getOrientationRange(SpawnOrientation.Random)[0])
 time.sleep(1) # wait for the car to spawn
 env.get_arena_topview("image_printer_images/spawnOrientation_Random_min.png")
+env.saveObservationNoPreprocessing(f"image_printer_images/spawnOrientation_Random_min_pov.png")
 
-env.reset(mapType = MapType.hardBlueFirstLeft, lightSetting=LightSetting.standard, spawnRot=SpawnOrientation.getOrientationRange(SpawnOrientation.VeryRandom)[0])
+env.reset(mapType = MapType.hardBlueFirstRight, lightSetting=LightSetting.standard, spawnRot=SpawnOrientation.getOrientationRange(SpawnOrientation.VeryRandom)[0])
 time.sleep(1) # wait for the car to spawn
 env.get_arena_topview("image_printer_images/spawnOrientation_VeryRandom_min.png")
+env.saveObservationNoPreprocessing(f"image_printer_images/spawnOrientation_VeryRandom_min_pov.png")
 
 
 env.reset(mapType = MapType.hardBlueFirstRight, lightSetting=LightSetting.standard, spawnRot=0.0)

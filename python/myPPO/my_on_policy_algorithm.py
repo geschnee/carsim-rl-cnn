@@ -879,6 +879,8 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
 
         return list(zip(tracks, rotations))
 
+    # TODO reorder parameters
+    # TODO rename to match basic eval algo in Experiments.tex
     def eval_model_track(
         self: SelfOnPolicyAlgorithm,
         n_eval_episodes: int = 10,
