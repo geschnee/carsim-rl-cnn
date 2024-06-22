@@ -9,7 +9,7 @@
         - this is for tensorboard
 - Install Unity version 2022.3.10f1
 - start Unity and import the project
-- open Scenes/Main.unity
+- open Scenes/PythonControlledScene.unity
 - use NuGet in Unity to install 
     - Magick.NET-Q16-AnyCPU
     - Magick.NET.Core
