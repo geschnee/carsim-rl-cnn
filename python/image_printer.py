@@ -29,7 +29,7 @@ normalize_images = False
 # requires dtype float32
 
 n_envs = 1
-fixedTimestepsLength = False
+fixedTimestepsLength = 0.3
 # false --> timestep length is determined by python speed
 # some other value --> timestep length is fixed to this value
 
@@ -82,6 +82,7 @@ env.get_arena_screenshot("image_printer_images/evaluation_medium.png")
 env.reset(mapType = MapType.hardBlueFirstLeft, lightSetting=LightSetting.standard)
 time.sleep(1) # wait for the car to spawn
 env.get_arena_screenshot("image_printer_images/evaluation_hard.png")
+env.saveObservationNoPreprocessing(f"image_printer_images/agent_image_from_unity.png")
 
 
 
@@ -300,5 +301,30 @@ for i in range(20):
     os.remove(f'{prefix}_grayscale.png')
     os.remove(f'{prefix}_equalized.png')
     os.remove(f'{prefix}_image_from_unity.png')
+
+
+
+
+# agent movement
+movements = {"strait": ((1,1), MapType.easyBlueFirst), "turnRight": ((1, 0.5), MapType.hardBlueFirstLeft), "turn": ((1, -1), MapType.hardBlueFirstLeft)}
+if not os.path.exists("image_printer_images/movement"):
+    os.makedirs("image_printer_images/movement")
+
+required_indices = [0,1,5,15,30]
+
+for movement, t in movements.items():
+    if not os.path.exists(f"image_printer_images/movement/{movement}"):
+        os.makedirs(f"image_printer_images/movement/{movement}")
+
+    action = t[0]
+    map = t[1]
+
+    env.reset(mapType = map, lightSetting=LightSetting.standard, spawnRot=0.0)
+
+    for i in range(50):
+        time.sleep(fixedTimestepsLength * 2)
+        if i in required_indices:
+            env.get_arena_topview(f"image_printer_images/movement/{movement}/{i}.png")
+        stepReturnObject = env.step(action)
 
 
