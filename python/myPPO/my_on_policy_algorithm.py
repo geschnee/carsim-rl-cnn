@@ -721,7 +721,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
 
             nonfresh_obs_success_rate, nonfresh_obs_collision_rate = self.eval_model_track_wrapper_noFreshObs(n_episodes, difficulty, iteration, light_setting)
 
-
+            print(f'difficulty: {difficulty}')
             print(f'fresh obs success rate: {fresh_obs_success_rate} collision rate: {fresh_obs_collision_rate}')
             print(f'nonfresh obs success rate: {nonfresh_obs_success_rate} collision rate: {nonfresh_obs_collision_rate}')
             print(f'fresh better than nonfresh obs: {fresh_obs_success_rate > nonfresh_obs_success_rate}')
@@ -734,6 +734,8 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
                 self.my_record(f"fresh_nonfresh_comparison/fresh_better_by_{difficulty}_{light_setting.name}", fresh_obs_success_rate - nonfresh_obs_success_rate)
         
         self.use_fresh_obs = fresh_obs_status
+
+        print(f'freshObs finished', flush=True)
 
 
     def test_jetbot_generalization(self, n_episodes: int = 10, iteration: int = 0, light_setting: LightSetting = LightSetting.standard, log=False) -> float:
@@ -928,14 +930,14 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
             log_indices = []
         for i in log_indices:
             if use_fresh_obs:
-                x = "freshObs_"
+                prefix = "freshObs_"
             else:
-                x = ""
+                prefix = ""
 
             env.env_method(
                 method_name="setVideoFilename",
                 indices=[i],
-                video_filename = f'{os.getcwd()}\\videos_iter_{iteration}\\{x}{difficulty}_{light_setting.name}_{jetbot_name}_env_{i}_video_'
+                video_filename = f'{os.getcwd()}\\videos_iter_{iteration}\\{prefix}{difficulty}_{light_setting.name}_{jetbot_name}_env_{i}_video_'
             )
         
 
@@ -996,7 +998,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
 
                         if i in log_indices:
                             if episode_counts[i] <= episode_count_targets[i]:
-                                with open(os.path.join(f'{os.getcwd()}\\videos_iter_{iteration}\\{difficulty}_{light_setting.name}_{jetbot_name}_env_{i}_episode_{episode_counts[i]-1}_endInfo.yml'), 'w') as outfile:
+                                with open(os.path.join(f'{os.getcwd()}\\videos_iter_{iteration}\\{prefix}{difficulty}_{light_setting.name}_{jetbot_name}_env_{i}_episode_{episode_counts[i]-1}_endInfo.yml'), 'w') as outfile:
                                     yaml.dump(infos[0], outfile, default_flow_style=False)
 
 
@@ -1095,8 +1097,11 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
 
             eval_time = time.time()
             
-            self.test_fresh_obs_improves(n_episodes=n_eval_episodes, iteration=step, light_setting=LightSetting.standard, log=True)
+            
             self.test_episodes_identical_start_conditions(n_episodes=n_eval_episodes, iteration=step, light_setting=LightSetting.standard, log=True)
+            self.test_episodes_identical_start_conditions(n_episodes=n_eval_episodes, iteration=step, light_setting=LightSetting.standard, spawnRot=-15, log=True)
+            self.test_episodes_identical_start_conditions(n_episodes=n_eval_episodes, iteration=step, light_setting=LightSetting.standard, spawnRot=15, log=True)
+            self.test_fresh_obs_improves(n_episodes=n_eval_episodes, iteration=step, light_setting=LightSetting.standard, log=True)
             self.my_dump(step=step) 
             assert False
 
@@ -1178,6 +1183,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         iteration: int = 0,
         difficulty: str = "hard",
         light_setting: LightSetting = LightSetting.standard,
+        spawnRot: float = 0,
         deterministic: bool = False,
         log=False
     ):
@@ -1234,7 +1240,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
             mapType=map,
             lightSetting=light_setting,
             evalMode=True,
-            spawnRot=0.0
+            spawnRot=spawnRot
         ) 
 
         # switch to eval mode
@@ -1299,7 +1305,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
                             mapType=map,
                             lightSetting=light_setting,
                             evalMode=True,
-                            spawnRot=0.0
+                            spawnRot=spawnRot
                         )
             
             self._last_obs = observations
@@ -1313,6 +1319,8 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         episode_results_counter = collections.Counter(episode_results)
 
         most_common_episode_result = max(set(episode_results), key=episode_results.count)
+
+        print(f'results for spawnRot={spawnRot} and map={map} and lightSetting={light_setting.name} deterministic={deterministic}')
         print(f'most common episode result: {most_common_episode_result}')
 
         print(f'episode results and counts: {episode_results_counter}')
@@ -1330,7 +1338,10 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
             )
 
         if log:
-            self.my_record(f'identicalStartConditions/most_common_episode_result_rate', most_common_episode_result_rate)
+            if spawnRot == 0:
+                self.my_record(f'identicalStartConditions/most_common_episode_result_rate', most_common_episode_result_rate)
+            else:
+                self.my_record(f'identicalStartConditions/most_common_episode_result_rate_spawnRot_{spawnRot}', most_common_episode_result_rate)
 
         return most_common_episode_result_rate, success_rate
     
