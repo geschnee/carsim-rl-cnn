@@ -4,8 +4,7 @@ using UnityEngine;
 using System;
 using System.IO;
 using System.Linq;
-// using System.Drawing;
-// unity does not support the System.drawing library: https://docs.unity3d.com/Manual/overview-of-dot-net-in-unity.html#:~:text=Unity%20uses%20the%20open%2Dsource,variety%20of%20different%20hardware%20configurations.
+
 
 
 using System.Threading;

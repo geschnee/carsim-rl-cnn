@@ -296,7 +296,6 @@ for i in range(20):
     time.sleep(0.3)
     prefix = f'image_printer_images/memory_mechanism/preprocessed_image_step_{env.step_nr}'
     env.saveObservation(prefix)
-
     os.remove(f'{prefix}_downsampled.png')
     os.remove(f'{prefix}_grayscale.png')
     os.remove(f'{prefix}_equalized.png')
@@ -328,3 +327,60 @@ for movement, t in movements.items():
         stepReturnObject = env.step(action)
 
 
+
+# all tracks
+
+if not os.path.exists("image_printer_images/tracks"):
+    os.makedirs("image_printer_images/tracks")
+
+for map in myEnums.MapType:
+    env.reset(mapType = map, lightSetting=LightSetting.standard, spawnRot=0.0)
+    time.sleep(1) # wait for the car to spawn
+    env.get_arena_screenshot(f"image_printer_images/tracks/{map}.png")
+
+
+
+# agent interaction
+
+if not os.path.exists("image_printer_images/agent_interaction"):
+    os.mkdir("image_printer_images/agent_interaction")
+
+env.reset(mapType = MapType.hardBlueFirstLeft, lightSetting=LightSetting.standard, spawnRot=0.0)
+
+action = (0.8, 0.1)
+
+prefix = f'image_printer_images/agent_interaction/step_{0}'
+env.saveObservation(prefix)
+env.get_arena_screenshot(f'{prefix}_arena.png')
+os.remove(f'{prefix}_downsampled.png')
+os.remove(f'{prefix}_grayscale.png')
+os.remove(f'{prefix}_equalized.png')
+
+for i in range(30):
+    stepReturnObject = env.step(action)
+    time.sleep(0.3)
+    
+
+prefix = f'image_printer_images/agent_interaction/step_1'
+env.saveObservation(prefix)
+env.get_arena_screenshot(f'{prefix}_arena.png')
+os.remove(f'{prefix}_downsampled.png')
+os.remove(f'{prefix}_grayscale.png')
+os.remove(f'{prefix}_equalized.png')
+
+
+# images for identical start conditions test
+if not os.path.exists("image_printer_images/identical_start_conditions"):
+    os.mkdir("image_printer_images/identical_start_conditions")
+
+env.reset(mapType = MapType.hardBlueFirstLeft, lightSetting=LightSetting.standard, spawnRot=0.0)
+time.sleep(1) # wait for the car to spawn
+env.get_arena_topview("image_printer_images/identical_start_conditions/hardBlueFirstRight_0.png")
+
+env.reset(mapType = MapType.hardBlueFirstLeft, lightSetting=LightSetting.standard, spawnRot=-15.0)
+time.sleep(1) # wait for the car to spawn
+env.get_arena_topview("image_printer_images/identical_start_conditions/hardBlueFirstRight_minus15.png")
+
+env.reset(mapType = MapType.hardBlueFirstLeft, lightSetting=LightSetting.standard, spawnRot=15.0)
+time.sleep(1) # wait for the car to spawn
+env.get_arena_topview("image_printer_images/identical_start_conditions/hardBlueFirstRight_15.png")

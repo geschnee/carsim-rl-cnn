@@ -242,7 +242,7 @@ class BaseCarsimEnv(gym.Env):
     def unityReset(self, mp_name, spawn_rot, video_filename, lightSettingName, evalMode, jetbot_name):
 
         return BaseCarsimEnv.unity_comms.reset(mapType=mp_name,
-            id=self.instancenumber, spawn_rot=spawn_rot, lightSettingName=lightSettingName, evalMode=evalMode, video_filename=video_filename, jetbot_name=jetbot_name) 
+            id=self.instancenumber, spawnRot=spawn_rot, lightSetting=lightSettingName, evalMode=evalMode, videoFilename=video_filename, jetbotName=jetbot_name) 
 
     def unityGetObservation(self):
         return BaseCarsimEnv.unity_comms.getObservation(id=self.instancenumber)

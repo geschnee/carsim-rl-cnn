@@ -37,7 +37,7 @@ public enum SpawnOrientation
 
 public enum MapType
 {
-    random = 0,
+    random = 0, // deprecated
     easyBlueFirst = 1,
     easyRedFirst = 2,
 

@@ -50,7 +50,7 @@ class LightSetting(Enum):
         return LightSetting(np.random.choice([1,2,3]))
 
 class MapType(Enum):
-    random = 0
+    random = 0 # deprecated
     easyBlueFirst = 1
     easyRedFirst = 2
 

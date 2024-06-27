@@ -251,7 +251,7 @@ class myPPO(MyOnPolicyAlgorithm):
 
                 # ratio between old and new policy, should be one at the first iteration
                 ratio = th.exp(log_prob - rollout_data.old_log_prob)
-                print(f'ratio: {ratio}')
+                
 
                 # clipped surrogate loss
                 policy_loss_1 = advantages * ratio

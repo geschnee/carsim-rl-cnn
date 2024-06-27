@@ -659,8 +659,8 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
 
             for difficulty in difficulties:
 
-                deter_success_rate, deter_collision_rate = self.eval_model_track(n_episodes, difficulty, iteration, light_setting, deterministic=True)
-                nondeter_success_rate, nondeter_collision_rate = self.eval_model_track(n_episodes, difficulty, iteration, light_setting, deterministic=False)
+                deter_success_rate, deter_collision_rate = self.basic_evaluation_algorithm(n_episodes, difficulty, iteration, light_setting, deterministic=True)
+                nondeter_success_rate, nondeter_collision_rate = self.basic_evaluation_algorithm(n_episodes, difficulty, iteration, light_setting, deterministic=False)
 
                 total_deter_success_rate += deter_success_rate
                 total_deter_collision_rate += deter_collision_rate
@@ -697,11 +697,11 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         self.my_record(f"deter_nondeter_comparison/nondeter_collision_rate_better", total_nondeter_collision_rate - total_deter_collision_rate)
 
 
-    def eval_model_track_wrapper_freshObs(self, n_episodes, difficulty, iteration, light_setting):
-        return self.eval_model_track(n_episodes, difficulty, iteration, light_setting, use_fresh_obs=True, record_videos=True)
+    def basic_evaluation_algorithm_wrapper_freshObs(self, n_episodes, difficulty, iteration, light_setting):
+        return self.basic_evaluation_algorithm(n_episodes, difficulty, iteration, light_setting, use_fresh_obs=True, record_videos=True)
     
-    def eval_model_track_wrapper_noFreshObs(self, n_episodes, difficulty, iteration, light_setting):
-        return self.eval_model_track(n_episodes, difficulty, iteration, light_setting, use_fresh_obs=False, record_videos=True)
+    def basic_evaluation_algorithm_wrapper_noFreshObs(self, n_episodes, difficulty, iteration, light_setting):
+        return self.basic_evaluation_algorithm(n_episodes, difficulty, iteration, light_setting, use_fresh_obs=False, record_videos=True)
 
     def test_fresh_obs_improves(self, n_episodes: int = 10, difficulty: str = "easy", iteration: int = 0, light_setting: LightSetting = LightSetting.standard, log=False) -> float:
         dirpath=f'{os.getcwd()}\\videos_iter_{iteration}'
@@ -716,10 +716,10 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
 
         for difficulty in difficulties:
 
-            fresh_obs_success_rate, fresh_obs_collision_rate = self.eval_model_track_wrapper_freshObs(n_episodes, difficulty, iteration, light_setting)
+            fresh_obs_success_rate, fresh_obs_collision_rate = self.basic_evaluation_algorithm_wrapper_freshObs(n_episodes, difficulty, iteration, light_setting)
 
 
-            nonfresh_obs_success_rate, nonfresh_obs_collision_rate = self.eval_model_track_wrapper_noFreshObs(n_episodes, difficulty, iteration, light_setting)
+            nonfresh_obs_success_rate, nonfresh_obs_collision_rate = self.basic_evaluation_algorithm_wrapper_noFreshObs(n_episodes, difficulty, iteration, light_setting)
 
             print(f'difficulty: {difficulty}')
             print(f'fresh obs success rate: {fresh_obs_success_rate} collision rate: {fresh_obs_collision_rate}')
@@ -758,7 +758,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
 
         for jetBotName in jetBotNames:
             for difficulty in difficulties:
-                jb_success_rate, jb_collision_rate = self.eval_model_track(n_episodes, difficulty, iteration, light_setting, jetbot_name = jetBotName, record_videos=True)
+                jb_success_rate, jb_collision_rate = self.basic_evaluation_algorithm(n_episodes, difficulty, iteration, light_setting, jetbot_name = jetBotName, record_videos=True)
 
                 print(f'{jetBotName} success rate: {jb_success_rate} collision rate: {jb_collision_rate} for difficulty {difficulty} Light Setting {light_setting}', flush=True)
                 if log:
@@ -789,10 +789,10 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
             print(f'running eval for light setting {light_setting.name}', flush=True)
             
             time_easy = time.time()
-            easy_success_rate, easy_collision_rate = self.eval_model_track(n_eval_episodes = n_eval_episodes, difficulty ="easy", iteration=iteration, light_setting=light_setting, log=True)
-            print(f'eval_model_track easy done in {(time.time() - time_easy)/60} minutes', flush=True)
-            medium_success_rate, medium_collision_rate = self.eval_model_track(n_eval_episodes =n_eval_episodes, difficulty="medium", iteration=iteration, light_setting=light_setting, log=True)
-            hard_success_rate, hard_collision_rate = self.eval_model_track(n_eval_episodes =n_eval_episodes, difficulty="hard", iteration=iteration, light_setting=light_setting, log=True)
+            easy_success_rate, easy_collision_rate = self.basic_evaluation_algorithm(n_eval_episodes = n_eval_episodes, difficulty ="easy", iteration=iteration, light_setting=light_setting, log=True)
+            print(f'basic_evaluation_algorithm easy done in {(time.time() - time_easy)/60} minutes', flush=True)
+            medium_success_rate, medium_collision_rate = self.basic_evaluation_algorithm(n_eval_episodes =n_eval_episodes, difficulty="medium", iteration=iteration, light_setting=light_setting, log=True)
+            hard_success_rate, hard_collision_rate = self.basic_evaluation_algorithm(n_eval_episodes =n_eval_episodes, difficulty="hard", iteration=iteration, light_setting=light_setting, log=True)
             total_success_rate += easy_success_rate + medium_success_rate + hard_success_rate
             light_success_rate = (easy_success_rate + medium_success_rate + hard_success_rate) / 3
             
@@ -879,11 +879,12 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         # and example of the resulting track and rotation combinations:
         # map_and_rotations: [(<MapType.hardBlueFirstLeft: 7>, -15), (<MapType.hardBlueFirstRight: 8>, -13), (<MapType.hardRedFirstLeft: 9>, -11), (<MapType.hardRedFirstRight: 10>, -10), (<MapType.hardBlueFirstLeft: 7>, -8), (<MapType.hardBlueFirstRight: 8>, -7), (<MapType.hardRedFirstLeft: 9>, -5), (<MapType.hardRedFirstRight: 10>, -3), (<MapType.hardBlueFirstLeft: 7>, -2), (<MapType.hardBlueFirstRight: 8>, 0), (<MapType.hardRedFirstLeft: 9>, 0), (<MapType.hardRedFirstRight: 10>, 2), (<MapType.hardBlueFirstLeft: 7>, 3), (<MapType.hardBlueFirstRight: 8>, 5), (<MapType.hardRedFirstLeft: 9>, 7), (<MapType.hardRedFirstRight: 10>, 8), (<MapType.hardBlueFirstLeft: 7>, 10), (<MapType.hardBlueFirstRight: 8>, 11), (<MapType.hardRedFirstLeft: 9>, 13), (<MapType.hardRedFirstRight: 10>, 15)]
 
+        if difficulty == "hard":
+            print(f'map_and_rotations for hard: {list(zip(tracks, rotations))}', flush=True)
+
         return list(zip(tracks, rotations))
 
-    # TODO reorder parameters
-    # TODO rename to match basic eval algo in Experiments.tex
-    def eval_model_track(
+    def basic_evaluation_algorithm(
         self: SelfOnPolicyAlgorithm,
         n_eval_episodes: int = 10,
         difficulty: str = "easy",
@@ -1097,16 +1098,18 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
 
             eval_time = time.time()
             
-            
-            self.test_episodes_identical_start_conditions(n_episodes=n_eval_episodes, iteration=step, light_setting=LightSetting.standard, log=True)
-            self.test_episodes_identical_start_conditions(n_episodes=n_eval_episodes, iteration=step, light_setting=LightSetting.standard, spawnRot=-15, log=True)
-            self.test_episodes_identical_start_conditions(n_episodes=n_eval_episodes, iteration=step, light_setting=LightSetting.standard, spawnRot=15, log=True)
-            self.test_fresh_obs_improves(n_episodes=n_eval_episodes, iteration=step, light_setting=LightSetting.standard, log=True)
-            self.my_dump(step=step) 
-            assert False
+            if False:
+                self.test_episodes_identical_start_conditions(n_episodes=n_eval_episodes, iteration=step, light_setting=LightSetting.standard, log=True)
+                self.test_episodes_identical_start_conditions(n_episodes=n_eval_episodes, iteration=step, light_setting=LightSetting.standard, deterministic=True, log=True)
+                self.test_episodes_identical_start_conditions(n_episodes=n_eval_episodes, iteration=step, light_setting=LightSetting.standard, spawnRot=-15.0, log=True)
+                self.test_episodes_identical_start_conditions(n_episodes=n_eval_episodes, iteration=step, light_setting=LightSetting.standard, deterministic=True, spawnRot=-15.0, log=True)
+                self.test_episodes_identical_start_conditions(n_episodes=n_eval_episodes, iteration=step, light_setting=LightSetting.standard, spawnRot=15.0, log=True)
+                self.test_fresh_obs_improves(n_episodes=n_eval_episodes, iteration=step, light_setting=LightSetting.standard, deterministic=True, spawnRot=15.0, log=True)
+                self.my_dump(step=step) 
+                assert False
 
 
-            self.test_identical_results_eval_model_track(iteration=step, n_episodes=n_eval_episodes, difficulty="hard", light_setting=LightSetting.standard, deterministic=False, log=False)
+            #self.test_identical_results_basic_evaluation_algorithm(iteration=step, n_episodes=n_eval_episodes, difficulty="hard", light_setting=LightSetting.standard, deterministic=False, log=False)
             self.eval_model(iteration=step, n_eval_episodes=n_eval_episodes)
             self.my_dump(step=step)
             
@@ -1149,7 +1152,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
             assert th.allclose(actions[0:1], first_actions), f'actions are not invariant to the batch size/samples {actions[0:1]} != {first_actions}'
             print(f'actions are invariant to the batch size/samples')
 
-    def test_identical_results_eval_model_track(
+    def test_identical_results_basic_evaluation_algorithm(
         self: SelfOnPolicyAlgorithm,
         n_episodes: int = 10,
         iteration: int = 0,
@@ -1168,7 +1171,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         collision_rates = []
 
         for i in range(nr_evals):
-            success_rate, collision_rate = self.eval_model_track(nr_eval_episodes_per_run, difficulty, iteration, light_setting, deterministic, log=False)
+            success_rate, collision_rate = self.basic_evaluation_algorithm(nr_eval_episodes_per_run, difficulty, iteration, light_setting, deterministic, log=False)
             success_rates.append(success_rate)
             collision_rates.append(collision_rate)
 
@@ -1183,12 +1186,12 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         iteration: int = 0,
         difficulty: str = "hard",
         light_setting: LightSetting = LightSetting.standard,
-        spawnRot: float = 0,
+        spawnRot: float = 0.0,
         deterministic: bool = False,
         log=False
     ):
-        # besser wenn der test nicht eine config nimmt sondern stattdessen mehrmals eval_model_track_ausführt???
-        # genau das mach der test_identical_results_eval_model_track
+        # besser wenn der test nicht eine config nimmt sondern stattdessen mehrmals basic_evaluation_algorithm_ausführt???
+        # genau das mach der test_identical_results_basic_evaluation_algorithm
 
         # same initialization of envs, does the agent traverse the env in the same way?
 
@@ -1222,7 +1225,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
             env.env_method(
                 method_name="setVideoFilename",
                 indices=[i],
-                video_filename = f'{os.getcwd()}\\videos_identicalStartConditions_iter_{iteration}\\{light_setting.name}_env_{i}_video_'
+                video_filename = f'{os.getcwd()}\\videos_identicalStartConditions_iter_{iteration}\\{light_setting.name}_{int(spawnRot)}_deter{deterministic}_env_{i}_video_'
             )
 
         if difficulty == "easy":
@@ -1289,6 +1292,11 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
                         episode_results.append(EpisodeRepresentation(infos[i]))
 
                         if i in log_indices:
+
+                            if episode_counts[i] <= episode_count_targets[i]:
+                                with open(os.path.join(f'{os.getcwd()}\\videos_identicalStartConditions_iter_{iteration}\\{light_setting.name}_{int(spawnRot)}_deter{deterministic}_env_{i}_episode_{episode_counts[i]-1}_endInfo.yml'), 'w') as outfile:
+                                    yaml.dump(infos[i], outfile, default_flow_style=False)
+
                             if episode_counts[i] == episode_count_targets[i]-1:
                                 # no more logging needed for this env
                                 env.env_method(
@@ -1338,10 +1346,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
             )
 
         if log:
-            if spawnRot == 0:
-                self.my_record(f'identicalStartConditions/most_common_episode_result_rate', most_common_episode_result_rate)
-            else:
-                self.my_record(f'identicalStartConditions/most_common_episode_result_rate_spawnRot_{spawnRot}', most_common_episode_result_rate)
+            self.my_record(f'identicalStartConditions/most_common_rate_rot{int(spawnRot)}_deter{deterministic}', most_common_episode_result_rate)
 
         return most_common_episode_result_rate, success_rate
     

@@ -13,11 +13,21 @@
 - use NuGet in Unity to install 
     - Magick.NET-Q16-AnyCPU
     - Magick.NET.Core
-- add Magick.Native-Q16-x64.dll to Assets/Packages
+- add to Assets/Packages
+    - Magick.Native-Q16-x64.dll 
 - add to Assets/Plugins
     - AustinHarrisJsonRpc.dll
     - PeacefulPie.dll
 - add NetManager.cs Script from Assets/Packages/PeacefulPie to RpcCommunicator Object in the scene
+
+
+Magick is only required for the recording videos
+
+## Magick.Native-Q16-x64.dll
+
+- download from internet
+  - e.g. https://www.dllme.com/dll/files/magick_native-q16-x64/e924369b24e1de791993f37f0aad1e3c
+- add to Assets/Packages
 
 ## AustinHarrisJsonRpc.dll
 
