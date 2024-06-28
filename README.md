@@ -21,7 +21,7 @@
 - add NetManager.cs Script from Assets/Packages/PeacefulPie to RpcCommunicator Object in the scene
 
 
-Magick is only required for the recording videos
+Magick is only required for the recording of videos
 
 ## Magick.Native-Q16-x64.dll
 
@@ -67,7 +67,7 @@ Download at https://github.com/hughperkins/peaceful-pie/releases/tag/v2.1.0
 
 see replays_on_jetbot.md for instructions
 
-# trained model
+# trained models
 
 trained models availible on huggingface:
 https://huggingface.co/geschnee/carsim-rl-cnn

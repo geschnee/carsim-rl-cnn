@@ -1,10 +1,8 @@
 comment: "rewardFunction capability check, this tests if the agent is able to learn the individual reward function (for easy tracks), eventReward"
  
 
-# reducing n_envs results in higher fps (per env)
 n_envs: 10
 copy_model_from: False
-# copy_model_from can be False or a string (filename without .zip suffix)
 
 total_timesteps: 1000000
 
@@ -20,19 +18,13 @@ episode_record_replay_settings:
   n_episodes_per_setting: 2
   deterministic_sampling: True
   replay_folder: False
-  # replay_folder can be False to replay the previously recorded episodes
 
 algo_settings:
-  n_epochs: 5 # amount of training passes over the replay buffer per timestep
-
+  n_epochs: 5
 
   batch_size: 64
 
-  n_steps: 512 # 64 
-# amount of steps to collect per collect_rollouts per environment
-# Tensorboard shows the mean_episode_length is below 3
-# we can reduce the n_steps to make the collection time shorter while still collecting a lot of episodes
-# n_steps * fixedTimestepsLength = the amount of seconds required for the collection
+  n_steps: 256
 
   policy: "CnnPolicy"
   use_bundled_calls: True
@@ -63,6 +55,6 @@ env_kwargs:
   trainingLightSetting: standard
   fixedTimestepsLength: 0.3
 
-  agentImageWidth: 500 #800 #500 #336
+  agentImageWidth: 500
   agentImageHeight: 168
 

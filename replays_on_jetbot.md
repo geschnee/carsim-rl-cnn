@@ -1,3 +1,6 @@
+# Contents
+
+- [Contents](#contents)
 - [connect to jetbot](#connect-to-jetbot)
   - [there is not enough space on the JetBot](#there-is-not-enough-space-on-the-jetbot)
     - [check space on device](#check-space-on-device)
@@ -44,7 +47,7 @@ connect to jetbot from the same network
 ssh jetbot@ip
 ```
 
-ip = ipv4 aus nmcli
+ip = ipv4 from nmcli
 
 
 ## there is not enough space on the JetBot
@@ -141,13 +144,13 @@ sudo reboot
 ## copy carsim repo to JetBot
 
 ```
-scp -r carsim_no_mlagents jetbot@192.168.1.3:/mnt/usb_drive/carsim_no_mlagents
+scp -r carsim-rl-cnn jetbot@192.168.1.3:/mnt/usb_drive/carsim-rl-cnn
 ```
 
 ## copy replay to JetBot
 
 ```
-scp -r episode_recordings jetbot@192.168.1.3:/mnt/usb_drive/carsim_no_mlagents/python/episode_recordings
+scp -r episode_recordings jetbot@192.168.1.3:/mnt/usb_drive/carsim-rl-cnn/python/episode_recordings
 ```
 
 ## install openssl
@@ -247,7 +250,7 @@ source sb3_env/bin/activate
 ### install packages to virtual env
 
 ```
-python -m pip install -r carsim_no_mlagents-main/python/replay_only_requirements.txt
+python -m pip install -r carsim-rl-cnn/python/replay_only_requirements.txt
 ```
 
 # run replay
@@ -266,7 +269,7 @@ python sb3_ppo_replay_only.py --config-name cfg/...
 
 # replay results
 
-replaying episodes from /mnt/usb_drive/carsim_no_mlagents-main/python/episode_recordings/hardDistanceSuccess_recordings_desktop
+replaying episodes from /mnt/usb_drive/carsim-rl-cnn/python/episode_recordings/hardDistanceSuccess_recordings_desktop
 replay episode results:
 avg time for preprocessing and infer: 0.06583681669864026
 max time for preprocessing and infer: 0.20911359786987305

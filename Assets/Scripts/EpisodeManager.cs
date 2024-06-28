@@ -21,7 +21,7 @@ public class EpisodeManager : MonoBehaviour
     public float orientationCoefficient;
     public float eventCoefficient;
 
-    private float finishLineReward = 100f;
+    private float trackReward = 100f;
     private float wallHitReward = -1f;
     private float obstacleHitReward = -1f;
     private float timeoutReward = -1f;
@@ -442,7 +442,7 @@ public class EpisodeManager : MonoBehaviour
 
         if (this.passedGoals.Count == this.numberOfGoals)
         {
-            AddEventReward(finishLineReward);
+            AddEventReward(trackReward);
 
 
             EndEpisode(EpisodeStatus.Success);

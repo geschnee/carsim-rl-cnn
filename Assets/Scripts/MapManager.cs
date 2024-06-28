@@ -282,8 +282,6 @@ public class MapManager : MonoBehaviour
         return spawnPoint;
     }
 
-    // TODO was this method used in Maximilian code before?
-    // yes, in CarAgent random spawn
     public Quaternion JetBotRotation(float jetBotSpawnRotationAngle)
     {
         // previously called JetBotRandomRotation
@@ -391,15 +389,6 @@ public class MapManager : MonoBehaviour
         Destroy(this.finishLine);
     }
 
-    /*
-    public void DestroyObstacles()
-    {
-        for (int i = 0; i < this.obstacles.Count; i++)
-        {
-            GameObject.DestroyImmediate(this.obstacles[i]);
-        }
-    }*/
-
     private GameObject FindChildWithTag(GameObject parent, string tag)
     {
         Transform t = parent.transform;
@@ -419,20 +408,8 @@ public class MapManager : MonoBehaviour
     public MapData GenerateObstacleMap(MapType mapType, float jetBotSpawnRotationAngle)
     {
 
-
         Vector3 jetBotSpawnPosition = this.GetJetBotSpawnCoords();
 
-        /* random spawn is deprecated
-        else if (mapType == MapType.random)
-        {
-            jetBotSpawnPosition = this.GetJetBotRandomCoords();
-        }
-        else
-        {
-            // the mapType is not random (it is an evaluation track)
-            // we cannot use the same random spawn for these
-            jetBotSpawnPosition = this.GetJetBotRandomCoordsEval();
-        }*/
 
         Quaternion jetBotSpawnRotation = this.JetBotRotation(jetBotSpawnRotationAngle);
 
@@ -480,63 +457,6 @@ public class MapManager : MonoBehaviour
         return mapData;
 
     }
-
-    //deprecated
-    
-    /*
-    private Goal[] GenerateRandomObstacleMap(SpawnOrientation jetBotSpawn, Vector3 jetBotSpawnPosition)
-    {
-        Debug.LogError("deprecated TODO remove");        
-
-
-        List<Goal> obstacles = new List<Goal>();
-        Random rnd = new Random();
-        bool randomIsBlueFirst = rnd.Next(0, 2) == 0;
-
-        GameObject actualColorObject = getColorObject(randomIsBlueFirst);
-
-        //local goal post coordinates depend arena position
-        float zLeftMax = (1 + this.gameManagerPosition.z);
-        // left post of goal max 
-        float zRightMax = (5.5f + this.gameManagerPosition.z);
-        int minXLocal = (int)(Constants.MIN_X + this.gameManagerPosition.x);
-        int maxXLocal = minXLocal + Constants.X_WIDTH;
-
-        if (jetBotSpawn == SpawnOrientation.FullyRandom)
-        {
-            //first goal random distance to JetBot
-            minXLocal = (int)(jetBotSpawnPosition.x + rnd.Next(Constants.MINXDISTANCEGOALS, Constants.MAXXDISTANCEGOALS));
-            //Debug.Log($"minXLocal {minXLocal} maxXLocal {maxXLocal}");
-        }
-
-        // choose random distance between goals every round
-        int xDistanceGoals = 0;
-        for (int x = minXLocal; x < maxXLocal; x += xDistanceGoals)
-        {
-            // choose distance to next goal
-            xDistanceGoals = rnd.Next(Constants.MINXDISTANCEGOALS, Constants.MAXXDISTANCEGOALS + 1);
-            // choose z-position of left goal post random 
-            float zLeftPost = (float)rnd.NextDouble() * (zRightMax - zLeftMax) + zLeftMax;
-
-            Vector3[] coordsGoal = { new Vector3(), new Vector3() };
-
-            Vector3 coordLeft = new Vector3(x, Constants.SPAWNHEIGHT_Y, zLeftPost);
-
-            Vector3 coordRight = new Vector3(x, Constants.SPAWNHEIGHT_Y, zLeftPost + Constants.MAXWIDTH_GOAL);
-
-            coordsGoal[0] = coordLeft;
-            coordsGoal[1] = coordRight;
-
-
-            Goal goal = new Goal(actualColorObject, coordsGoal);
-            obstacles.Add(goal);
-
-            actualColorObject = actualColorObject == obstacleBlue ? obstacleRed : obstacleBlue;
-
-        }
-
-        return obstacles.ToArray();
-    }*/
 
     private Goal[] GenerateEasyGoalLaneMiddleMap(Boolean isBlueFirst = true)
     {

@@ -1097,19 +1097,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
             self.num_timesteps = step # for proper logging we need to manipulate this, very dirty!!!
 
             eval_time = time.time()
-            
-            if False:
-                self.test_episodes_identical_start_conditions(n_episodes=n_eval_episodes, iteration=step, light_setting=LightSetting.standard, log=True)
-                self.test_episodes_identical_start_conditions(n_episodes=n_eval_episodes, iteration=step, light_setting=LightSetting.standard, deterministic=True, log=True)
-                self.test_episodes_identical_start_conditions(n_episodes=n_eval_episodes, iteration=step, light_setting=LightSetting.standard, spawnRot=-15.0, log=True)
-                self.test_episodes_identical_start_conditions(n_episodes=n_eval_episodes, iteration=step, light_setting=LightSetting.standard, deterministic=True, spawnRot=-15.0, log=True)
-                self.test_episodes_identical_start_conditions(n_episodes=n_eval_episodes, iteration=step, light_setting=LightSetting.standard, spawnRot=15.0, log=True)
-                self.test_fresh_obs_improves(n_episodes=n_eval_episodes, iteration=step, light_setting=LightSetting.standard, deterministic=True, spawnRot=15.0, log=True)
-                self.my_dump(step=step) 
-                assert False
 
-
-            #self.test_identical_results_basic_evaluation_algorithm(iteration=step, n_episodes=n_eval_episodes, difficulty="hard", light_setting=LightSetting.standard, deterministic=False, log=False)
             self.eval_model(iteration=step, n_eval_episodes=n_eval_episodes)
             self.my_dump(step=step)
             
@@ -1117,6 +1105,11 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
             
             self.test_deterministic_improves(n_episodes=n_eval_episodes, iteration=step, log=True)
             
+            self.test_episodes_identical_start_conditions(n_episodes=n_eval_episodes, iteration=step, light_setting=LightSetting.standard, log=True)
+            self.test_episodes_identical_start_conditions(n_episodes=n_eval_episodes, iteration=step, light_setting=LightSetting.standard, spawnRot=-15.0, log=True)
+            self.test_episodes_identical_start_conditions(n_episodes=n_eval_episodes, iteration=step, light_setting=LightSetting.standard, spawnRot=15.0, log=True)
+            self.test_fresh_obs_improves(n_episodes=n_eval_episodes, iteration=step, light_setting=LightSetting.standard, deterministic=True, spawnRot=15.0, log=True)
+
             eval_time = time.time() - eval_time
             self.my_record("time/eval_time_seconds", eval_time)
 
@@ -1133,7 +1126,6 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         env = self.env
         env.reset()
 
-        #self.policy.set_training_mode(False)
 
         with th.no_grad():
             obs = get_obs_bundled_calls(env)
@@ -1152,34 +1144,6 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
             assert th.allclose(actions[0:1], first_actions), f'actions are not invariant to the batch size/samples {actions[0:1]} != {first_actions}'
             print(f'actions are invariant to the batch size/samples')
 
-    def test_identical_results_basic_evaluation_algorithm(
-        self: SelfOnPolicyAlgorithm,
-        n_episodes: int = 10,
-        iteration: int = 0,
-        difficulty: str = "hard",
-        light_setting: LightSetting = LightSetting.standard,
-        deterministic: bool = False,
-        log=False
-    ):
-        # same initialization of envs, does the agent traverse the env in the same way?
-
-        nr_evals = 5
-
-        nr_eval_episodes_per_run = n_episodes
-
-        success_rates = []
-        collision_rates = []
-
-        for i in range(nr_evals):
-            success_rate, collision_rate = self.basic_evaluation_algorithm(nr_eval_episodes_per_run, difficulty, iteration, light_setting, deterministic, log=False)
-            success_rates.append(success_rate)
-            collision_rates.append(collision_rate)
-
-        print(f'test identical results eval model track for {difficulty} {light_setting.name} with {nr_eval_episodes_per_run} episodes per eval')
-        print(f'success rates: {success_rates}')
-        print(f'collision rates: {collision_rates}', flush=True)
-
-
     def test_episodes_identical_start_conditions(
         self: SelfOnPolicyAlgorithm,
         n_episodes: int = 10,
@@ -1190,9 +1154,7 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
         deterministic: bool = False,
         log=False
     ):
-        # besser wenn der test nicht eine config nimmt sondern stattdessen mehrmals basic_evaluation_algorithm_ausführt???
-        # genau das mach der test_identical_results_basic_evaluation_algorithm
-
+        
         # same initialization of envs, does the agent traverse the env in the same way?
 
         env = self.env

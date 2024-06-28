@@ -383,4 +383,30 @@ env.get_arena_topview("image_printer_images/identical_start_conditions/hardBlueF
 
 env.reset(mapType = MapType.hardBlueFirstLeft, lightSetting=LightSetting.standard, spawnRot=15.0)
 time.sleep(1) # wait for the car to spawn
-env.get_arena_topview("image_printer_images/identical_start_conditions/hardBlueFirstRight_15.png")
+env.get_arena_topview("image_printer_images//hardBlueFirstRight_15.png")
+
+
+# show small differences between subsequent step images
+if not os.path.exists("image_printer_images/agent_steps"):
+    os.mkdir("image_printer_images/agent_steps")
+
+env.reset(mapType = MapType.hardBlueFirstLeft, lightSetting=LightSetting.standard, spawnRot=0.0)
+
+action = (0.8, 0.1)
+
+prefix = f'image_printer_images/agent_steps/step_{0}'
+env.saveObservation(prefix)
+env.get_arena_screenshot(f'{prefix}_arena.png')
+os.remove(f'{prefix}_downsampled.png')
+os.remove(f'{prefix}_grayscale.png')
+os.remove(f'{prefix}_equalized.png')
+
+for i in range(3):
+    stepReturnObject = env.step(action)
+    time.sleep(0.3)
+
+    prefix = f'image_printer_images/agent_steps/step_{i}'
+    env.saveObservation(prefix)
+    os.remove(f'{prefix}_downsampled.png')
+    os.remove(f'{prefix}_grayscale.png')
+    os.remove(f'{prefix}_equalized.png')
