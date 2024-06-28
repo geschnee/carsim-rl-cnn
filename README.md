@@ -74,7 +74,7 @@ https://huggingface.co/geschnee/carsim-rl-cnn
 
 # Master's Thesis document
 
-https://github.com/geschnee/carsim-rl-cnn/blob/main/Masterarbeit.pdf
+https://github.com/geschnee/carsim-rl-cnn/blob/main/Masterarbeit_Georg_Schneeberger_signed.pdf
 
 # Acknowledgements
 
