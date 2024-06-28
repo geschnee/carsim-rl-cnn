@@ -67,14 +67,14 @@ Download at https://github.com/hughperkins/peaceful-pie/releases/tag/v2.1.0
 
 see replays_on_jetbot.md for instructions
 
-# trained models
+# trained models + video files + episode recordings
 
-trained models availible on huggingface:
+availible on huggingface:
 https://huggingface.co/geschnee/carsim-rl-cnn
 
 # Master's Thesis document
 
-https://github.com/geschnee/masterarbeit
+https://github.com/geschnee/carsim-rl-cnn/blob/main/Masterarbeit.pdf
 
 # Acknowledgements
 
