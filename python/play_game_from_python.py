@@ -149,9 +149,6 @@ def run(cfg) -> None:
                     sys.exit()
 
         
-            #print(f'new_obs {new_obs.shape}', flush=True)
-            #print(f'max and min of new_obs {np.max(new_obs)} {np.min(new_obs)}', flush=True)
-
             text_surface = my_font.render(f'Input Left: {left_acceleration}\nInput right: {right_acceleration}', False, (0, 0, 0))
             gameDisplay.blit(text_surface, (600,0))
 
@@ -196,8 +193,6 @@ def run(cfg) -> None:
                 print(f'fps {frames / (time.time() - starttime)}')
                 # about 20 fps on my machine
 
-            #print(f'format {im.format}, size {im.size}, mode {im.mode}')
-            # png, (240,240), RGB
 
 
 @hydra.main(config_path=".", config_name="cfg/play_game.yaml")
