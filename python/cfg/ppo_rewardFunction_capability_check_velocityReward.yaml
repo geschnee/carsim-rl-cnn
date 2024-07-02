@@ -4,7 +4,7 @@ comment: "rewardFunction capability check, this tests if the agent is able to le
 n_envs: 10
 copy_model_from: False
 
-total_timesteps: 1000000
+total_timesteps: 500000
 
 seed: 2048
 

@@ -773,6 +773,8 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
 
         light_settings = [LightSetting.bright, LightSetting.standard, LightSetting.dark]
         
+        light_settings = [LightSetting.standard]
+        print(f"warning: only running eval for standard light due to rewardFunction video recording issues", flush=True)
 
         dirpath = f'{os.getcwd()}\\videos_iter_{iteration}'
         if not os.path.exists(dirpath):
@@ -791,6 +793,8 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
             time_easy = time.time()
             easy_success_rate, easy_collision_rate = self.basic_evaluation_algorithm(n_eval_episodes = n_eval_episodes, difficulty ="easy", iteration=iteration, light_setting=light_setting, log=True)
             print(f'basic_evaluation_algorithm easy done in {(time.time() - time_easy)/60} minutes', flush=True)
+            assert False
+            
             medium_success_rate, medium_collision_rate = self.basic_evaluation_algorithm(n_eval_episodes =n_eval_episodes, difficulty="medium", iteration=iteration, light_setting=light_setting, log=True)
             hard_success_rate, hard_collision_rate = self.basic_evaluation_algorithm(n_eval_episodes =n_eval_episodes, difficulty="hard", iteration=iteration, light_setting=light_setting, log=True)
             total_success_rate += easy_success_rate + medium_success_rate + hard_success_rate
