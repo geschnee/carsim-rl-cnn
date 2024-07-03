@@ -793,7 +793,6 @@ class MyOnPolicyAlgorithm(BaseAlgorithm):
             time_easy = time.time()
             easy_success_rate, easy_collision_rate = self.basic_evaluation_algorithm(n_eval_episodes = n_eval_episodes, difficulty ="easy", iteration=iteration, light_setting=light_setting, log=True)
             print(f'basic_evaluation_algorithm easy done in {(time.time() - time_easy)/60} minutes', flush=True)
-            assert False
             
             medium_success_rate, medium_collision_rate = self.basic_evaluation_algorithm(n_eval_episodes =n_eval_episodes, difficulty="medium", iteration=iteration, light_setting=light_setting, log=True)
             hard_success_rate, hard_collision_rate = self.basic_evaluation_algorithm(n_eval_episodes =n_eval_episodes, difficulty="hard", iteration=iteration, light_setting=light_setting, log=True)

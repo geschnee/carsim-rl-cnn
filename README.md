@@ -3,6 +3,7 @@
 
 - clone repo
 - python -m pip install -r python/requirements.txt
+  - I used 3.10.6, 3.10.11 and 3.11.5
 - add Path variables
     - Python310
     - Python310/Scripts
@@ -18,7 +19,7 @@
 - add to Assets/Plugins
     - AustinHarrisJsonRpc.dll
     - PeacefulPie.dll
-- add NetManager.cs Script from Assets/Packages/PeacefulPie to RpcCommunicator Object in the scene
+- add NetManager.cs Script from Assets/Plugins/PeacefulPie to RpcCommunicator Object in the scene
 
 
 Magick is only required for the recording of videos
@@ -66,6 +67,13 @@ Download at https://github.com/hughperkins/peaceful-pie/releases/tag/v2.1.0
 ## episode replays only
 
 see replays_on_jetbot.md for instructions
+
+## drive the agent yourself
+
+- start unity scene
+- python play_game_from_python.py
+  - use arrow keys to change left and right acceleration values
+  - use space bar to reset the acceleration values to 0
 
 # trained models + video files + episode recordings
 

@@ -57,9 +57,6 @@ def run(cfg) -> None:
     new_obs, info_dict = env.reset()
 
 
-    print(f'event reset')
-
-    full_control_mode = False
 
     # creating a running loop
     while True:
@@ -91,19 +88,6 @@ def run(cfg) -> None:
                     if left_acceleration > 0.05:
                         left_acceleration -= 0.05
 
-                # precise/absolute control
-                if event.key == pygame.K_0:
-                    right_acceleration += 0.1
-                    full_control_mode = True
-                if event.key == pygame.K_9:
-                    right_acceleration -= 0.1
-                    full_control_mode = True
-                if event.key == pygame.K_1:
-                    left_acceleration += 0.1
-                    full_control_mode = True
-                if event.key == pygame.K_2:
-                    left_acceleration -= 0.1
-                    full_control_mode = True
 
                 if event.key == pygame.K_SPACE:
                     right_acceleration = 0
@@ -121,14 +105,13 @@ def run(cfg) -> None:
                 if left_acceleration < -1:
                     left_acceleration = -1
                 
-                if not full_control_mode:
-                    if right_acceleration < -0.5:
-                        right_acceleration = -0.5
-                    if left_acceleration < -0.5:
-                        left_acceleration = -0.5
+                if right_acceleration < -0.5:
+                    right_acceleration = -0.5
+                if left_acceleration < -0.5:
+                    left_acceleration = -0.5
                 
 
-                print(f'left_acceleration {left_acceleration} right_acceleration {right_acceleration}', flush=True)
+                print(f'left_acceleration {round(left_acceleration, 2)} right_acceleration {round(right_acceleration,2)}', flush=True)
 
                 new_obs, reward, terminated, truncated, info_dict  = env.step((float(
                     left_acceleration), float(right_acceleration)))
@@ -138,7 +121,7 @@ def run(cfg) -> None:
                 event_reward = float(info_dict["eventReward"].replace(",","."))
                 orientation_reward = float(info_dict["orientationReward"].replace(",","."))
 
-                print(f'distance_reward {distance_reward} velocity_reward {velocity_reward} event_reward {event_reward} orientation_reward {orientation_reward}', flush=True)
+                #print(f'distance_reward {distance_reward} velocity_reward {velocity_reward} event_reward {event_reward} orientation_reward {orientation_reward}', flush=True)
 
                 if terminated:
                     print(f'stepObj reward {reward} terminated {terminated} info {info_dict}', flush=True)
@@ -162,9 +145,7 @@ def run(cfg) -> None:
                 img_obs = np.squeeze(img_obs)
 
                 img_obs = np.rot90(img_obs, k=1)
-                #print(f'max and min of img_obs {np.max(img_obs)} {np.min(img_obs)}', flush=True)
                 g = gray(img_obs)
-                #print(f'max and min of g {np.max(g)} {np.min(g)}', flush=True)
 
                 g = np.flipud(g)
                 img = pygame.surfarray.make_surface(g)
@@ -172,10 +153,6 @@ def run(cfg) -> None:
                 img = new_obs[:, :, 0:3]
                 img = np.rot90(img, k=1)
 
-            
-            #print(f'max and min of img {np.max(img)} {np.min(img)}', flush=True)
-            
-            
 
             gameDisplay.blit(img, (0, 0))
 
